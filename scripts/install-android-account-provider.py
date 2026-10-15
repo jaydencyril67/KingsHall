@@ -42,7 +42,11 @@ if "KingsHallAuthenticatorService" not in manifest:
 manifest_path.write_text(manifest, encoding="utf-8")
 
 strings_path = target_root / "res/values/strings.xml"
-strings = strings_path.read_text(encoding="utf-8")
+strings_path.parent.mkdir(parents=True, exist_ok=True)
+if strings_path.exists():
+    strings = strings_path.read_text(encoding="utf-8")
+else:
+    strings = '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n</resources>\n'
 if "kingshall_account_label" not in strings:
     strings = strings.replace("</resources>", '    <string name="kingshall_account_label">KingsHall</string>\n</resources>')
     strings_path.write_text(strings, encoding="utf-8")
