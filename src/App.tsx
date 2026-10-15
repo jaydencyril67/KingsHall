@@ -5,7 +5,7 @@ import './App.css';
 type Mode = 'login' | 'signup' | 'verify' | 'account';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
-const API = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 async function api(path: string, body?: unknown, access?: string): Promise<Result> {
   if (!API) throw new Error('KingsHall API address is not configured yet. Set VITE_API_BASE_URL in the frontend deployment to your ApiKingsHall service URL.');
   let response: Response;
