@@ -81,10 +81,13 @@ jobs:
             // Reuse the exact app-wide KingsHall mark, removing only its black canvas
             // so it sits cleanly inside the native splash's circular backdrop.
             const crown = Buffer.from(markSvg.replace('<rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>', ''));
-            const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#0b0b0b" stroke="#262626" stroke-width="10"/></svg>');
-            await sharp({ create: { width: 720, height: 721, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-              .composite([{ input: circle }, { input: crown }])
-              .resize(512, 512)
+            const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 720 721"><circle cx="360" cy="360.5" r="330" fill="#0b0b0b" stroke="#262626" stroke-width="10"/></svg>');
+            // Sharp applies resize before composite regardless of chain order. Resize
+            // each SVG layer first so neither can exceed the 512x512 output canvas.
+            const crownLayer = await sharp(crown).resize(512, 512, { fit: 'fill' }).png().toBuffer();
+            const circleLayer = await sharp(circle).resize(512, 512, { fit: 'fill' }).png().toBuffer();
+            await sharp({ create: { width: 512, height: 512, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+              .composite([{ input: circleLayer }, { input: crownLayer }])
               .png()
               .toFile('android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
 
