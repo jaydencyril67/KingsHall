@@ -169,3 +169,9 @@ body:before,body:after{animation:none!important;filter:none!important;opacity:.5
 .kh-nowbar-dock.is-expanded .kh-nowbar-slot{width:100%;min-width:0;max-width:100%}
 .kh-nowbar-dock.is-expanded .kh-nowbar-actions{display:contents}
 .kh-nowbar{background:linear-gradient(180deg,rgba(29,31,36,.88),rgba(7,8,10,.86));backdrop-filter:blur(16px) saturate(120%);-webkit-backdrop-filter:blur(16px) saturate(120%)}
+
+
+/* Match CryBots NowBar button geometry: full 112px expanded cells and 54px grid rows. */
+.kh-nowbar-dock.is-expanded .kh-nowbar{grid-template-columns:repeat(3,minmax(112px,max-content));grid-auto-rows:minmax(54px,auto)}
+.kh-nowbar-dock.is-expanded .kh-nowbar-action{width:100%;min-width:112px;max-width:100%;min-height:40px;padding:9px 10px 8px;border-radius:12px;gap:4px}
+@media(max-width:380px){.kh-nowbar-dock.is-expanded .kh-nowbar{grid-template-columns:repeat(3,minmax(0,1fr))}.kh-nowbar-dock.is-expanded .kh-nowbar-action{min-width:0}}
