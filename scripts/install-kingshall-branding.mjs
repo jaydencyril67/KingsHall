@@ -28,7 +28,7 @@ const colorsPath = path.join(valuesDir, 'colors.xml');
 let colors = '';
 try { colors = await (await import('node:fs/promises')).readFile(colorsPath, 'utf8'); } catch {}
 if (colors.includes('kingshall_icon_background')) {
-  colors = colors.replace(/<color name="kingshall_icon_background">[^<]*<\\/color>/, '<color name="kingshall_icon_background">#000000</color>');
+  colors = colors.replace(/<color name="kingshall_icon_background">[^<]*<\/color>/, '<color name="kingshall_icon_background">#000000</color>');
 } else if (colors.includes('</resources>')) {
   colors = colors.replace('</resources>', '    <color name="kingshall_icon_background">#000000</color>\n</resources>');
 } else {
