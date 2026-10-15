@@ -2,3 +2,5 @@
 /* KingsHall signature: polished silver crown on pure black. */
 .brand-mark{border-color:rgba(235,239,244,.22);color:#f5f7fa;background:#000;box-shadow:0 0 24px rgba(220,226,233,.08)}
 .brand-mark svg.kh-brand-mark-svg{stroke:none;stroke-width:initial;stroke-linecap:initial;stroke-linejoin:initial;width:30px;height:30px;overflow:visible}
+
+.brand-mark img.kh-brand-mark-svg{display:block;width:30px;height:30px;object-fit:contain;}
