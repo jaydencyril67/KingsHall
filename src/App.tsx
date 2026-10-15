@@ -28,8 +28,8 @@ async function api(path: string, body?: unknown, access?: string): Promise<Resul
 function store(data: Result) { if(data.accessToken) sessionStorage.setItem('kh_access',data.accessToken); if(data.refreshToken) sessionStorage.setItem('kh_refresh',data.refreshToken); }
 function clear() { sessionStorage.removeItem('kh_access'); sessionStorage.removeItem('kh_refresh'); }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
-function CrownMark() {
- return <svg className="kh-crown-svg" viewBox="0 0 64 64" role="img" aria-label="KingsHall identity mark">
+function KingsHallMark() {
+ return <svg className="kh-brand-mark-svg" viewBox="0 0 64 64" role="img" aria-label="KingsHall identity mark">
   <path d="M13 55V28a19 19 0 0 1 38 0v27" fill="none" stroke="#eaf5f7" strokeWidth="4.2" strokeLinecap="round"/>
   <path d="M23 50V22M23 36l19-15M27 34l16 16" fill="none" stroke="#eaf5f7" strokeWidth="4.5" strokeLinecap="square"/>
   <path d="m32 5 3.1 6.2 6.9 1-5 4.8 1.2 6.8-6.2-3.2-6.2 3.2 1.2-6.8-5-4.8 6.9-1Z" fill="#82d9e8"/>
@@ -68,7 +68,7 @@ export default function App() {
  async function resend(){if(busy||!verifyEmail)return;setBusy(true);say('');try{const d=await api('/api/auth/resend-verification',{email:verifyEmail});say(d.message||'If eligible, a new code has been sent.',true);}catch(e){say((e as Error).message);}finally{setBusy(false);}}
  async function logout(){const refreshToken=sessionStorage.getItem('kh_refresh');setBusy(true);try{await api('/api/auth/logout',{refreshToken});}catch{}clear();setUser(null);setMode('login');setBusy(false);say('You have signed out.',true);}
  return <main className="shell">
-  <header className="topbar"><a className="brand" href="#home" aria-label="KingsHall home"><span className="brand-mark"><CrownMark/></span><span>KingsHall</span></a><span className="top-note">One identity · Endless possibilities</span></header>
+  <header className="topbar"><a className="brand" href="#home" aria-label="KingsHall home"><span className="brand-mark"><KingsHallMark/></span><span>KingsHall</span></a><span className="top-note">One identity · Endless possibilities</span></header>
   <section className="layout" id="home" aria-label="KingsHall welcome and account access">
    <div className="intro"><span className="eyebrow">Your next chapter starts here</span><h1>Your world.<br/><span>One home.</span></h1><p className="intro-copy">Welcome to KingsHall — a home for your digital identity and the experiences you’ll connect to it. Start here, and build from a foundation designed around you.</p><div className="feature-list"><div className="feature"><span className="feature-icon"><FeatureIcon type="lock"/></span><span>Designed with privacy and security in mind</span></div><div className="feature"><span className="feature-icon"><FeatureIcon type="people"/></span><span>A starting point for your connected apps</span></div><div className="feature"><span className="feature-icon"><FeatureIcon type="shield"/></span><span>Email verification and protected sessions</span></div></div></div>
    <section className="auth-card" aria-labelledby="form-title"><div className="card-top"><span className="card-symbol"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><span className="secure"><span className="secure-dot"/>{mode==='account'?'SIGNED IN':'SECURE ACCOUNT'}</span></div>
