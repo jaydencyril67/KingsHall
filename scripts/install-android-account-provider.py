@@ -65,12 +65,20 @@ activity_path = target_root / "java/online/kingshall/foundation/MainActivity.jav
 if not activity_path.exists():
     raise SystemExit("Expected generated MainActivity.java was not found.")
 activity = activity_path.read_text(encoding="utf-8")
-if "KingsHallAccountPlugin" not in activity:
+
+# Register the account bridge and disable Android's native WebView scroll indicators.
+if "import android.os.Bundle;" not in activity:
     activity = activity.replace(
         "import com.getcapacitor.BridgeActivity;",
-        "import android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n"
-        "import online.kingshall.foundation.account.KingsHallAccountPlugin;"
+        "import android.os.Bundle;\\nimport com.getcapacitor.BridgeActivity;"
     )
+if "import online.kingshall.foundation.account.KingsHallAccountPlugin;" not in activity:
+    activity = activity.replace(
+        "import com.getcapacitor.BridgeActivity;",
+        "import com.getcapacitor.BridgeActivity;\\nimport online.kingshall.foundation.account.KingsHallAccountPlugin;"
+    )
+
+if "public class MainActivity extends BridgeActivity {}" in activity:
     activity = activity.replace(
         "public class MainActivity extends BridgeActivity {}",
         """public class MainActivity extends BridgeActivity {
@@ -78,11 +86,46 @@ if "KingsHallAccountPlugin" not in activity:
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(KingsHallAccountPlugin.class);
         super.onCreate(savedInstanceState);
+        disableNativeWebViewScrollbars();
+    }
+
+    private void disableNativeWebViewScrollbars() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setVerticalScrollBarEnabled(false);
+            getBridge().getWebView().setHorizontalScrollBarEnabled(false);
+        }
     }
 }"""
     )
-    if "KingsHallAccountPlugin" not in activity or "registerPlugin(" not in activity:
-        raise SystemExit("Could not safely register KingsHallAccountPlugin in MainActivity.")
-    activity_path.write_text(activity, encoding="utf-8")
+else:
+    if "KingsHallAccountPlugin" not in activity:
+        marker = "super.onCreate(savedInstanceState);"
+        if marker not in activity:
+            raise SystemExit("Could not safely locate MainActivity onCreate to register the account plugin.")
+        activity = activity.replace(
+            marker,
+            marker + "\\n        registerPlugin(KingsHallAccountPlugin.class);",
+            1
+        )
+    if "setVerticalScrollBarEnabled(false)" not in activity:
+        marker = "super.onCreate(savedInstanceState);"
+        if marker not in activity:
+            raise SystemExit("Could not safely locate MainActivity onCreate for native scrollbar setup.")
+        activity = activity.replace(
+            marker,
+            marker + """
+        // Match CryBots: hide native Android WebView scroll indicators while keeping scrolling enabled.
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setVerticalScrollBarEnabled(false);
+            getBridge().getWebView().setHorizontalScrollBarEnabled(false);
+        }""",
+            1
+        )
 
-print("Installed KingsHall Android AccountManager authenticator and Capacitor bridge.")
+if "KingsHallAccountPlugin" not in activity or "registerPlugin(" not in activity:
+    raise SystemExit("Could not safely register KingsHallAccountPlugin in MainActivity.")
+if "setVerticalScrollBarEnabled(false)" not in activity or "setHorizontalScrollBarEnabled(false)" not in activity:
+    raise SystemExit("Could not safely disable native WebView scroll indicators.")
+activity_path.write_text(activity, encoding="utf-8")
+
+print("Installed KingsHall Android AccountManager authenticator, Capacitor bridge, and hidden native scrollbars.")
