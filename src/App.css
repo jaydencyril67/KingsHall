@@ -185,3 +185,36 @@ body:before,body:after{animation:none!important;filter:none!important;opacity:.5
 .kh-nowbar-icon svg{width:18px;height:18px}
 .kh-nowbar-label-compact{display:block;max-width:100%;font-size:.58rem;font-weight:700;letter-spacing:.04em;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:380px){.kh-nowbar-slot:not(.is-expanded){min-width:92px;width:auto;max-width:none}.kh-nowbar-actions.is-compact{gap:12px}.kh-nowbar-action:not(.is-expanded){padding:7px 6px 6px}}
+
+
+/* Compact typography pass: keep the existing KingsHall layout and STIX font, but remove oversized headings and body copy. */
+.landing-copy h1,.auth-heading h1{font-size:clamp(32px,4.8vw,50px);letter-spacing:-1.5px;line-height:1.14}
+.intro-copy{font-size:14px;line-height:1.8}
+.section-heading h2,.final-cta h2{font-size:clamp(24px,3.2vw,32px);letter-spacing:-.7px}
+.section-heading p,.final-cta p{font-size:12px;line-height:1.8}
+.feature-card h3{font-size:14px}
+.feature-card p{font-size:11px;line-height:1.75}
+.ecosystem-core strong{font-size:17px}
+.ecosystem-links strong{font-size:12px}
+.auth-card h2{font-size:21px}
+.auth-heading>p{font-size:12px;line-height:1.8}
+.card-subtitle,.account-panel p{font-size:11px;line-height:1.75}
+label{font-size:11px}
+input,textarea{font-size:12px}
+.form-footnote,.notice{font-size:11px}
+.kh-home-heading h1{font-size:clamp(30px,4.8vw,44px);letter-spacing:-1px;line-height:1.15}
+.kh-home-identity h2,.kh-home-card h2{font-size:clamp(18px,2.5vw,22px)}
+.kh-home-section-heading h2{font-size:clamp(22px,3.2vw,29px);letter-spacing:-.5px}
+.kh-home-section-heading p{font-size:12px;line-height:1.75}
+.kh-home-app-card h3{font-size:16px}
+.kh-home-intro{font-size:12px;line-height:1.8}
+.kh-home-muted,.kh-home-app-card p,.kh-home-app-card a{font-size:11px;line-height:1.75}
+@media(max-width:700px){
+  .landing-copy h1,.auth-heading h1{font-size:clamp(29px,8vw,38px);letter-spacing:-1.1px}
+  .section-heading h2,.final-cta h2{font-size:clamp(23px,6vw,29px)}
+  .auth-card h2{font-size:20px}
+  .intro-copy,.auth-heading>p{font-size:12px}
+  .kh-home-heading h1{font-size:clamp(28px,8vw,36px);letter-spacing:-.8px}
+  .kh-home-identity h2,.kh-home-card h2{font-size:19px}
+  .kh-home-section-heading h2{font-size:23px}
+}
