@@ -9,7 +9,6 @@ function InitialSplashCleanup() {
     let firstFrame: number | undefined;
     let secondFrame: number | undefined;
 
-    // Start the 3-second clock only after the splash has had a chance to paint.
     firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(() => {
         timeout = window.setTimeout(() => {
@@ -27,6 +26,24 @@ function InitialSplashCleanup() {
 
   return null;
 }
+
+function registerKingsHallPwa() {
+  // The service worker is for the HTTPS website/PWA, not the Capacitor APK.
+  if (
+    typeof window === 'undefined' ||
+    !('serviceWorker' in navigator) ||
+    window.location.protocol !== 'https:' ||
+    window.location.hostname === 'localhost'
+  ) return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => registration.update())
+      .catch((error) => console.warn('KingsHall PWA service worker registration failed:', error));
+  }, { once: true });
+}
+
+registerKingsHallPwa();
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
