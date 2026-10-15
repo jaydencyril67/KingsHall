@@ -58,6 +58,87 @@ jobs:
           npm install --no-save --package-lock=false sharp
           node scripts/install-kingshall-branding.mjs
 
+      - name: Configure unified KingsHall native launch splash
+        run: |
+          set -euo pipefail
+          mkdir -p android/app/src/main/res/drawable-nodpi android/app/src/main/res/values-v31
+
+          # Compose the transparent silver crown over its own circular dark backdrop.
+          # The outer launch background remains pure black, matching KingsHall branding.
+          node - <<'NODE'
+          const fs = require('fs');
+          const sharp = require('sharp');
+
+          (async () => {
+            const crown = fs.readFileSync('public/kingshall-splash-crown.svg');
+            const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#0b0b0b" stroke="#262626" stroke-width="10"/></svg>');
+            await sharp({ create: { width: 720, height: 721, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+              .composite([{ input: circle }, { input: crown }])
+              .resize(512, 512)
+              .png()
+              .toFile('android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
+
+            const branding = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="320" viewBox="0 0 800 320"><rect width="800" height="320" fill="none"/><text x="400" y="174" text-anchor="middle" fill="#f4f4f4" font-family="STIX Two Text, serif" font-size="72" font-weight="700" letter-spacing="3">KingsHall</text></svg>');
+            await sharp(branding).png().toFile('android/app/src/main/res/drawable-nodpi/kingshall_branding.png');
+            console.log('Created KingsHall splash crown, circular backdrop, and branding.');
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
+
+          cat > android/app/src/main/res/drawable/kingshall_launch_background.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="@color/kingshall_splash_background" />
+              <item
+                  android:width="213dp"
+                  android:height="213dp"
+                  android:gravity="center"
+                  android:drawable="@drawable-nodpi/kingshall_splash_logo" />
+              <item
+                  android:width="160dp"
+                  android:height="64dp"
+                  android:gravity="center|bottom"
+                  android:bottom="51dp"
+                  android:drawable="@drawable-nodpi/kingshall_branding" />
+          </layer-list>
+          XML
+
+          cat > android/app/src/main/res/values/kingshall_splash_colors.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="kingshall_splash_background">#000000</color>
+          </resources>
+          XML
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/app/src/main/res/values/styles.xml")
+          text = path.read_text()
+          pattern = re.compile(r'(?s)<style\\s+name="AppTheme\\.NoActionBarLaunch"[^>]*>.*?</style>')
+          replacement = """<style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+              <item name="android:windowBackground">@drawable/kingshall_launch_background</item>
+              <item name="windowSplashScreenBackground">@color/kingshall_splash_background</item>
+              <item name="windowSplashScreenAnimatedIcon">@drawable/kingshall_splash_logo</item>
+              <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+          </style>"""
+          if not pattern.search(text):
+              raise SystemExit("Could not find Capacitor AppTheme.NoActionBarLaunch in values/styles.xml")
+          path.write_text(pattern.sub(lambda _: replacement, text, count=1))
+          PY
+
+          cat > android/app/src/main/res/values-v31/kingshall_splash.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+                  <item name="android:windowSplashScreenBackground">@color/kingshall_splash_background</item>
+                  <item name="android:windowSplashScreenAnimatedIcon">@drawable/kingshall_splash_logo</item>
+                  <item name="android:windowSplashScreenBrandingImage">@drawable-nodpi/kingshall_branding</item>
+                  <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+              </style>
+          </resources>
+          XML
+
       - name: Install native KingsHall device-account provider
         run: python3 scripts/install-android-account-provider.py
 
