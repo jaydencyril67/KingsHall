@@ -98,7 +98,7 @@ if "public class MainActivity extends BridgeActivity {}" in activity:
 }"""
     )
 else:
-    if "KingsHallAccountPlugin" not in activity:
+    if "registerPlugin(KingsHallAccountPlugin.class)" not in activity:
         marker = "super.onCreate(savedInstanceState);"
         if marker not in activity:
             raise SystemExit("Could not safely locate MainActivity onCreate to register the account plugin.")
