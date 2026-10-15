@@ -5,11 +5,24 @@ import './index.css';
 
 function InitialSplashCleanup() {
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      document.getElementById('kh-refresh-splash')?.remove();
-    }, 3000);
+    let timeout: number | undefined;
+    let firstFrame: number | undefined;
+    let secondFrame: number | undefined;
 
-    return () => window.clearTimeout(timer);
+    // Start the 3-second clock only after the splash has had a chance to paint.
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        timeout = window.setTimeout(() => {
+          document.getElementById('kh-refresh-splash')?.remove();
+        }, 3000);
+      });
+    });
+
+    return () => {
+      if (firstFrame !== undefined) window.cancelAnimationFrame(firstFrame);
+      if (secondFrame !== undefined) window.cancelAnimationFrame(secondFrame);
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
   }, []);
 
   return null;
