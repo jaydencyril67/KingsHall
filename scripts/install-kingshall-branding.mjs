@@ -28,8 +28,8 @@ const colorsPath = path.join(valuesDir, 'colors.xml');
 let colors = '';
 try { colors = await (await import('node:fs/promises')).readFile(colorsPath, 'utf8'); } catch {}
 if (!colors.includes('kingshall_icon_background')) {
-  if (colors.includes('</resources>')) colors = colors.replace('</resources>', '    <color name="kingshall_icon_background">#07111f</color>\n</resources>');
-  else colors = '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="kingshall_icon_background">#07111f</color>\n</resources>\n';
+  if (colors.includes('</resources>')) colors = colors.replace('</resources>', '    <color name="kingshall_icon_background">#000000</color>\n</resources>');
+  else colors = '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="kingshall_icon_background">#000000</color>\n</resources>\n';
   await writeFile(colorsPath, colors, 'utf8');
 }
 console.log('Installed KingsHall launcher icons from the custom SVG brand assets.');
