@@ -168,3 +168,4 @@ body:before,body:after{animation:none!important;filter:none!important;opacity:.5
 .kh-nowbar-dock.is-expanded .kh-nowbar-label-expanded{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.58rem;font-weight:700;letter-spacing:.04em;line-height:1;text-align:center}
 .kh-nowbar-dock.is-expanded .kh-nowbar-slot{width:100%;min-width:0;max-width:100%}
 .kh-nowbar-dock.is-expanded .kh-nowbar-actions{display:contents}
+.kh-nowbar{background:linear-gradient(180deg,rgba(29,31,36,.88),rgba(7,8,10,.86));backdrop-filter:blur(16px) saturate(120%);-webkit-backdrop-filter:blur(16px) saturate(120%)}
