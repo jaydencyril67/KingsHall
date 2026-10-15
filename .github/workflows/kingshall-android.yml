@@ -70,7 +70,10 @@ jobs:
           const sharp = require('sharp');
 
           (async () => {
-            const crown = fs.readFileSync('public/kingshall-splash-crown.svg');
+            const markSvg = fs.readFileSync('public/kingshall-mark.svg', 'utf8');
+            // Reuse the exact app-wide KingsHall mark, removing only its black canvas
+            // so it sits cleanly inside the native splash's circular backdrop.
+            const crown = Buffer.from(markSvg.replace('<rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>', ''));
             const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#0b0b0b" stroke="#262626" stroke-width="10"/></svg>');
             await sharp({ create: { width: 720, height: 721, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
               .composite([{ input: circle }, { input: crown }])
