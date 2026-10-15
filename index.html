@@ -30,14 +30,6 @@
       <p class="kh-splash-powered">Your world starts here</p>
     </div>
     <div id="root"></div>
-    <script>
-      (() => {
-        const splash = document.getElementById('kh-refresh-splash');
-        let dismissed = false;
-        const dismiss = () => { if (dismissed || !splash) return; dismissed = true; splash.classList.add('is-hidden'); window.setTimeout(() => splash.remove(), 400); };
-        window.setTimeout(dismiss, 3000);
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
