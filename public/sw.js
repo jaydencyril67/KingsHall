@@ -1,9 +1,10 @@
-const CACHE_NAME = 'kingshall-pwa-v1';
+const CACHE_NAME = 'kingshall-pwa-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/kingshall-mark.svg'
+  '/kingshall-mark.svg',
+  '/kingshall-pwa-icon.svg?v=2'
 ];
 
 self.addEventListener('install', (event) => {
