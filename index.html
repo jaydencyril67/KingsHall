@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b16">
+  <meta name="description" content="KingsHall — one place to begin your digital world.">
+  <title>KingsHall — Your world starts here</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b16;
+      --panel: rgba(19, 22, 40, .82);
+      --panel-soft: rgba(255,255,255,.035);
+      --line: rgba(196, 185, 255, .15);
+      --text: #f7f4ff;
+      --muted: #a7a8c1;
+      --purple: #a58bff;
+      --purple-bright: #c1b1ff;
+      --gold: #e8c98b;
+      --danger: #ff9baf;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 12% 12%, rgba(102, 77, 190, .20), transparent 42%),
+        radial-gradient(ellipse at 88% 82%, rgba(61, 77, 139, .16), transparent 38%),
+        var(--bg);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1120px, 100%); margin: auto; padding: 26px clamp(18px, 4vw, 48px) 20px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .brand { display:flex; align-items:center; gap:11px; color:var(--text); text-decoration:none; font-size:21px; font-weight:750; letter-spacing:-.7px; }
+    .brand-mark { display:grid; place-items:center; width:42px; height:42px; border:1px solid rgba(193,177,255,.36); border-radius:14px; color:var(--purple-bright); background:linear-gradient(145deg,rgba(165,139,255,.22),rgba(232,201,139,.07)); box-shadow:0 0 32px rgba(142,115,255,.12); }
+    .brand-mark svg { width:23px; height:23px; }
+    .top-note { color:var(--muted); font-size:12px; letter-spacing:.11em; text-transform:uppercase; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr); align-items:center; gap:clamp(36px,7vw,90px); padding:clamp(48px,9vh,94px) 0 58px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:9px; color:var(--gold); font-size:11px; font-weight:750; letter-spacing:.17em; text-transform:uppercase; }
+    .eyebrow::before { content:""; width:22px; height:1px; background:var(--gold); }
+    h1 { max-width:590px; margin:20px 0 18px; font-size:clamp(42px,6.5vw,72px); line-height:1.02; letter-spacing:-.065em; font-weight:760; }
+    h1 span { color:var(--purple-bright); }
+    .intro-copy { max-width:460px; margin:0; color:var(--muted); font-size:16px; line-height:1.8; }
+    .feature-list { display:grid; gap:16px; margin-top:36px; }
+    .feature { display:flex; align-items:center; gap:13px; color:#e5e3f3; font-size:13px; }
+    .feature-icon { display:grid; place-items:center; flex:0 0 36px; height:36px; border:1px solid var(--line); border-radius:12px; color:var(--purple-bright); background:rgba(165,139,255,.07); }
+    .feature-icon svg { width:17px; height:17px; }
+    .auth-card { padding:clamp(22px,3.2vw,34px); border:1px solid var(--line); border-radius:25px; background:linear-gradient(155deg,rgba(25,28,49,.93),rgba(14,16,30,.93)); box-shadow:0 26px 90px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.04); backdrop-filter:blur(18px); }
+    .card-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:26px; }
+    .card-symbol { display:grid; place-items:center; width:43px; height:43px; border:1px solid var(--line); border-radius:14px; color:var(--purple-bright); background:rgba(165,139,255,.09); }
+    .card-symbol svg { width:21px; height:21px; }
+    .secure { display:flex; align-items:center; gap:8px; color:#bcb8d3; font-size:10px; letter-spacing:.12em; font-weight:700; }
+    .secure-dot { width:6px; height:6px; border-radius:50%; background:#87d9b3; box-shadow:0 0 12px rgba(135,217,179,.7); }
+    h2 { margin:0; font-size:26px; letter-spacing:-.04em; }
+    .card-subtitle { margin:8px 0 24px; color:var(--muted); font-size:13px; line-height:1.65; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:5px; margin-bottom:24px; border:1px solid rgba(255,255,255,.04); border-radius:13px; background:rgba(0,0,0,.19); }
+    .tab { min-height:40px; border:0; border-radius:9px; color:#a8a8c0; background:transparent; font-size:13px; font-weight:650; transition:background .18s,color .18s; }
+    .tab[aria-selected="true"] { color:#fff; background:linear-gradient(120deg,rgba(143,119,238,.28),rgba(165,139,255,.12)); box-shadow:inset 0 0 0 1px rgba(193,177,255,.16); }
+    .field { margin:0 0 16px; }
+    label { display:block; margin-bottom:8px; color:#e5e2f2; font-size:12px; font-weight:650; }
+    input { display:block; width:100%; min-height:47px; padding:0 14px; outline:none; color:var(--text); border:1px solid rgba(190,184,226,.16); border-radius:11px; background:rgba(5,7,17,.48); transition:border-color .18s,box-shadow .18s; }
+    input::placeholder { color:#777991; }
+    input:focus { border-color:rgba(165,139,255,.75); box-shadow:0 0 0 3px rgba(165,139,255,.10); }
+    .password-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .password-row label { margin-bottom:8px; }
+    .small-note { color:#8587a2; font-size:10px; }
+    .submit { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:49px; margin-top:22px; border:1px solid rgba(213,202,255,.32); border-radius:12px; color:#171225; background:linear-gradient(115deg,#c6b6ff,#a58bff 62%,#e8c98b); font-weight:800; font-size:13px; box-shadow:0 9px 24px rgba(139,112,235,.16); }
+    .submit:hover { filter:brightness(1.06); }
+    .submit svg { width:16px; height:16px; }
+    .fine-print { margin:18px 0 0; text-align:center; color:#8587a2; font-size:10px; line-height:1.6; }
+    .notice { display:none; margin:0 0 16px; padding:11px 12px; border:1px solid rgba(232,201,139,.25); border-radius:10px; color:#eadcb9; background:rgba(232,201,139,.06); font-size:12px; line-height:1.5; }
+    .notice.show { display:block; }
+    .footer { display:flex; justify-content:space-between; gap:18px; padding-top:18px; border-top:1px solid rgba(196,185,255,.09); color:#777991; font-size:11px; }
+    .footer-right { display:flex; align-items:center; gap:7px; }
+    .footer-right svg { width:13px; height:13px; color:var(--gold); }
+    [hidden] { display:none !important; }
+    @media (max-width:760px) {
+      .shell { padding-top:18px; }
+      .top-note { display:none; }
+      .layout { grid-template-columns:1fr; gap:34px; padding:50px 0 42px; }
+      .intro-copy { font-size:14px; }
+      .feature-list { grid-template-columns:1fr; gap:12px; margin-top:25px; }
+      .feature { font-size:12px; }
+      h1 { font-size:clamp(42px,12vw,60px); }
+      .auth-card { max-width:480px; width:100%; margin:0 auto; }
+      .footer { font-size:10px; }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; scroll-behavior:auto !important; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="KingsHall home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 6.5 12 12 5l5.5 7L21 9.5l-2 10H5L3 9.5Z"/><path d="M7 16h10"/></svg>
+        </span>
+        <span>KingsHall</span>
+      </a>
+      <span class="top-note">One identity · Endless possibilities</span>
+    </header>
+
+    <section class="layout" aria-label="KingsHall welcome and account access">
+      <div class="intro">
+        <span class="eyebrow">Your next chapter starts here</span>
+        <h1>Your world.<br><span>One home.</span></h1>
+        <p class="intro-copy">Welcome to KingsHall — a home for your digital identity and the experiences you’ll connect to it. Start here, and build from a foundation designed around you.</p>
+        <div class="feature-list">
+          <div class="feature">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+            <span>Designed with privacy and security in mind</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5.5a3 3 0 0 1 0 5.8M18 14a5.5 5.5 0 0 1 3.5 5"/></svg></span>
+            <span>A starting point for your connected apps</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span>A clean foundation, built one step at a time</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="auth-card" aria-labelledby="form-title">
+        <div class="card-top">
+          <span class="card-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span>
+          <span class="secure"><span class="secure-dot"></span> FOUNDATION MODE</span>
+        </div>
+        <h2 id="form-title">Welcome to KingsHall</h2>
+        <p class="card-subtitle" id="form-subtitle">Sign in to continue to your space.</p>
+        <div class="tabs" role="tablist" aria-label="Choose login or signup">
+          <button class="tab" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-panel">Log in</button>
+          <button class="tab" id="signup-tab" type="button" role="tab" aria-selected="false" aria-controls="signup-panel">Sign up</button>
+        </div>
+
+        <div class="notice" id="notice" role="status" aria-live="polite">This is the visual foundation only. Account creation and login will be connected after the landing page is approved.</div>
+
+        <form id="login-panel" role="tabpanel" aria-labelledby="login-tab">
+          <div class="field">
+            <label for="login-identity">Email or username</label>
+            <input id="login-identity" name="identity" type="text" autocomplete="username" placeholder="Enter your email or username" required>
+          </div>
+          <div class="field">
+            <div class="password-row"><label for="login-password">Password</label><span class="small-note">Authentication not connected</span></div>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          </div>
+          <button class="submit" type="submit">Log in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+
+        <form id="signup-panel" role="tabpanel" aria-labelledby="signup-tab" hidden>
+          <div class="field">
+            <label for="signup-name">Full name</label>
+            <input id="signup-name" name="name" type="text" autocomplete="name" placeholder="Enter your full name" required>
+          </div>
+          <div class="field">
+            <label for="signup-username">Username</label>
+            <input id="signup-username" name="username" type="text" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_.]+" placeholder="Choose a username" required>
+          </div>
+          <div class="field">
+            <label for="signup-email">Email address</label>
+            <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <div class="password-row"><label for="signup-password">Create password</label><span class="small-note">Demo only</span></div>
+            <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="12" placeholder="At least 12 characters" required>
+          </div>
+          <button class="submit" type="submit">Create account <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <p class="fine-print">This page does not send, save, or verify account details yet.<br>Authentication will be added as a separate, tested step.</p>
+      </section>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> KingsHall</span>
+      <span class="footer-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6l7-3Z"/></svg> New foundation · No backend connected</span>
+    </footer>
+  </main>
+  <script>
+    (() => {
+      const loginTab = document.getElementById("login-tab");
+      const signupTab = document.getElementById("signup-tab");
+      const loginPanel = document.getElementById("login-panel");
+      const signupPanel = document.getElementById("signup-panel");
+      const title = document.getElementById("form-title");
+      const subtitle = document.getElementById("form-subtitle");
+      const notice = document.getElementById("notice");
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      function selectMode(mode) {
+        const signup = mode === "signup";
+        loginTab.setAttribute("aria-selected", String(!signup));
+        signupTab.setAttribute("aria-selected", String(signup));
+        loginPanel.hidden = signup;
+        signupPanel.hidden = !signup;
+        title.textContent = signup ? "Create your account" : "Welcome to KingsHall";
+        subtitle.textContent = signup ? "Set up your place in the KingsHall world." : "Sign in to continue to your space.";
+        notice.classList.remove("show");
+      }
+      loginTab.addEventListener("click", () => selectMode("login"));
+      signupTab.addEventListener("click", () => selectMode("signup"));
+
+      for (const form of [loginPanel, signupPanel]) {
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          notice.textContent = "The landing page is ready, but authentication is intentionally not connected yet. No details were sent or saved.";
+          notice.classList.add("show");
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
