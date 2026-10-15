@@ -19,10 +19,10 @@
       .kh-splash-logo-circle{display:grid;place-items:center;width:92px;height:92px;flex:0 0 92px;box-sizing:border-box;border:1px solid rgba(255,255,255,.10);border-radius:50%;background:radial-gradient(circle at 34% 26%,#1c1c1c 0%,#0b0b0b 62%,#030303 100%);box-shadow:inset 0 1px 2px rgba(255,255,255,.06)}
       .kh-splash-crown{display:block;width:72px;height:72px;max-width:100%;max-height:100%;object-fit:contain;object-position:center center;margin:0;justify-self:center;align-self:center}
       .kh-splash-wordmark{margin:0;color:inherit;font-family:"STIX Two Text",serif;font-size:13px;font-weight:600;line-height:1.4;letter-spacing:.14em;text-transform:uppercase}
-      .kh-splash-shimmer{width:180px;height:3px;margin-top:-8px;border-radius:999px;background:currentColor;animation:kh-splash-shimmer 1.4s ease-in-out infinite}
+      .kh-splash-shimmer{position:relative;width:180px;height:3px;margin-top:-8px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.18);isolation:isolate}.kh-splash-shimmer::after{content:"";position:absolute;inset:0 auto 0 0;width:42%;border-radius:inherit;background:linear-gradient(90deg,transparent,#fff,transparent);transform:translate3d(-130%,0,0);will-change:transform;animation:kh-splash-shimmer 1.15s linear infinite}@keyframes kh-splash-shimmer{to{transform:translate3d(340%,0,0)}}
       .kh-splash-powered{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 28px);z-index:10001;display:block;margin:0;padding:0 16px;box-sizing:border-box;color:inherit;font-family:"STIX Two Text",serif;font-size:12px;font-weight:700;line-height:1.4;letter-spacing:.08em;opacity:.72;text-align:center;pointer-events:none}
       @keyframes kh-splash-shimmer{0%,100%{transform:scaleX(.72);opacity:.45}50%{transform:scaleX(1);opacity:1}}
-      @media(prefers-reduced-motion:reduce){.kh-splash-shimmer{animation-duration:2.8s}}
+      @media(prefers-reduced-motion:reduce){.kh-splash-shimmer::after{animation:none;transform:translate3d(30%,0,0)}}
     </style>
   </head>
   <body>
