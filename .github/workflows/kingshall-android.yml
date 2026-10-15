@@ -1,4 +1,4 @@
-name: KingsHall Android APK
+name: KingsHall Signed Production APK
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ on:
       - 'vite.config.ts'
       - 'tsconfig*.json'
       - 'capacitor.config.ts'
+      - 'README.md'
       - '.github/workflows/kingshall-android.yml'
 
 permissions:
@@ -21,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-debug-apk:
+  build-signed-release-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -39,6 +40,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Verify signing secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing repository secret: ANDROID_KEYSTORE_BASE64"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing repository secret: ANDROID_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Missing repository secret: ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing repository secret: ANDROID_KEY_PASSWORD"; exit 1; }
+
       - name: Install frontend dependencies
         run: npm install
 
@@ -51,14 +64,59 @@ jobs:
       - name: Sync built web app into Android
         run: npx cap sync android
 
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/kingshall-release.keystore"
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Upload diagnostic APK
+          gradle_file = Path("android/app/build.gradle")
+          source = gradle_file.read_text()
+          if "signingConfigs {" in source:
+              raise SystemExit("Unexpected existing signing configuration; refusing to patch it twice.")
+          marker = "    buildTypes {"
+          if marker not in source:
+              raise SystemExit("Could not find Android buildTypes block in generated app/build.gradle.")
+          signing = """    signingConfigs {
+                  release {
+                      storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                  }
+              }
+
+          """
+          source = source.replace(marker, signing + marker, 1)
+          build_types_index = source.index(marker)
+          release_index = source.find("release {", build_types_index)
+          if release_index < 0:
+              raise SystemExit("Could not find release build type in generated app/build.gradle.")
+          insert_at = source.find("\n", release_index) + 1
+          source = source[:insert_at] + "            signingConfig signingConfigs.release\n" + source[insert_at:]
+          gradle_file.write_text(source)
+          PY
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
+
+      - name: Build signed production APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Upload signed production APK
         uses: actions/upload-artifact@v4
         with:
-          name: KingsHall-foundation-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: KingsHall-production-signed-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
