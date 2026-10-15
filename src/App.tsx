@@ -37,12 +37,6 @@ function FeatureIcon({type}:{type:'lock'|'people'|'shield'}) {
  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg>;
 }
 export default function App() {
- useEffect(() => {
-  const timer = window.setTimeout(() => {
-   document.getElementById('kh-refresh-splash')?.remove();
-  }, 3000);
-  return () => window.clearTimeout(timer);
- }, []);
  const [mode,setMode]=useState<Mode>('login');
  const [notice,setNotice]=useState(''); const [success,setSuccess]=useState(false); const [busy,setBusy]=useState(false);
  const [verifyEmail,setVerifyEmail]=useState(''); const [user,setUser]=useState<User|null>(null);
