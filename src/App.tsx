@@ -29,11 +29,34 @@ function store(data: Result) { if(data.accessToken) sessionStorage.setItem('kh_a
 function clear() { sessionStorage.removeItem('kh_access'); sessionStorage.removeItem('kh_refresh'); }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
 function KingsHallMark() {
- return <svg className="kh-brand-mark-svg" viewBox="0 0 64 64" role="img" aria-label="KingsHall identity mark">
-  <path d="M13 55V28a19 19 0 0 1 38 0v27" fill="none" stroke="#eaf5f7" strokeWidth="4.2" strokeLinecap="round"/>
-  <path d="M23 50V22M23 36l19-15M27 34l16 16" fill="none" stroke="#eaf5f7" strokeWidth="4.5" strokeLinecap="square"/>
-  <path d="m32 5 3.1 6.2 6.9 1-5 4.8 1.2 6.8-6.2-3.2-6.2 3.2 1.2-6.8-5-4.8 6.9-1Z" fill="#82d9e8"/>
-  <circle cx="13" cy="28" r="2.2" fill="#82d9e8"/><circle cx="51" cy="28" r="2.2" fill="#82d9e8"/>
+ return <svg className="kh-brand-mark-svg" viewBox="0 0 64 64" role="img" aria-label="KingsHall silver crown">
+  <defs>
+   <linearGradient id="khChrome" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stopColor="#555b62"/><stop offset=".13" stopColor="#fff"/><stop offset=".27" stopColor="#858b92"/><stop offset=".4" stopColor="#f8fafc"/><stop offset=".55" stopColor="#3e4349"/><stop offset=".7" stopColor="#e9edf1"/><stop offset=".85" stopColor="#777d84"/><stop offset="1" stopColor="#fff"/>
+   </linearGradient>
+   <linearGradient id="khFace" x1=".1" y1="0" x2=".8" y2="1">
+    <stop offset="0" stopColor="#fff"/><stop offset=".2" stopColor="#aeb4bb"/><stop offset=".42" stopColor="#f7f9fb"/><stop offset=".62" stopColor="#555b62"/><stop offset=".8" stopColor="#dce0e4"/><stop offset="1" stopColor="#f5f7f9"/>
+   </linearGradient>
+   <linearGradient id="khBase" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stopColor="#fff"/><stop offset=".25" stopColor="#858b92"/><stop offset=".48" stopColor="#353a40"/><stop offset=".68" stopColor="#f6f8fa"/><stop offset="1" stopColor="#777d84"/>
+   </linearGradient>
+   <clipPath id="khCrownClip"><path d="M11.4 20.75 Q15.4 24.8 20.5 22.5 L23.4 14.9 Q28 20.1 32 9.1 Q36 20.1 40.6 14.9 L43.5 22.5 Q48.6 24.8 52.6 20.75 L47.75 43.75 Q32 49.25 16.25 43.75 Z"/></clipPath>
+  </defs>
+  <path d="M11.4 20.75 Q15.4 24.8 20.5 22.5 L23.4 14.9 Q28 20.1 32 9.1 Q36 20.1 40.6 14.9 L43.5 22.5 Q48.6 24.8 52.6 20.75 L47.75 43.75 Q32 49.25 16.25 43.75 Z" fill="url(#khFace)" stroke="#f7f9fb" strokeWidth=".5" strokeLinejoin="round"/>
+  <g clipPath="url(#khCrownClip)">
+   <path d="M11 21 L20.5 22.5 24.3 41.2 16.2 43.8Z" fill="#30353a"/>
+   <path d="M20.5 22.5 23.4 14.9 28.9 39.9 24.3 41.2Z" fill="#fff" opacity=".9"/>
+   <path d="M23.4 14.9 32 9.1 32 39.5 28.9 39.9Z" fill="url(#khChrome)"/>
+   <path d="M32 9.1 40.6 14.9 35.1 39.9 32 39.5Z" fill="#30353a" opacity=".8"/>
+   <path d="M40.6 14.9 43.5 22.5 39.7 41.2 35.1 39.9Z" fill="#fff" opacity=".85"/>
+   <path d="M43.5 22.5 53 21 47.8 43.8 39.7 41.2Z" fill="#30353a"/>
+   <path d="M23.4 15 25.8 21 28.6 37 M32 9.5V38 M40.6 15 38.2 21 35.4 37" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round" opacity=".9"/>
+   <path d="M13 23 Q32 31 51 23" fill="none" stroke="#fff" strokeWidth=".45" opacity=".65"/>
+  </g>
+  <path d="M16.25 41.6 Q32 46.2 47.75 41.6 L46.9 46.2 Q32 51.2 17.1 46.2Z" fill="url(#khBase)" stroke="#f8fafc" strokeWidth=".35"/>
+  <path d="M17.3 43 Q32 47.2 46.7 43" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round"/>
+  <path d="M18 45.2 Q32 49.1 46 45.2" fill="none" stroke="#25292e" strokeWidth=".65" strokeLinecap="round"/>
+  <g fill="#fff"><circle cx="23.4" cy="14.9" r=".55"/><circle cx="32" cy="9.1" r=".6"/><circle cx="40.6" cy="14.9" r=".55"/></g>
  </svg>;
 }
 function FeatureIcon({type}:{type:'lock'|'people'|'shield'}) {
