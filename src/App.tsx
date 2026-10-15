@@ -41,9 +41,6 @@ function FeatureIcon({ type }: { type: 'lock' | 'apps' | 'shield' | 'chat' | 'sp
   };
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={paths[type]} /></svg>;
 }
-function Brand() {
-  return <a className="brand" href="/" onClick={e => { e.preventDefault(); go('/'); }} aria-label="KingsHall home"><span className="brand-mark"><KingsHallMark /></span><span>KingsHall</span></a>;
-}
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : 'landing');
