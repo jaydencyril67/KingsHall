@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createHmac, randomInt } from 'node:crypto';
+import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import User from '../models/User.js';
 
@@ -29,8 +29,7 @@ function codeHash(email, code) {
 }
 function safeEqual(left, right) {
   if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length) return false;
-  // HMAC outputs are fixed-length hex strings, so ordinary comparison is sufficient for this stored value.
-  return left === right;
+  return timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
 }
 function issueToken(user) {
   return jwt.sign(
