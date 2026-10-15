@@ -91,7 +91,7 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
     onNavigate(label);
   };
 
-  const finishSwipe = (event: TouchEvent<HTMLButtonElement>) => {
+  const finishSwipe = (event: TouchEvent<HTMLDivElement>) => {
     const start = swipeStart.current;
     swipeStart.current = null;
     if (!start || event.changedTouches.length !== 1) return;
@@ -111,26 +111,32 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
 
   return (
     <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''}`}>
-      <div ref={barRef} className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${mode === 'expanded' ? 'is-expanded' : ''}`} role="group" aria-label="KingsHall quick navigation">
+      <div
+        ref={barRef}
+        className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${mode === 'expanded' ? 'is-expanded' : ''}`}
+        role="group"
+        aria-label="KingsHall quick navigation"
+        onPointerDown={startHold}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
+        onTouchStart={event => {
+          startHold();
+          const titleTarget = (event.target as HTMLElement).closest('.kh-nowbar-title');
+          if (titleTarget && event.touches.length === 1) swipeStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        }}
+        onTouchEnd={event => {
+          stopHold();
+          if ((event.target as HTMLElement).closest('.kh-nowbar-title')) finishSwipe(event);
+        }}
+        onTouchCancel={() => { stopHold(); swipeStart.current = null; }}
+      >
         <div className="kh-nowbar-rail" />
         {view === 'title' ? (
           <button
             className={`kh-nowbar-title ${pressing ? 'is-pressing' : ''}`}
             type="button"
             aria-label={`${section} page. Tap to show navigation buttons; hold to expand; swipe to navigate.`}
-            onPointerDown={startHold}
-            onPointerUp={stopHold}
-            onPointerLeave={stopHold}
-            onPointerCancel={stopHold}
-            onTouchStart={event => {
-              startHold();
-              if (event.touches.length === 1) swipeStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-            }}
-            onTouchEnd={event => {
-              stopHold();
-              finishSwipe(event);
-            }}
-            onTouchCancel={() => { stopHold(); swipeStart.current = null; }}
             onClick={() => {
               if (swipeHandled.current) { swipeHandled.current = false; return; }
               if (holdTriggered.current) { holdTriggered.current = false; return; }
@@ -160,7 +166,10 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
                   className={`kh-nowbar-action ${section === action.label ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
                   type="button"
                   aria-label={action.label}
-                  onClick={() => activate(action.label)}
+                  onClick={() => {
+                    if (holdTriggered.current) { holdTriggered.current = false; return; }
+                    activate(action.label);
+                  }}
                 >
                   <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
                   {mode === 'compact' && <span className="kh-nowbar-label-compact">{action.label}</span>}
