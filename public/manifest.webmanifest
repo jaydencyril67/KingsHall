@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "KingsHall",
+  "short_name": "KingsHall",
+  "description": "One place to begin your digital world.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#08070b",
+  "theme_color": "#08070b",
+  "categories": ["productivity", "social"],
+  "icons": [
+    {
+      "src": "/kingshall-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
