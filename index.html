@@ -3,16 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#08070b" />
+    <meta name="background-color" content="#08070b" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="KingsHall — one place to begin your digital world." />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" href="/fonts/STIXTwoText-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/STIXTwoText-Bold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" as="image" href="/kingshall-mark.svg?v=5" fetchpriority="high" />
-    <link rel="icon" type="image/svg+xml" href="/kingshall-mark.svg?v=4" />
-    <link rel="apple-touch-icon" href="/kingshall-mark.svg?v=4" />
+    <link rel="icon" type="image/svg+xml" href="/kingshall-mark.svg?v=5" />
+    <link rel="apple-touch-icon" href="/kingshall-mark.svg?v=5" />
     <title>KingsHall — Your world starts here</title>
     <style>
       /* Match CryBots: locally bundled STIX faces for browser, PWA and Android WebView. */
@@ -44,7 +46,6 @@
     </div>
     <div id="root"></div>
     <script>
-      // Match CryBots: allow native selection/copy menus only in editable fields.
       document.addEventListener("contextmenu", function(event) {
         const target = event.target;
         if (!(target instanceof Element)) return;
