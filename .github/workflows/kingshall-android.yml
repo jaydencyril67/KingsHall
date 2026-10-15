@@ -41,8 +41,12 @@ jobs:
           test -n "$ANDROID_KEY_ALIAS" || { echo "Missing repository secret: ANDROID_KEY_ALIAS"; exit 1; }
           test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing repository secret: ANDROID_KEY_PASSWORD"; exit 1; }
 
-      - name: Install frontend dependencies
-        run: npm install
+      - name: Install frontend and pinned Android branding dependencies
+        run: |
+          npm install
+          npm install --no-save --package-lock=false \
+            @capacitor/assets@3.0.5 \
+            sharp
 
       - name: Build React frontend
         run: npm run build
@@ -50,13 +54,16 @@ jobs:
       - name: Add Android wrapper
         run: npx cap add android
 
+      - name: Generate KingsHall Android app icons from the master logo
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          cp public/kingshall-mark.svg assets/icon.svg
+          cp public/kingshall-mark.svg assets/splash.svg
+          npx capacitor-assets generate --android
+
       - name: Sync built web app into Android
         run: npx cap sync android
-
-      - name: Generate KingsHall Android launcher icons
-        run: |
-          npm install --no-save --package-lock=false sharp
-          node scripts/install-kingshall-branding.mjs
 
       - name: Configure unified KingsHall native launch splash
         run: |
