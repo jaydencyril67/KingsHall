@@ -3,12 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#090b16" />
+    <meta name="theme-color" content="#000000" />
     <meta name="description" content="KingsHall — one place to begin your digital world." />
     <title>KingsHall — Your world starts here</title>
+    <style>
+      #kh-refresh-splash{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#000;opacity:1;visibility:visible;transition:opacity .35s ease,visibility .35s ease}
+      #kh-refresh-splash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+      #kh-refresh-splash img{display:block;width:100%;height:100%;object-fit:contain}
+      @media(prefers-reduced-motion:reduce){#kh-refresh-splash{transition:none}}
+    </style>
   </head>
   <body>
+    <div id="kh-refresh-splash" aria-label="KingsHall loading" role="status"><img alt="KingsHall crown splash" /></div>
     <div id="root"></div>
+    <script>
+      (() => {
+        const splash = document.getElementById('kh-refresh-splash');
+        const image = splash && splash.querySelector('img');
+        let dismissed = false;
+        const dismiss = () => { if (dismissed || !splash) return; dismissed = true; splash.classList.add('is-hidden'); window.setTimeout(() => splash.remove(), 400); };
+        fetch('/kingshall-splash.b64', { cache: 'force-cache' })
+          .then(response => { if (!response.ok) throw new Error('Splash asset unavailable'); return response.text(); })
+          .then(data => { if (image) image.src = 'data:image/webp;base64,' + data.trim(); })
+          .catch(() => dismiss());
+        window.addEventListener('load', () => window.setTimeout(dismiss, 2300), { once: true });
+        window.setTimeout(dismiss, 4500);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
