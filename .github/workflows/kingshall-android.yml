@@ -61,7 +61,7 @@ jobs:
       - name: Configure unified KingsHall native launch splash
         run: |
           set -euo pipefail
-          mkdir -p android/app/src/main/res/drawable-nodpi android/app/src/main/res/values-v31
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/drawable-nodpi android/app/src/main/res/values android/app/src/main/res/values-v31
 
           # Compose the transparent silver crown over its own circular dark backdrop.
           # The outer launch background remains pure black, matching KingsHall branding.
