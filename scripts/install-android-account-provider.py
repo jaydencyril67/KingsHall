@@ -70,12 +70,12 @@ activity = activity_path.read_text(encoding="utf-8")
 if "import android.os.Bundle;" not in activity:
     activity = activity.replace(
         "import com.getcapacitor.BridgeActivity;",
-        "import android.os.Bundle;\\nimport com.getcapacitor.BridgeActivity;"
+        "import android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;"
     )
 if "import online.kingshall.foundation.account.KingsHallAccountPlugin;" not in activity:
     activity = activity.replace(
         "import com.getcapacitor.BridgeActivity;",
-        "import com.getcapacitor.BridgeActivity;\\nimport online.kingshall.foundation.account.KingsHallAccountPlugin;"
+        "import com.getcapacitor.BridgeActivity;\nimport online.kingshall.foundation.account.KingsHallAccountPlugin;"
     )
 
 if "public class MainActivity extends BridgeActivity {}" in activity:
@@ -104,7 +104,7 @@ else:
             raise SystemExit("Could not safely locate MainActivity onCreate to register the account plugin.")
         activity = activity.replace(
             marker,
-            marker + "\\n        registerPlugin(KingsHallAccountPlugin.class);",
+            marker + "\n        registerPlugin(KingsHallAccountPlugin.class);",
             1
         )
     if "setVerticalScrollBarEnabled(false)" not in activity:
