@@ -40,6 +40,10 @@ public class KingsHallAuthenticator extends AbstractAccountAuthenticator {
         return "profile:" + sha256(email.trim().toLowerCase(Locale.ROOT)) + ":" + field;
     }
 
+    static String trustKey(String packageName, String email) {
+        return "trusted:" + packageName + ":" + profileKey(email, "account");
+    }
+
     static String signingDigest(Context context, String packageName) throws Exception {
         PackageManager pm = context.getPackageManager();
         PackageInfo info = pm.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES);
@@ -128,7 +132,7 @@ public class KingsHallAuthenticator extends AbstractAccountAuthenticator {
             }
 
             String trustedDigest = context.getSharedPreferences(TRUST_PREFS, Context.MODE_PRIVATE)
-                    .getString(packageName, "");
+                    .getString(trustKey(packageName, account.name), "");
             if (!actualDigest.equals(trustedDigest)) {
                 Intent intent = new Intent(context, KingsHallIdentityConsentActivity.class);
                 intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);

@@ -66,7 +66,7 @@ public class KingsHallIdentityConsentActivity extends Activity {
             }
 
             getSharedPreferences(KingsHallAuthenticator.TRUST_PREFS, MODE_PRIVATE)
-                    .edit().putString(callerPackage, actualDigest).apply();
+                    .edit().putString(KingsHallAuthenticator.trustKey(callerPackage, accountName), actualDigest).apply();
             Account account = new Account(accountName, accountType);
             Bundle result = KingsHallAuthenticator.identityResult(this, account, callerPackage, tokenType);
             response.onResult(result);
