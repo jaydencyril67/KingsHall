@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { FormEvent } from 'react';
 import './App.css';
 
@@ -6,6 +7,15 @@ type Mode = 'login' | 'signup' | 'verify' | 'account';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
+
+type KingsHallAccountPlugin = {
+  addAccount(options: { email: string; username: string; displayName: string }): Promise<{ accountName: string; alreadyPresent?: boolean }>;
+};
+const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount');
+async function registerDeviceAccount(user: User) {
+  if (!Capacitor.isNativePlatform()) return;
+  await DeviceAccount.addAccount({ email: user.email, username: user.username, displayName: user.name });
+}
 async function api(path: string, body?: unknown, access?: string): Promise<Result> {
   if (!API) throw new Error('KingsHall API address is not configured yet. Set VITE_API_BASE_URL in the frontend deployment to your ApiKingsHall service URL.');
   let response: Response;
@@ -42,7 +52,7 @@ export default function App() {
     const data=await api('/api/auth/verify-email',{email:verifyEmail,code:f.get('code')});setMode('login');say(data.message||'Email verified. You can sign in.',true);
    }else if(mode==='login'){
     const identity=String(f.get('identity')||'');
-    try{const data=await api('/api/auth/login',{identity,password:f.get('password')});store(data);setUser(data.user||null);setMode('account');say(data.message||'Signed in successfully.',true);}
+    try{const data=await api('/api/auth/login',{identity,password:f.get('password')});store(data);setUser(data.user||null);setMode('account');if(data.user){try{await registerDeviceAccount(data.user);say(data.message||'Signed in successfully. KingsHall was added to your Android accounts.',true);}catch{say('Signed in successfully, but Android could not add the device account. You can still use KingsHall; please report this issue.');}}else{say(data.message||'Signed in successfully.',true);}}
     catch(err){const x=err as Error&{code?:string;email?:string};if(x.code==='EMAIL_NOT_VERIFIED'){setVerifyEmail(x.email||(identity.includes('@')?identity.trim().toLowerCase():''));setMode('verify');}throw err;}
    }
   }catch(err){const x=err as Error&{code?:string;email?:string};if(x.code==='EMAIL_DELIVERY_FAILED'&&x.email){setVerifyEmail(x.email);setMode('verify');}say(x.message||'Request failed.');}
