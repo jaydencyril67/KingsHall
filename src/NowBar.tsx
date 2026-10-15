@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type TouchEvent } from 'react';
 
 type Section = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'EXIT';
-type Props = { section: Section; onNavigate: (section: Exclude<Section, 'EXIT'>) => void; onExit: () => void };
+type Destination = Exclude<Section, 'EXIT'>;
+type Props = { section: Section; onNavigate: (section: Destination) => void; onExit: () => void };
 
 const actions: { label: Section; icon: string }[] = [
   { label: 'HOME', icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6' },
@@ -14,56 +15,65 @@ const actions: { label: Section; icon: string }[] = [
 ];
 
 const STORAGE_KEY = 'kingshall-nowbar-action';
+const ORDER: Destination[] = ['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP'];
 
 export default function NowBar({ section, onNavigate, onExit }: Props) {
   const [view, setView] = useState<'title' | 'actions'>('title');
-  const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<'compact' | 'expanded'>('compact');
+  const [pressing, setPressing] = useState(false);
   const barRef = useRef<HTMLDivElement | null>(null);
   const holdTimer = useRef<number | null>(null);
   const idleTimer = useRef<number | null>(null);
   const holdTriggered = useRef(false);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swipeHandled = useRef(false);
+
+  const stopHold = () => {
+    setPressing(false);
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+  };
 
   const resetIdle = () => {
     if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
     idleTimer.current = window.setTimeout(() => {
       setView('title');
-      setExpanded(false);
+      setMode('compact');
     }, 10000);
-  };
-
-  const stopHold = () => {
-    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
-    holdTimer.current = null;
   };
 
   const startHold = () => {
     holdTriggered.current = false;
-    stopHold();
+    setPressing(true);
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
     holdTimer.current = window.setTimeout(() => {
       holdTriggered.current = true;
       setView('actions');
-      setExpanded(value => !value);
+      setMode(current => current === 'compact' ? 'expanded' : 'compact');
       resetIdle();
     }, 700);
   };
 
   useEffect(() => {
-    if (view !== 'actions' || expanded || !barRef.current) return;
-    let target: HTMLButtonElement | undefined;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      target = Array.from(barRef.current.querySelectorAll<HTMLButtonElement>('button[data-nowbar-label]'))
-        .find(button => button.dataset.nowbarLabel === saved);
-    } catch {}
-    if (target && barRef.current) {
-      const maxScrollLeft = barRef.current.scrollWidth - barRef.current.clientWidth;
-      const nextScrollLeft = target.offsetLeft - (barRef.current.clientWidth - target.offsetWidth) / 2;
-      barRef.current.scrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
-    }
-  }, [view, expanded]);
+    if (view !== 'actions' || mode !== 'compact' || !barRef.current) return;
+    let saved: string | null = null;
+    try { saved = window.localStorage.getItem(STORAGE_KEY); } catch {}
+    const target = Array.from(barRef.current.querySelectorAll<HTMLButtonElement>('[data-nowbar-label]'))
+      .find(button => button.dataset.nowbarLabel === saved);
+    if (!target) return;
+    const centerTarget = () => {
+      if (!barRef.current) return;
+      const max = barRef.current.scrollWidth - barRef.current.clientWidth;
+      const left = target.offsetLeft - (barRef.current.clientWidth - target.offsetWidth) / 2;
+      barRef.current.scrollLeft = Math.max(0, Math.min(left, max));
+    };
+    centerTarget();
+    const frame = window.requestAnimationFrame(centerTarget);
+    return () => window.cancelAnimationFrame(frame);
+  }, [view, mode]);
 
   useEffect(() => () => {
-    stopHold();
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
     if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
   }, []);
 
@@ -71,38 +81,68 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
     try { window.localStorage.setItem(STORAGE_KEY, label); } catch {}
     resetIdle();
     if (label === 'EXIT') { onExit(); return; }
+    if (label === section) {
+      setView('title');
+      setMode('compact');
+      return;
+    }
     setView('title');
-    setExpanded(false);
+    setMode('compact');
     onNavigate(label);
   };
 
+  const finishSwipe = (event: TouchEvent<HTMLButtonElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || event.changedTouches.length !== 1) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    const index = ORDER.indexOf(section === 'EXIT' ? 'HOME' : section);
+    const next = ORDER[index + (dx < 0 ? 1 : -1)];
+    if (!next) return;
+    swipeHandled.current = true;
+    onNavigate(next);
+    setView('title');
+    setMode('compact');
+    resetIdle();
+  };
+
   return (
-    <div className={`kh-nowbar-dock ${expanded && view === 'actions' ? 'is-expanded' : ''}`}>
-      <div
-        ref={barRef}
-        className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${expanded && view === 'actions' ? 'is-expanded' : ''}`}
-        role="group"
-        aria-label="KingsHall navigation"
-      >
+    <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''}`}>
+      <div ref={barRef} className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${mode === 'expanded' ? 'is-expanded' : ''}`} role="group" aria-label="KingsHall quick navigation">
+        <div className="kh-nowbar-rail" />
         {view === 'title' ? (
           <button
-            className="kh-nowbar-title"
+            className={`kh-nowbar-title ${pressing ? 'is-pressing' : ''}`}
             type="button"
-            aria-label={`${section} page. Tap to show navigation buttons; hold to expand.`}
+            aria-label={`${section} page. Tap to show navigation buttons; hold to expand; swipe to navigate.`}
             onPointerDown={startHold}
             onPointerUp={stopHold}
             onPointerLeave={stopHold}
             onPointerCancel={stopHold}
+            onTouchStart={event => {
+              startHold();
+              if (event.touches.length === 1) swipeStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            }}
+            onTouchEnd={event => {
+              stopHold();
+              finishSwipe(event);
+            }}
+            onTouchCancel={() => { stopHold(); swipeStart.current = null; }}
             onClick={() => {
+              if (swipeHandled.current) { swipeHandled.current = false; return; }
               if (holdTriggered.current) { holdTriggered.current = false; return; }
-              setView('actions');
-              setExpanded(false);
+              setView(current => current === 'title' ? 'actions' : 'title');
+              setMode('compact');
               resetIdle();
             }}
             onKeyDown={event => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                setView('actions');
+                setView(current => current === 'title' ? 'actions' : 'title');
+                setMode('compact');
                 resetIdle();
               }
             }}
@@ -112,19 +152,21 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
           </button>
         ) : (
-          <div className="kh-nowbar-actions" aria-label="Navigation buttons">
+          <div className={`kh-nowbar-actions ${mode === 'expanded' ? 'is-expanded' : 'is-compact'}`} aria-label="Navigation buttons">
             {actions.map(action => (
-              <button
-                key={action.label}
-                data-nowbar-label={action.label}
-                className={`kh-nowbar-action ${section === action.label ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
-                type="button"
-                aria-label={action.label}
-                onClick={() => activate(action.label)}
-              >
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg>
-                <span>{action.label}</span>
-              </button>
+              <div className={`kh-nowbar-slot ${mode === 'expanded' ? 'is-expanded' : ''}`} key={action.label}>
+                <button
+                  data-nowbar-label={action.label}
+                  className={`kh-nowbar-action ${section === action.label ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
+                  type="button"
+                  aria-label={action.label}
+                  onClick={() => activate(action.label)}
+                >
+                  <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
+                  {mode === 'compact' && <span className="kh-nowbar-label-compact">{action.label}</span>}
+                  {mode === 'expanded' && <span className="kh-nowbar-label-expanded">{action.label.length > 12 ? <span className="kh-nowbar-marquee">{action.label.toUpperCase()} · {action.label.toUpperCase()}</span> : action.label}</span>}
+                </button>
+              </div>
             ))}
           </div>
         )}
