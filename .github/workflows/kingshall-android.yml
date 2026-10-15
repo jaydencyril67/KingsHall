@@ -70,6 +70,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
         run: |
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/kingshall-release.keystore"
           python3 - <<'PY'
@@ -101,8 +102,6 @@ jobs:
           source = source[:insert_at] + "            signingConfig signingConfigs.release\n" + source[insert_at:]
           gradle_file.write_text(source)
           PY
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
 
       - name: Build signed production APK
         working-directory: android
