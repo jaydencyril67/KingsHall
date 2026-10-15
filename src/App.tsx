@@ -28,7 +28,29 @@ async function api(path: string, body?: unknown, access?: string): Promise<Resul
 function store(data: Result) { if(data.accessToken) sessionStorage.setItem('kh_access',data.accessToken); if(data.refreshToken) sessionStorage.setItem('kh_refresh',data.refreshToken); }
 function clear() { sessionStorage.removeItem('kh_access'); sessionStorage.removeItem('kh_refresh'); }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
-function CrownMark() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9.5 6.5 12 12 5l5.5 7L21 9.5l-2 10H5L3 9.5Z" /><path d="M7 16h10" /></svg>; }
+function CrownMark() {
+ return <svg className="kh-crown-svg" viewBox="0 0 128 112" role="img" aria-label="KingsHall silver crown">
+  <defs>
+   <linearGradient id="kh-metal-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff"/><stop offset=".16" stopColor="#7c8793"/><stop offset=".3" stopColor="#f8fbff"/><stop offset=".47" stopColor="#555f6c"/><stop offset=".63" stopColor="#eef3f8"/><stop offset=".8" stopColor="#858f9b"/><stop offset="1" stopColor="#fdfefe"/></linearGradient>
+   <linearGradient id="kh-metal-side" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#e9eef4"/><stop offset=".48" stopColor="#4b535f"/><stop offset="1" stopColor="#aab4bf"/></linearGradient>
+   <linearGradient id="kh-metal-band" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#fdfefe"/><stop offset=".22" stopColor="#87919c"/><stop offset=".5" stopColor="#303741"/><stop offset=".78" stopColor="#dfe5eb"/><stop offset="1" stopColor="#707a86"/></linearGradient>
+   <filter id="kh-crown-shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="2.2"/></filter>
+  </defs>
+  <ellipse cx="64" cy="99" rx="43" ry="5" fill="#aebdce" opacity=".2" filter="url(#kh-crown-shadow)"/>
+  <path d="M17 37 38 52 63 12 89 52 111 37 101 84 27 84Z" fill="#171c24" stroke="#f4f7fa" strokeWidth="1.8" strokeLinejoin="round" transform="translate(0 3)"/>
+  <path d="M15 31 37 47 63 8 90 47 113 31 101 81 27 81Z" fill="url(#kh-metal-face)" stroke="#f9fbff" strokeWidth="1.6" strokeLinejoin="round"/>
+  <path d="M15 31 37 47 34 62 24 49Z" fill="#f8fbff" opacity=".78"/>
+  <path d="M37 47 63 8 58 53 46 64Z" fill="#ffffff" opacity=".78"/>
+  <path d="M63 8 90 47 76 64 64 52Z" fill="#5b6571" opacity=".82"/>
+  <path d="M90 47 113 31 103 50 95 63Z" fill="#ffffff" opacity=".72"/>
+  <path d="M27 81 101 81 97 94 31 94Z" fill="url(#kh-metal-side)" stroke="#e8edf3" strokeWidth="1.3" strokeLinejoin="round"/>
+  <path d="M31 94 97 94 93 101 35 101Z" fill="#424a55" stroke="#b9c2cc" strokeWidth="1.2" strokeLinejoin="round"/>
+  <path d="M19 32 37 47 63 8 90 47 109 32" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity=".9"/>
+  <path d="M29 84 99 84" stroke="#fff" strokeWidth="1.7" opacity=".92"/>
+  <path d="M39 52 34 76M63 16 63 76M87 52 94 76" stroke="#ffffff" strokeWidth="1.1" opacity=".55"/>
+  <circle cx="15" cy="30" r="3.1" fill="#fff"/><circle cx="63" cy="7.5" r="3.4" fill="#fff"/><circle cx="113" cy="30" r="3.1" fill="#fff"/>
+ </svg>;
+}
 function FeatureIcon({type}:{type:'lock'|'people'|'shield'}) {
  if(type==='lock')return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>;
  if(type==='people')return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5.5a3 3 0 0 1 0 5.8M18 14a5.5 5.5 0 0 1 3.5 5"/></svg>;
