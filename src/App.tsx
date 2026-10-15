@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import NowBar from './NowBar';
 import type { FormEvent } from 'react';
 import './App.css';
 
-type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account';
+type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home';
+type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -43,19 +45,21 @@ function FeatureIcon({ type }: { type: 'lock' | 'apps' | 'shield' | 'chat' | 'sp
 }
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
-  const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : 'landing');
+  const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : window.location.pathname === '/verify-email' ? 'verify' : (window.location.pathname === '/home' || window.location.pathname === '/account') ? 'home' : 'landing');
   const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null);
+  const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
+  const [homeSection, setHomeSection] = useState<HomeSection>('HOME');
   useEffect(() => {
-    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/account' ? 'account' : 'landing'); setNotice(''); };
+    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setNotice(''); };
     window.addEventListener('popstate', sync);
     const refresh = sessionStorage.getItem('kh_refresh');
-    if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { setMode('account'); setPath('/account'); } }).catch(clear);
+    if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } }).catch(clear);
     return () => window.removeEventListener('popstate', sync);
   }, []);
   function say(s: string, ok = false) { setNotice(s); setSuccess(ok); }
   function navigate(next: Mode) {
-    const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : next === 'account' ? '/account' : '/';
+    const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : (next === 'account' || next === 'home') ? '/home' : '/';
     setMode(next); setPath(route); setNotice(''); go(route);
   }
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -73,9 +77,10 @@ export default function App() {
         try {
           const data = await api('/api/auth/login', { identity, password: f.get('password') }); store(data); setUser(data.user || null);
           if (data.user) {
-            try { await registerDeviceAccount(data.user); navigate('account'); say(data.message || 'Signed in successfully. KingsHall was added to your Android accounts.', true); }
-            catch { navigate('account'); say('Signed in successfully, but Android could not add the device account. You can still use KingsHall.', false); }
-          } else { navigate('account'); say(data.message || 'Signed in successfully.', true); }
+            try { await registerDeviceAccount(data.user); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }
+            catch { setDeviceAccountStatus('You are signed in, but Android could not add the device account.'); }
+            navigate('home'); say(data.message || 'Signed in successfully. Welcome to your KingsHall home.', true);
+          } else { navigate('home'); say(data.message || 'Signed in successfully. Welcome to KingsHall.', true); }
         } catch (err) {
           const x = err as Error & { code?: string; email?: string };
           if (x.code === 'EMAIL_NOT_VERIFIED') { setVerifyEmail(x.email || (identity.includes('@') ? identity.trim().toLowerCase() : '')); navigate('verify'); }
@@ -95,7 +100,12 @@ export default function App() {
     try { await api('/api/auth/logout', { refreshToken }); } catch {}
     clear(); setUser(null); setBusy(false); navigate('landing'); say('You have signed out.', true);
   }
-  const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/account');
+  const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/account' && path !== '/home');
+  function navigateHomeSection(section: HomeSection) {
+    setHomeSection(section);
+    const targetId = section === 'HOME' ? 'kh-home-top' : section === 'IDENTITY' ? 'kh-home-identity' : section === 'APPS' ? 'kh-home-apps' : section === 'SECURITY' ? 'kh-home-security' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
   return <main className="kh-shell">
     <header className="topbar">
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
@@ -127,6 +137,46 @@ export default function App() {
         </div>
       </section>
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div></section>
+    </> : mode === 'home' ? <>
+      <section className="kh-home" id="kh-home-top">
+        <div className="kh-home-heading">
+          <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
+          <p className="kh-home-greeting">WELCOME BACK</p>
+          <h1>Your digital <em>home base.</em></h1>
+          <p className="kh-home-intro">Your KingsHall identity, device account, and ecosystem entry points — together in one place.</p>
+        </div>
+        {notice && <div className={success ? 'notice notice-success kh-home-notice' : 'notice kh-home-notice'} role="status" aria-live="polite">{notice}</div>}
+        <section className="kh-home-overview" aria-label="Account overview">
+          <article className="kh-home-card kh-home-identity" id="kh-home-identity">
+            <div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="shield" /></span><span className="kh-home-tag">IDENTITY ACTIVE</span></div>
+            <span className="kh-home-kicker">YOUR KINGSHALL ID</span>
+            <h2>{user?.name || 'KingsHall member'}</h2>
+            <p className="kh-home-muted">@{user?.username || 'member'}</p>
+            <div className="kh-home-detail"><span>Email</span><strong>{user?.email || 'Signed-in account'}</strong></div>
+            <div className="kh-home-detail"><span>Verification</span><strong>{user?.isEmailVerified ? 'Email verified' : 'Account session active'}</strong></div>
+            <div className="kh-home-detail"><span>Device account</span><strong>{deviceAccountStatus}</strong></div>
+          </article>
+          <article className="kh-home-card kh-home-welcome" id="kh-home-security">
+            <div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="lock" /></span><span className="kh-home-tag">SESSION</span></div>
+            <h2>Your session is active.</h2>
+            <p className="kh-home-muted">Keep your password and verification codes private. Sign out when you're using a shared device.</p>
+            <button className="secondary-button kh-home-signout" type="button" disabled={busy} onClick={logout}>Sign Out <ArrowIcon /></button>
+          </article>
+        </section>
+        <section className="kh-home-section" id="kh-home-apps">
+          <div className="kh-home-section-heading"><span className="eyebrow"><span className="eyebrow-line" />THE ECOSYSTEM</span><h2>Your connected possibilities.</h2><p>Explore KingsHall ecosystem applications from your home base.</p></div>
+          <div className="kh-home-app-grid">
+            <article className="kh-home-app-card"><span className="kh-home-card-icon"><FeatureIcon type="wallet" /></span><h3>CryBots</h3><p>Digital asset tools and bot experiences.</p><a href="https://crybots.kingshall.online" target="_blank" rel="noreferrer">Open CryBots <ArrowIcon /></a></article>
+            <article className="kh-home-app-card"><span className="kh-home-card-icon"><FeatureIcon type="chat" /></span><h3>HallsChat</h3><p>Social connections and conversations.</p><a href="https://hallschat.kingshall.online" target="_blank" rel="noreferrer">Open HallsChat <ArrowIcon /></a></article>
+            <article className="kh-home-app-card kh-home-app-coming"><span className="kh-home-card-icon"><FeatureIcon type="spark" /></span><h3>More to come</h3><p>A home for future compatible KingsHall services.</p><span className="kh-home-coming-label">ECOSYSTEM EXPANDING</span></article>
+          </div>
+        </section>
+        <section className="kh-home-lower-grid">
+          <article className="kh-home-card" id="kh-home-profile"><div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="apps" /></span><span className="kh-home-tag">PROFILE</span></div><h2>Your account details</h2><p className="kh-home-muted">This is the identity currently signed in to KingsHall.</p><div className="kh-home-detail"><span>Full name</span><strong>{user?.name || 'Not available'}</strong></div><div className="kh-home-detail"><span>Username</span><strong>@{user?.username || 'member'}</strong></div><div className="kh-home-detail"><span>Email</span><strong>{user?.email || 'Not available'}</strong></div></article>
+          <article className="kh-home-card" id="kh-home-help"><div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="chat" /></span><span className="kh-home-tag">HELP & SAFETY</span></div><h2>Keep your account secure.</h2><p className="kh-home-muted">Never share your password or one-time verification codes. If you use a shared device, sign out before leaving.</p><button className="secondary-button kh-home-help-button" type="button" onClick={() => navigateHomeSection('IDENTITY')}>Review my identity <ArrowIcon /></button></article>
+        </section>
+      </section>
+      <NowBar section={homeSection} onNavigate={navigateHomeSection} onExit={logout} />
     </> : <section className="auth-layout">
       <div className="auth-heading"><button className="back-link" onClick={() => navigate('landing')}>← Back to KingsHall</button><span className="eyebrow"><span className="eyebrow-line" />{mode === 'login' ? 'MEMBER ACCESS' : mode === 'request' ? 'ACCESS APPLICATION' : mode === 'verify' ? 'EMAIL VERIFICATION' : 'YOUR ACCOUNT'}</span>
         <h1>{mode === 'login' ? <>Welcome <em>back.</em></> : mode === 'request' ? <>Request <em>access.</em></> : mode === 'verify' ? <>Verify your <em>email.</em></> : <>Your <em>KingsHall.</em></>}</h1>
