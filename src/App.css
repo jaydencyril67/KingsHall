@@ -175,3 +175,13 @@ body:before,body:after{animation:none!important;filter:none!important;opacity:.5
 .kh-nowbar-dock.is-expanded .kh-nowbar{grid-template-columns:repeat(3,minmax(112px,max-content));grid-auto-rows:minmax(54px,auto)}
 .kh-nowbar-dock.is-expanded .kh-nowbar-action{width:100%;min-width:112px;max-width:100%;min-height:40px;padding:9px 10px 8px;border-radius:12px;gap:4px}
 @media(max-width:380px){.kh-nowbar-dock.is-expanded .kh-nowbar{grid-template-columns:repeat(3,minmax(0,1fr))}.kh-nowbar-dock.is-expanded .kh-nowbar-action{min-width:0}}
+
+
+/* Compact NowBar geometry matched to CryBots: 92px slots, 12px rail gaps, 40px buttons. */
+.kh-nowbar-actions.is-compact{gap:12px;width:max-content;max-width:none;overflow:visible}
+.kh-nowbar-slot:not(.is-expanded){flex:0 0 auto;width:92px;min-width:92px;max-width:92px}
+.kh-nowbar-action:not(.is-expanded){width:100%;min-width:0;min-height:40px;padding:7px 6px 6px;gap:4px;border-radius:12px}
+.kh-nowbar-icon{width:20px;height:20px;flex:0 0 20px}
+.kh-nowbar-icon svg{width:18px;height:18px}
+.kh-nowbar-label-compact{font-size:.58rem;letter-spacing:.04em;line-height:1}
+@media(max-width:380px){.kh-nowbar-slot:not(.is-expanded){width:92px;min-width:92px;max-width:92px}.kh-nowbar-actions.is-compact{gap:12px}}
