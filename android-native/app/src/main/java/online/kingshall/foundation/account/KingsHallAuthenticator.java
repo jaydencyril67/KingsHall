@@ -8,11 +8,8 @@ import android.content.Context;
 import android.os.Bundle;
 
 public class KingsHallAuthenticator extends AbstractAccountAuthenticator {
-    private final Context context;
-
     public KingsHallAuthenticator(Context context) {
         super(context);
-        this.context = context.getApplicationContext();
     }
 
     @Override
@@ -54,7 +51,6 @@ public class KingsHallAuthenticator extends AbstractAccountAuthenticator {
                               String[] features) {
         Bundle result = new Bundle();
         result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, false);
-        response.onResult(result);
         return result;
     }
 
