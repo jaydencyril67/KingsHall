@@ -55,7 +55,11 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
       target = Array.from(barRef.current.querySelectorAll<HTMLButtonElement>('button[data-nowbar-label]'))
         .find(button => button.dataset.nowbarLabel === saved);
     } catch {}
-    if (target) target.scrollIntoView({ block: 'nearest', inline: 'center' });
+    if (target && barRef.current) {
+      const maxScrollLeft = barRef.current.scrollWidth - barRef.current.clientWidth;
+      const nextScrollLeft = target.offsetLeft - (barRef.current.clientWidth - target.offsetWidth) / 2;
+      barRef.current.scrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
+    }
   }, [view, expanded]);
 
   useEffect(() => () => {
