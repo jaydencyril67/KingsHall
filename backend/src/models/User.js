@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, minlength: 2, maxlength: 80 },
-  username: { type: String, required: true, trim: true, lowercase: true, minlength: 3, maxlength: 24, unique: true, index: true },
-  email: { type: String, required: true, trim: true, lowercase: true, maxlength: 254, unique: true, index: true },
+  username: { type: String, required: true, trim: true, lowercase: true, minlength: 3, maxlength: 24, unique: true },
+  email: { type: String, required: true, trim: true, lowercase: true, maxlength: 254, unique: true },
   passwordHash: { type: String, required: true, select: false },
   isEmailVerified: { type: Boolean, default: false, index: true },
   emailVerificationCodeHash: { type: String, select: false, default: undefined },
@@ -27,7 +27,5 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ username: 1 }, { unique: true });
 
 export default mongoose.model('User', userSchema);
