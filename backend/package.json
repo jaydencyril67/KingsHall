@@ -2,7 +2,7 @@
   "name": "kingshall-auth-api",
   "version": "1.0.0",
   "private": true,
-  "description": "Isolated KingsHall signup, email verification and login API",
+  "description": "KingsHall signup, email verification, login and session API using Neon PostgreSQL",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
@@ -18,6 +18,6 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.5"
+    "pg": "^8.13.1"
   }
 }
