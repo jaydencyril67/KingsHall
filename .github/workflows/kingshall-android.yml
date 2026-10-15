@@ -11,6 +11,8 @@ on:
       - 'vite.config.ts'
       - 'tsconfig*.json'
       - 'capacitor.config.ts'
+      - 'android-native/**'
+      - 'scripts/**'
       - 'README.md'
       - '.github/workflows/kingshall-android.yml'
 
@@ -63,6 +65,9 @@ jobs:
 
       - name: Sync built web app into Android
         run: npx cap sync android
+
+      - name: Install native KingsHall device-account provider
+        run: python3 scripts/install-android-account-provider.py
 
       - name: Configure release signing
         env:
