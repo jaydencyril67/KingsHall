@@ -19,7 +19,8 @@
       .kh-splash-wordmark{margin:0;color:inherit;font-family:"STIX Two Text",serif;font-size:13px;font-weight:600;line-height:1.4;letter-spacing:.14em;text-transform:uppercase}
       .kh-splash-shimmer{width:180px;height:3px;margin-top:-8px;border-radius:999px;background:currentColor;animation:kh-splash-shimmer 1.4s ease-in-out infinite}
       .kh-splash-powered{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 28px);z-index:10001;display:block;margin:0;padding:0 16px;box-sizing:border-box;color:inherit;font-family:"STIX Two Text",serif;font-size:12px;font-weight:700;line-height:1.4;letter-spacing:.08em;opacity:.72;text-align:center;pointer-events:none}
-      @keyframes kh-splash-shimmer{0%{transform:translateX(-140%);opacity:.35}45%{opacity:1}100%{transform:translateX(340%);opacity:.35}}\n      @media(prefers-reduced-motion:reduce){.kh-splash-shimmer::after{animation-duration:2.8s}}
+      @keyframes kh-splash-shimmer{0%,100%{transform:scaleX(.72);opacity:.45}50%{transform:scaleX(1);opacity:1}}
+      @media(prefers-reduced-motion:reduce){.kh-splash-shimmer{animation-duration:2.8s}}
     </style>
   </head>
   <body>
