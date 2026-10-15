@@ -8,16 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="KingsHall — one place to begin your digital world." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap" />
+    <link rel="preload" href="/fonts/STIXTwoText-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/STIXTwoText-Bold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" as="image" href="/kingshall-mark.svg?v=5" fetchpriority="high" />
     <link rel="icon" type="image/svg+xml" href="/kingshall-mark.svg?v=4" />
     <link rel="apple-touch-icon" href="/kingshall-mark.svg?v=4" />
     <title>KingsHall — Your world starts here</title>
     <style>
-      /* Match CryBots global typography and touch/scroll behavior in browser, PWA and WebView. */
-      :root{--kingshall-global-font:"STIX Two Text",serif;font-family:var(--kingshall-global-font)!important;font-synthesis:none!important}
+      /* Match CryBots: locally bundled STIX faces for browser, PWA and Android WebView. */
+      @font-face{font-family:"STIX Two Text";src:url("/fonts/STIXTwoText-Regular.woff2") format("woff2");font-weight:100 699;font-style:normal;font-display:block}
+      @font-face{font-family:"STIX Two Text";src:url("/fonts/STIXTwoText-Bold.woff2") format("woff2");font-weight:700 1000;font-style:normal;font-display:block}
+      :root{--kingshall-global-font:"STIX Two Text";font-family:var(--kingshall-global-font)!important;font-synthesis:none!important}
       html,body,#root,*,*::before,*::after,button,input,textarea,select,option{font-family:var(--kingshall-global-font)!important;font-synthesis:none!important}
       *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;scrollbar-width:none;-ms-overflow-style:none}
       html,body,#root,*{scrollbar-width:none!important;scrollbar-color:transparent transparent!important;-ms-overflow-style:none!important}
