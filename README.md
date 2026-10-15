@@ -22,7 +22,11 @@ After a successful run, download the `KingsHall-production-signed-apk` artifact.
 
 The app uses the separate package ID `online.kingshall.foundation` so this clean test can be distinguished from previous KingsHall APKs.
 
-## Current scope
-- Login and Sign Up are visual React forms only.
-- No backend, authentication, API requests, or credential storage.
-- A signed release build is not the same as a Google Play-distributed app; Play Protect may still show a first-time developer warning, and signing alone does not guarantee approval.
+## Android device account (initial stage)
+- After a successful KingsHall sign-in in the Android app, the native Capacitor bridge registers the user's email as an Android `AccountManager` account with account type `online.kingshall.account`.
+- The account authenticator is installed into the generated Android project by `scripts/install-android-account-provider.py` during the release workflow.
+- Only the email, username, and display name are kept as account metadata. The user's password and API tokens are not stored in Android AccountManager.
+- This stage does not provide authentication tokens to CryBots, HallsChat, or other apps. The authenticator explicitly does not issue cross-app tokens.
+- Android permits separate accounts with different names; AccountManager naturally treats the same account type/name pair as one account.
+
+The web frontend uses the separate ApiKingsHall backend for sign-up, email verification, and sign-in. A signed release build is not the same as a Google Play-distributed app; Play Protect may still show a first-time developer warning, and signing alone does not guarantee approval.
