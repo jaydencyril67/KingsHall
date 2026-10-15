@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721" viewBox="0 0 720 721">
+  <rect width="720" height="721" fill="#000000"/>
+  <!-- Keep the silver crown inside the same visual safe area as the APK adaptive launcher icon. -->
+  <image href="/kingshall-mark.svg" x="79" y="79" width="562" height="563" preserveAspectRatio="xMidYMid meet"/>
+</svg>
