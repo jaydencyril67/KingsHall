@@ -12,6 +12,7 @@ for relative in (
     "java/online/kingshall/foundation/account/KingsHallAccountPlugin.java",
     "java/online/kingshall/foundation/account/KingsHallAuthenticator.java",
     "java/online/kingshall/foundation/account/KingsHallAuthenticatorService.java",
+    "java/online/kingshall/foundation/account/KingsHallIdentityConsentActivity.java",
     "res/xml/kingshall_authenticator.xml",
 ):
     source = source_root / relative
@@ -39,6 +40,15 @@ service = """        <service
 """
 if "KingsHallAuthenticatorService" not in manifest:
     manifest = manifest.replace("</application>", service + "    </application>", 1)
+
+activity = """        <activity
+            android:name=".account.KingsHallIdentityConsentActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Material.Light.Dialog.Alert" />
+"""
+if "KingsHallIdentityConsentActivity" not in manifest:
+    manifest = manifest.replace("</application>", activity + "    </application>", 1)
 manifest_path.write_text(manifest, encoding="utf-8")
 
 strings_path = target_root / "res/values/strings.xml"
