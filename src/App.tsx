@@ -32,31 +32,32 @@ function KingsHallMark() {
  return <svg className="kh-brand-mark-svg" viewBox="0 0 64 64" role="img" aria-label="KingsHall silver crown">
   <defs>
    <linearGradient id="khChrome" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stopColor="#555b62"/><stop offset=".13" stopColor="#fff"/><stop offset=".27" stopColor="#858b92"/><stop offset=".4" stopColor="#f8fafc"/><stop offset=".55" stopColor="#3e4349"/><stop offset=".7" stopColor="#e9edf1"/><stop offset=".85" stopColor="#777d84"/><stop offset="1" stopColor="#fff"/>
+    <stop offset="0" stopColor="#383b40"/><stop offset=".08" stopColor="#f7f9fb"/><stop offset=".17" stopColor="#777e86"/><stop offset=".28" stopColor="#fff"/><stop offset=".4" stopColor="#4a5057"/><stop offset=".53" stopColor="#f4f6f8"/><stop offset=".65" stopColor="#737a82"/><stop offset=".78" stopColor="#fff"/><stop offset=".9" stopColor="#686e76"/><stop offset="1" stopColor="#e8ebef"/>
    </linearGradient>
-   <linearGradient id="khFace" x1=".1" y1="0" x2=".8" y2="1">
-    <stop offset="0" stopColor="#fff"/><stop offset=".2" stopColor="#aeb4bb"/><stop offset=".42" stopColor="#f7f9fb"/><stop offset=".62" stopColor="#555b62"/><stop offset=".8" stopColor="#dce0e4"/><stop offset="1" stopColor="#f5f7f9"/>
+   <linearGradient id="khFace" x1=".12" y1="0" x2=".82" y2="1">
+    <stop offset="0" stopColor="#fff"/><stop offset=".15" stopColor="#aeb4bb"/><stop offset=".3" stopColor="#f8fafc"/><stop offset=".48" stopColor="#555b62"/><stop offset=".64" stopColor="#e8ebef"/><stop offset=".8" stopColor="#777e86"/><stop offset="1" stopColor="#f8fafc"/>
    </linearGradient>
    <linearGradient id="khBase" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stopColor="#fff"/><stop offset=".25" stopColor="#858b92"/><stop offset=".48" stopColor="#353a40"/><stop offset=".68" stopColor="#f6f8fa"/><stop offset="1" stopColor="#777d84"/>
+    <stop offset="0" stopColor="#fff"/><stop offset=".14" stopColor="#aeb4bb"/><stop offset=".3" stopColor="#343940"/><stop offset=".47" stopColor="#f5f7f9"/><stop offset=".65" stopColor="#777d85"/><stop offset=".82" stopColor="#fdfefe"/><stop offset="1" stopColor="#555b62"/>
    </linearGradient>
-   <clipPath id="khCrownClip"><path d="M11.4 20.75 Q15.4 24.8 20.5 22.5 L23.4 14.9 Q28 20.1 32 9.1 Q36 20.1 40.6 14.9 L43.5 22.5 Q48.6 24.8 52.6 20.75 L47.75 43.75 Q32 49.25 16.25 43.75 Z"/></clipPath>
+   <clipPath id="khCrownClip"><path d="M9.75 17 Q10.25 16.1 11.25 17.1 L18.1 22 Q19.1 22.7 19.5 21.3 L21.4 10.4 Q21.75 8.6 23 10.4 L29 18.9 Q30 20.4 30.6 18.5 L31.1 7.75 Q32 4 32.9 7.75 L33.4 18.5 Q34 20.4 35 18.9 L41 10.4 Q42.25 8.6 42.6 10.4 L44.5 21.3 Q44.9 22.7 45.9 22 L52.75 17.1 Q53.75 16.1 54.25 17 L49.1 42.4 Q32 47.75 14.9 42.4 Z"/></clipPath>
   </defs>
-  <path d="M11.4 20.75 Q15.4 24.8 20.5 22.5 L23.4 14.9 Q28 20.1 32 9.1 Q36 20.1 40.6 14.9 L43.5 22.5 Q48.6 24.8 52.6 20.75 L47.75 43.75 Q32 49.25 16.25 43.75 Z" fill="url(#khFace)" stroke="#f7f9fb" strokeWidth=".5" strokeLinejoin="round"/>
+  <path d="M9.75 17 Q10.25 16.1 11.25 17.1 L18.1 22 Q19.1 22.7 19.5 21.3 L21.4 10.4 Q21.75 8.6 23 10.4 L29 18.9 Q30 20.4 30.6 18.5 L31.1 7.75 Q32 4 32.9 7.75 L33.4 18.5 Q34 20.4 35 18.9 L41 10.4 Q42.25 8.6 42.6 10.4 L44.5 21.3 Q44.9 22.7 45.9 22 L52.75 17.1 Q53.75 16.1 54.25 17 L49.1 42.4 Q32 47.75 14.9 42.4 Z" fill="url(#khFace)" stroke="#f7f9fb" strokeWidth=".5" strokeLinejoin="round"/>
   <g clipPath="url(#khCrownClip)">
-   <path d="M11 21 L20.5 22.5 24.3 41.2 16.2 43.8Z" fill="#30353a"/>
-   <path d="M20.5 22.5 23.4 14.9 28.9 39.9 24.3 41.2Z" fill="#fff" opacity=".9"/>
-   <path d="M23.4 14.9 32 9.1 32 39.5 28.9 39.9Z" fill="url(#khChrome)"/>
-   <path d="M32 9.1 40.6 14.9 35.1 39.9 32 39.5Z" fill="#30353a" opacity=".8"/>
-   <path d="M40.6 14.9 43.5 22.5 39.7 41.2 35.1 39.9Z" fill="#fff" opacity=".85"/>
-   <path d="M43.5 22.5 53 21 47.8 43.8 39.7 41.2Z" fill="#30353a"/>
-   <path d="M23.4 15 25.8 21 28.6 37 M32 9.5V38 M40.6 15 38.2 21 35.4 37" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round" opacity=".9"/>
-   <path d="M13 23 Q32 31 51 23" fill="none" stroke="#fff" strokeWidth=".45" opacity=".65"/>
+   <path d="M9 17 L18.1 22 21.7 40.5 14.9 42.4Z" fill="#30353b"/>
+   <path d="M18.1 22 21.4 10.4 28 39.5 21.7 40.5Z" fill="#fff" opacity=".9"/>
+   <path d="M21.4 10.4 31.1 7.75 32 39.3 28 39.5Z" fill="url(#khChrome)"/>
+   <path d="M31.1 7.75 32.9 7.75 36 39.5 32 39.3Z" fill="#fff" opacity=".85"/>
+   <path d="M32.9 7.75 42.6 10.4 36 39.5 32 39.3Z" fill="#30353b" opacity=".8"/>
+   <path d="M42.6 10.4 45.9 22 42.3 40.5 36 39.5Z" fill="#fff" opacity=".85"/>
+   <path d="M45.9 22 54.5 17 49.1 42.4 42.3 40.5Z" fill="#30353b"/>
+   <path d="M21.5 10.8 24 16.4 28 37 M32 7.9V38 M42.5 10.8 40 16.4 36 37" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round" opacity=".9"/>
+   <path d="M12.4 19.2 Q32 28.3 51.6 19.2" fill="none" stroke="#fff" strokeWidth=".45" opacity=".65"/>
   </g>
-  <path d="M16.25 41.6 Q32 46.2 47.75 41.6 L46.9 46.2 Q32 51.2 17.1 46.2Z" fill="url(#khBase)" stroke="#f8fafc" strokeWidth=".35"/>
-  <path d="M17.3 43 Q32 47.2 46.7 43" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round"/>
-  <path d="M18 45.2 Q32 49.1 46 45.2" fill="none" stroke="#25292e" strokeWidth=".65" strokeLinecap="round"/>
-  <g fill="#fff"><circle cx="23.4" cy="14.9" r=".55"/><circle cx="32" cy="9.1" r=".6"/><circle cx="40.6" cy="14.9" r=".55"/></g>
+  <path d="M14.9 40.5 Q32 45.4 49.1 40.5 L47.7 46 Q32 51 16.3 46Z" fill="url(#khBase)" stroke="#f8fafc" strokeWidth=".35"/>
+  <path d="M16.3 42.2 Q32 47 47.7 42.2" fill="none" stroke="#fff" strokeWidth=".55" strokeLinecap="round"/>
+  <path d="M17.2 45 Q32 49.3 46.8 45" fill="none" stroke="#25292e" strokeWidth=".65" strokeLinecap="round"/>
+  <g fill="#fff"><circle cx="22" cy="9.5" r=".55"/><circle cx="32" cy="6" r=".65"/><circle cx="42" cy="9.5" r=".55"/><circle cx="10.75" cy="16.8" r=".45"/><circle cx="53.25" cy="16.8" r=".45"/></g>
  </svg>;
 }
 function FeatureIcon({type}:{type:'lock'|'people'|'shield'}) {
