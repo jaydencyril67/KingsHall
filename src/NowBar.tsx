@@ -98,11 +98,11 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
-    const index = ORDER.indexOf(section === 'EXIT' ? 'HOME' : section);
+    const index = ORDER.indexOf((section === 'EXIT' ? 'HOME' : section) as Section);
     const next = ORDER[index + (dx < 0 ? 1 : -1)];
-    if (!next) return;
+    if (next !== 'HOME') return;
     swipeHandled.current = true;
-    onNavigate(next);
+    onNavigate('HOME');
     setView('title');
     setMode('compact');
     resetIdle();
