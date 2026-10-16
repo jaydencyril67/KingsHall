@@ -478,3 +478,10 @@ input,textarea{font-size:12px}
 .kh-two-factor-status{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;width:100%;box-sizing:border-box;padding:12px 44px 12px 14px;border:1px solid var(--kh-border,rgba(255,255,255,.12));border-radius:12px;background:var(--kh-input-bg,rgba(255,255,255,.035));color:inherit;cursor:default;user-select:text}
 .kh-two-factor-status-check{right:14px;width:20px;height:20px}
 .kh-two-factor-status-check svg{width:20px;height:20px}
+
+
+.kh-wallet-address-feedback{display:block;margin-top:7px;font-size:12px;line-height:1.45}
+.kh-wallet-address-feedback.is-valid{color:#35d07f}
+.kh-wallet-address-feedback.is-invalid{color:#f08080}
+.kh-identity-wallet .field input[aria-invalid="true"]{border-color:rgba(240,128,128,.7)}
+.kh-identity-wallet .field input[aria-invalid="false"]{border-color:rgba(53,208,127,.45)}
