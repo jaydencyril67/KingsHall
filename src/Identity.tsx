@@ -664,7 +664,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-identity-span"><label htmlFor="identity-bio">Bio <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
           </fieldset>
-          {!personalBound && <div className="kh-identity-section-save"><span>Bind your personal details once. After the first successful save, they stay locked.</span><button className="submit-button" type="button" onClick={() => void savePersonal()} disabled={savingPersonal || savingSocials || loading}>{savingPersonal ? <LoadingDots /> : 'Save Personal'}</button></div>}
+          {!personalBound && personalEditing && <div className="kh-identity-section-save"><span>Bind your personal details once. After the first successful save, they stay locked.</span><button className="submit-button" type="button" onClick={() => void savePersonal()} disabled={savingPersonal || savingSocials || loading}>{savingPersonal ? <LoadingDots /> : 'Save Personal'}</button></div>}
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
