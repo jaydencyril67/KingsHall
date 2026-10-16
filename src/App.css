@@ -442,3 +442,8 @@ input,textarea{font-size:12px}
 /* Local data loading: keep page structure visible while fetched values arrive. */
 .kh-identity-inline-loading{display:flex;align-items:center;justify-content:center;min-height:24px;margin:8px 0 12px;color:var(--theme-primary-hover,#b8c7ff)}
 .submit-button .worldscope-dot-loader,.secondary-button .worldscope-dot-loader{margin-right:5px;vertical-align:middle}
+
+/* Identity fields stay visually stable while locked; section actions toggle edit mode. */
+.kh-identity-editable-fields{display:contents;border:0;padding:0;margin:0;min-width:0}
+.kh-identity-editable-fields:disabled input,.kh-identity-editable-fields:disabled textarea,.kh-identity-editable-fields:disabled select,.kh-identity-editable-fields:disabled button{opacity:1;cursor:default}
+.kh-identity-editable-fields:disabled input,.kh-identity-editable-fields:disabled textarea{color:inherit;-webkit-text-fill-color:currentColor}
