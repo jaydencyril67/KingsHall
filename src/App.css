@@ -454,3 +454,9 @@ input,textarea{font-size:12px}
 .kh-email-change-verification>label{color:#dce2ea;font-size:11px;font-weight:600}
 .kh-email-change-verification>input{width:100%;min-height:42px;padding:10px 12px;border:1px solid rgba(210,216,225,.17);border-radius:10px;color:#f3f4f6;background:rgba(3,4,5,.5);font:inherit;font-size:13px;letter-spacing:.12em}
 .kh-email-change-verification>.submit-button{width:100%;min-height:40px;margin:0;font-size:11px}
+
+/* Security-code fields: saved-state mask and compact confirmation check. */
+.kh-security-code-input-wrap{position:relative;width:100%}
+.kh-security-code-input-wrap input{width:100%;padding-right:42px!important}
+.kh-security-code-check{position:absolute;right:13px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:19px;height:19px;color:#35d07f;pointer-events:none}
+.kh-security-code-check svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
