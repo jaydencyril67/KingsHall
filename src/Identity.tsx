@@ -212,6 +212,30 @@ export default function IdentityPage({ user }: Props) {
   const [deletePhotoConfirm, setDeletePhotoConfirm] = useState<'profile' | 'cover' | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const closePhotoPopouts = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('.kh-identity-photo-stack')) {
+        setPhotoActionsOpen(false);
+        setCoverActionsOpen(false);
+        setDeletePhotoConfirm(null);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPhotoActionsOpen(false);
+        setCoverActionsOpen(false);
+        setDeletePhotoConfirm(null);
+      }
+    };
+    document.addEventListener('pointerdown', closePhotoPopouts);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closePhotoPopouts);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
+
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   const parsedDobForStatus = parseDobInput(dobInput);
