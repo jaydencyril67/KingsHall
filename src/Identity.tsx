@@ -421,7 +421,8 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
+    const usernameUnchanged = savedProfileRef.current?.username === profile.username;
+    if (!/^[a-z0-9]{3,24}$/.test(profile.username) || (!usernameUnchanged && usernameStatus !== 'available')) {
       setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
       setNoticeOk(false);
       return false;
@@ -431,7 +432,7 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (postalCodeStatus === 'invalid') {
+    if (postalCodeStatus === 'invalid' && (!savedProfileRef.current || profile.postalCode !== savedProfileRef.current.postalCode)) {
       setNotice('Check the postal code format for your selected nationality before saving.');
       setNoticeOk(false);
       return false;
