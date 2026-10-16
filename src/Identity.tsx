@@ -5,6 +5,8 @@ type IdentityProfile = {
   id: string; name: string; username: string; email: string; emailVerified: boolean; memberSince: string;
   dateOfBirth: string; phone: string; country: string; state: string; city: string; address: string;
   postalCode: string; nationality: string; gender: string; occupation: string; bio: string;
+  website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
+  language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
   avatarData: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
@@ -14,6 +16,8 @@ const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', name: user?.name || '', username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '', bio: '',
+  website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
+  language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
   avatarData: '', wallets: [], securityCodeSet: false, updatedAt: null
 });
 async function request(path: string, body?: unknown) {
@@ -86,10 +90,14 @@ export default function IdentityPage({ user }: Props) {
     setSaving(true); setNotice('');
     try {
       const data = await request('/api/identity', {
+        name: profile.name, username: profile.username, email: profile.email,
         dateOfBirth: profile.dateOfBirth, phone: profile.phone, country: profile.country, state: profile.state,
         city: profile.city, address: profile.address, postalCode: profile.postalCode, nationality: profile.nationality,
         gender: profile.gender, occupation: profile.occupation, bio: profile.bio, avatarData: profile.avatarData,
-        wallets: profile.wallets
+        website: profile.website, instagram: profile.instagram, facebook: profile.facebook, xHandle: profile.xHandle,
+        telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
+        language: profile.language, timeZone: profile.timeZone, preferredCurrency: profile.preferredCurrency,
+        pronouns: profile.pronouns, relationshipStatus: profile.relationshipStatus, wallets: profile.wallets
       });
       if (data.profile) setProfile(data.profile);
       setNotice(data.message || 'Your identity has been saved.'); setNoticeOk(true);
@@ -125,16 +133,16 @@ export default function IdentityPage({ user }: Props) {
     {loading ? <div className="kh-identity-loading">Loading your saved identity…</div> : <>
       <form className="kh-identity-form" onSubmit={save}>
         <section className="kh-identity-card kh-identity-personal">
-          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal identity</h2><p>Core details connected to your KingsHall account.</p></div></div>
+          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
           <div className="kh-identity-avatar-row">
             <div className="kh-identity-avatar">{profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.name || 'K').trim().charAt(0).toUpperCase()}</span>}</div>
             <div className="kh-identity-avatar-copy"><strong>Profile photo</strong><small>Square or portrait image · automatically resized</small><label className="kh-identity-upload">{photoBusy ? 'Preparing photo…' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={photoBusy} /></label></div>
             {profile.avatarData && <button className="kh-identity-remove-photo" type="button" onClick={() => update('avatarData', '')}>Remove</button>}
           </div>
-          <div className="kh-identity-readonly-grid">
-            <div className="kh-identity-readonly"><span>Full name</span><strong>{profile.name || '—'}</strong></div>
-            <div className="kh-identity-readonly"><span>KingsHall username</span><strong>@{profile.username || '—'}</strong></div>
-            <div className="kh-identity-readonly"><span>Verified email</span><strong>{profile.email || '—'}</strong><small>{profile.emailVerified ? 'Verified' : 'Verification pending'}</small></div>
+          <div className="kh-identity-grid">
+            <div className="field"><label htmlFor="identity-name">Full name</label><input id="identity-name" maxLength={80} autoComplete="name" value={profile.name} onChange={e => update('name', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-username">KingsHall username</label><input id="identity-username" maxLength={24} autoComplete="username" value={profile.username} onChange={e => update('username', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-email">Email address</label><input id="identity-email" type="email" maxLength={254} autoComplete="email" value={profile.email} onChange={e => update('email', e.target.value)} /><small className="kh-identity-help">{profile.emailVerified ? 'Currently verified. Email verification controls will be added in the security pass.' : 'Email verification is pending.'}</small></div>
           </div>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-dob">Date of birth</label><input id="identity-dob" type="date" max={new Date().toISOString().slice(0,10)} value={profile.dateOfBirth} onChange={e => update('dateOfBirth', e.target.value)} /></div>
@@ -151,7 +159,29 @@ export default function IdentityPage({ user }: Props) {
           </div>
         </section>
         <section className="kh-identity-card">
-          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="wallet" /></span><div><h2>Crypto wallets</h2><p>Save receiving addresses by network. KingsHall stores addresses only; it never needs your seed phrase or private key.</p></div></div>
+          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
+          <div className="kh-identity-grid">
+            <div className="field"><label htmlFor="identity-website">Website</label><input id="identity-website" type="url" maxLength={240} placeholder="https://…" value={profile.website} onChange={e => update('website', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-instagram">Instagram</label><input id="identity-instagram" maxLength={100} placeholder="@username or profile URL" value={profile.instagram} onChange={e => update('instagram', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-facebook">Facebook</label><input id="identity-facebook" maxLength={160} placeholder="Profile URL or name" value={profile.facebook} onChange={e => update('facebook', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-x">X / Twitter</label><input id="identity-x" maxLength={100} placeholder="@username or profile URL" value={profile.xHandle} onChange={e => update('xHandle', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-telegram">Telegram</label><input id="identity-telegram" maxLength={100} placeholder="@username" value={profile.telegram} onChange={e => update('telegram', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-discord">Discord</label><input id="identity-discord" maxLength={100} placeholder="Username" value={profile.discord} onChange={e => update('discord', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
+          </div>
+        </section>
+        <section className="kh-identity-card">
+          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Advanced</h2><p>Optional preferences and additional profile details.</p></div></div>
+          <div className="kh-identity-grid">
+            <div className="field"><label htmlFor="identity-pronouns">Pronouns</label><input id="identity-pronouns" maxLength={40} placeholder="Optional" value={profile.pronouns} onChange={e => update('pronouns', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-relationship">Relationship status</label><select id="identity-relationship" value={profile.relationshipStatus} onChange={e => update('relationshipStatus', e.target.value)}><option value="">Prefer not to say</option><option>Single</option><option>In a relationship</option><option>Married</option><option>It's complicated</option><option>Other</option></select></div>
+            <div className="field"><label htmlFor="identity-language">Preferred language</label><input id="identity-language" maxLength={60} placeholder="e.g. English" value={profile.language} onChange={e => update('language', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-timezone">Time zone</label><input id="identity-timezone" maxLength={80} placeholder="e.g. Africa/Lagos" value={profile.timeZone} onChange={e => update('timeZone', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-currency">Preferred currency</label><select id="identity-currency" value={profile.preferredCurrency} onChange={e => update('preferredCurrency', e.target.value)}>{['USD','NGN','EUR','GBP','USDT','BTC','ETH','OTHER'].map(currency => <option key={currency}>{currency}</option>)}</select></div>
+          </div>
+        </section>
+        <section className="kh-identity-card">
+          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="wallet" /></span><div><h2>Wallets</h2><p>Save receiving addresses by network. KingsHall stores addresses only; it never needs your seed phrase or private key.</p></div></div>
           <div className="kh-identity-wallets">
             {profile.wallets.map((wallet, index) => <div className="kh-identity-wallet" key={wallet.id}>
               <div className="kh-identity-wallet-title"><strong>Wallet {index + 1}</strong><button type="button" onClick={() => setProfile(old => ({ ...old, wallets: old.wallets.filter(item => item.id !== wallet.id) }))}>Remove</button></div>
