@@ -343,3 +343,17 @@ input,textarea{font-size:12px}
 .kh-phone-code{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:58px;padding:0 12px;border:1px solid rgba(210,216,225,.17);border-right:0;border-radius:10px 0 0 10px;color:#dce2ea;background:rgba(255,255,255,.055);font-size:12px;font-weight:600;white-space:nowrap}
 .kh-phone-input-wrap>input{flex:1;width:100%;min-width:0;border-radius:0 10px 10px 0!important}
 .kh-phone-code[aria-label^="Select"]{color:#858b96;font-size:10px}
+
+
+/* Keep the open country/region popout above later sibling fields.
+   Gender is last in this section, which is why it was not being covered. */
+.kh-nationality-field.is-open{z-index:60!important}
+.kh-country-field.is-open,.kh-region-field.is-open{z-index:60!important}
+.kh-country-field .kh-nationality-trigger,.kh-region-field .kh-nationality-trigger{background:linear-gradient(180deg,#171b22,#0b0d11);border-color:rgba(210,216,225,.22)}
+.kh-country-field .kh-nationality-popout,.kh-region-field .kh-nationality-popout{background:linear-gradient(155deg,#202734 0%,#111620 55%,#0b0e14 100%);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);box-shadow:0 20px 48px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.06)}
+.kh-country-field .kh-nationality-search,.kh-region-field .kh-nationality-search{background:#10141b;border-color:rgba(210,216,225,.2)}
+.kh-postal-input-wrap{position:relative;width:100%}
+.kh-postal-input-wrap>input{width:100%;padding-right:39px}
+.kh-postal-feedback{display:block;margin-top:6px;color:#9ba2ae;font-size:10px;line-height:1.5}
+.kh-postal-feedback.is-invalid{color:#ef8585}
+.kh-postal-feedback.is-valid{color:#8fdbac}
