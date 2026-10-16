@@ -205,6 +205,8 @@ export default function StoryImageCropModal({ imageUrl, onCancel, onDone, title 
 
   const handleCropPointerDown = (event: PointerEvent<HTMLElement>, mode: "move" | "resize", handle?: string) => {
     if (!ready || saving) return;
+    // Keep one crop gesture in control at a time; extra fingers must not reset the drag origin.
+    if (cropDragRef.current && cropDragRef.current.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
     setErrorMessage("");
@@ -253,8 +255,15 @@ export default function StoryImageCropModal({ imageUrl, onCancel, onDone, title 
 
   const handleCropPointerUp = (event: PointerEvent<HTMLElement>) => {
     if (cropDragRef.current?.pointerId !== event.pointerId) return;
+    event.preventDefault();
     event.stopPropagation();
     cropDragRef.current = null;
+    // Flush the last queued movement so the visible box and saved crop always agree.
+    if (cropPaintFrameRef.current !== null) cancelAnimationFrame(cropPaintFrameRef.current);
+    cropPaintFrameRef.current = null;
+    const pending = pendingCropRef.current;
+    pendingCropRef.current = null;
+    if (pending) setCrop(pending);
     try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* Capture may already be released. */ }
   };
 
