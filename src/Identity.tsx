@@ -184,7 +184,6 @@ async function request(path: string, body?: unknown) {
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
-function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
 async function preparePhoto(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('Choose an image file.');
   const source = await new Promise<HTMLImageElement>((resolve, reject) => {
