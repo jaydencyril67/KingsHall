@@ -507,3 +507,7 @@ input,textarea{font-size:12px}
   background: var(--glass, rgba(255,255,255,.04));
 }
 .kh-security-verification-panel .field { flex: 1 1 220px; min-width: 0; }
+
+/* Account-security Edit popout: anchored to the clicked input like Identity photo actions. */
+.kh-security-code-input-wrap .kh-security-edit-popout{position:absolute;right:8px;top:calc(100% + 6px);bottom:auto;z-index:30;display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 12px;border:1px solid rgba(220,226,234,.22);border-radius:10px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.98));box-shadow:0 10px 28px rgba(0,0,0,.35);color:#e9edf3;font:inherit;font-size:11px;white-space:nowrap;cursor:pointer}
+.kh-security-code-input-wrap .kh-security-edit-popout:hover,.kh-security-code-input-wrap .kh-security-edit-popout:focus-visible{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
