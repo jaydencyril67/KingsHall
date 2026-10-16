@@ -668,7 +668,7 @@ export default function IdentityPage({ user }: Props) {
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
-          <fieldset className="kh-identity-editable-fields">
+          <fieldset className="kh-identity-editable-fields" disabled={loading}>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-website">Website</label><input id="identity-website" type="url" maxLength={240} placeholder="https://…" value={profile.website} onChange={e => update('website', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-instagram">Instagram</label><input id="identity-instagram" maxLength={100} placeholder="@username or profile URL" value={profile.instagram} onChange={e => update('instagram', e.target.value)} /></div>
