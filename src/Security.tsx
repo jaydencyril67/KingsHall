@@ -9,7 +9,7 @@ type Profile = {
   postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string; coverPhoto?: string;
   website?: string; instagram?: string; facebook?: string; xHandle?: string; telegram?: string; discord?: string;
   linkedin?: string; language?: string; timeZone?: string; preferredCurrency?: string; pronouns?: string;
-  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean;
+  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; fundingCodeSet?: boolean;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 type ResponseData = { profile?: Profile; message?: string; error?: string };
@@ -47,9 +47,11 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
+  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', currentFundingCode: '', fundingCode: '' });
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
+  const [savingFundingCode, setSavingFundingCode] = useState(false);
+  const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [openNetworkId, setOpenNetworkId] = useState<string | null>(null);
   const [networkSearch, setNetworkSearch] = useState('');
   const [notice, setNotice] = useState('');
@@ -81,6 +83,7 @@ export default function SecurityPage({ user }: Props) {
     request('/api/identity').then(data => {
       if (!current) return;
       setWallets(data.profile?.wallets || []);
+      setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
     }).catch(error => {
       if (current) { setNotice((error as Error).message || 'Could not load your security details.'); setNoticeOk(false); }
     }).finally(() => { if (current) setLoading(false); });
@@ -89,6 +92,32 @@ export default function SecurityPage({ user }: Props) {
 
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
+  }
+
+  async function saveFundingCode() {
+    if (savingFundingCode || securityDraft.fundingCode.length !== 4) return;
+    if (fundingCodeSet && securityDraft.currentFundingCode.length !== 4) {
+      setNotice('Enter your current 4-digit funding code first.');
+      setNoticeOk(false);
+      return;
+    }
+    setSavingFundingCode(true);
+    setNotice('');
+    try {
+      const result = await request('/api/identity/funding-code', {
+        code: securityDraft.fundingCode,
+        ...(fundingCodeSet ? { currentCode: securityDraft.currentFundingCode } : {})
+      });
+      setFundingCodeSet(Boolean(result.fundingCodeSet));
+      setSecurityDraft(old => ({ ...old, currentFundingCode: '', fundingCode: '' }));
+      setNotice(result.message || 'Funding code saved securely.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not save your funding code.');
+      setNoticeOk(false);
+    } finally {
+      setSavingFundingCode(false);
+    }
   }
 
   async function saveWallets() {
@@ -133,6 +162,7 @@ export default function SecurityPage({ user }: Props) {
         <div className="kh-identity-security-list">
           <div className="kh-identity-security-item"><div><strong>Verified email</strong><small>{user?.isEmailVerified ? 'Your account email is verified.' : 'Email verification status is not confirmed.'}</small></div><span className="kh-identity-code-status">{user?.isEmailVerified ? 'VERIFIED' : 'UNVERIFIED'}</span></div>
           <div className="kh-identity-security-item"><div><strong>Security code</strong><small>Use this area to review your security-code setup.</small></div><span className="kh-identity-code-status">ACCOUNT SETUP</span></div>
+          <div className="kh-identity-security-item"><div><strong>Funding Code</strong><small>{fundingCodeSet ? 'Your four-digit funding code is saved securely.' : 'Create a four-digit code to protect funding actions.'}</small></div><span className="kh-identity-code-status">{fundingCodeSet ? 'SET' : 'NOT SET'}</span></div>
         </div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field"><label htmlFor="security-password">Password</label><input id="security-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
@@ -140,10 +170,11 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-code">Security Code</label><input id="security-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Enter security code" value={securityDraft.securityCode} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
           <div className="field"><label htmlFor="security-access-code">Access Code</label><input id="security-access-code" type="password" autoComplete="off" placeholder="Enter access code" value={securityDraft.accessCode} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value }))} /></div>
           <div className="field"><label htmlFor="security-two-factor">2FA</label><select id="security-two-factor" value={securityDraft.twoFactor} onChange={e => setSecurityDraft(old => ({ ...old, twoFactor: e.target.value }))}><option value="">Choose status</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></div>
-          <div className="field"><label htmlFor="security-funding-code">Funding Code</label><input id="security-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={8} placeholder="Enter funding code" value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
+          {fundingCodeSet && <div className="field"><label htmlFor="security-current-funding-code">Current Funding Code</label><input id="security-current-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={4} placeholder="Enter current 4-digit code" value={securityDraft.currentFundingCode} onChange={e => setSecurityDraft(old => ({ ...old, currentFundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} /></div>}
+          <div className="field"><label htmlFor="security-funding-code">{fundingCodeSet ? 'New 4-digit Funding Code' : '4-digit Funding Code'}</label><input id="security-funding-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder={fundingCodeSet ? 'Enter new 4-digit code' : 'Create a 4-digit code'} value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} /></div>
         </div>
-        <p className="kh-identity-help">These fields are interface-only for now. Do not enter real passwords, access codes, or funding codes until the related secure account flows are connected.</p>
-        <div className="kh-identity-section-save"><span>Account-protection actions are not connected yet.</span><button type="button" className="submit-button" onClick={() => { setNotice('Account security settings are not connected yet. No changes were saved.'); setNoticeOk(false); }}>Save Security Settings</button></div>
+        <p className="kh-identity-help">Funding Code is connected to ApiKingshall and saved in Neon as a one-way hash. Password, KUI, Security Code, Access Code, and 2FA remain interface-only and are not saved by this section.</p>
+        <div className="kh-identity-section-save"><span>{fundingCodeSet ? 'Enter your current code to replace it.' : 'Choose a code you can remember; it will not be stored as plain text.'}</span><button type="button" className="submit-button" disabled={savingFundingCode || securityDraft.fundingCode.length !== 4 || (fundingCodeSet && securityDraft.currentFundingCode.length !== 4)} onClick={saveFundingCode}>{savingFundingCode ? <LoadingDots /> : fundingCodeSet ? 'Update Funding Code' : 'Save Funding Code'}</button></div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
