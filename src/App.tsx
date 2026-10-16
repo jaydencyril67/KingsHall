@@ -72,10 +72,12 @@ export default function App() {
   }
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (busy) return; setBusy(true); say('');
-    const f = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const f = new FormData(form);
     try {
       if (mode === 'request') {
         const data = await api('/api/access/request', { name: f.get('name'), email: f.get('email'), purpose: f.get('purpose') });
+        form.reset();
         say(data.message || 'Your access request has been sent for review.', true);
       } else if (mode === 'review') {
         const token = new URLSearchParams(window.location.search).get('token') || '';
