@@ -301,7 +301,7 @@ export default function StoryImageCropModal({ imageUrl, onCancel, onDone, title 
     <div role="dialog" aria-modal="true" aria-label={title} className="social-story-crop-overlay">
       <header className="social-story-crop-header">
         <button type="button" onClick={onCancel} disabled={saving} aria-label="Cancel photo edit">×</button>
-        <button type="button" onClick={() => void saveCrop()} disabled={!ready || saving} aria-label="Apply crop">{saving ? "…" : ✓}</button>
+        <button type="button" onClick={() => void saveCrop()} disabled={!ready || saving} aria-label="Apply crop">{saving ? "…" : "✓"}</button>
       </header>
       <div className="social-story-crop-stage">
         <div
