@@ -504,7 +504,6 @@ export default function IdentityPage({ user }: Props) {
       <form className="kh-identity-form" onSubmit={event => event.preventDefault()}>
         <section className="kh-identity-card kh-identity-personal">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
-          <fieldset className="kh-identity-editable-fields" disabled={!personalEditing}>
           <div className="kh-identity-photo-stack">
             <div className="kh-identity-cover-frame">
               <button type="button" className="kh-identity-cover-trigger" aria-label="Cover photo actions" aria-expanded={coverActionsOpen} onClick={() => { setCoverActionsOpen(open => !open); setPhotoActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={coverBusy || photoBusy}>
@@ -532,6 +531,7 @@ export default function IdentityPage({ user }: Props) {
             <input ref={photoInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'profile')} />
             <input ref={coverInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'cover')} />
           </div>
+          <fieldset className="kh-identity-editable-fields" disabled={!personalEditing}>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required /></div>
             <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
