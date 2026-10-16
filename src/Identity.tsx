@@ -134,10 +134,6 @@ function cooldownDaysRemaining(changedAt: string | null | undefined, days: numbe
   const remaining = new Date(changedAt).getTime() + days * 86400000 - Date.now();
   return remaining > 0 ? Math.ceil(remaining / 86400000) : 0;
 }
-function splitName(value: string | undefined) {
-  const parts = (value || '').trim().split(/\s+/).filter(Boolean);
-  return { firstName: parts[0] || '', middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '', lastName: parts.length > 1 ? parts[parts.length - 1] : '' };
-}
 function capitalizeNameInput(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value;
 }
