@@ -427,7 +427,8 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (!profile.email || (!emailAlreadyVerified && emailStatus !== 'available')) {
+    const emailUnchanged = savedProfileRef.current?.email?.trim().toLowerCase() === profile.email.trim().toLowerCase();
+    if (!profile.email || (!emailUnchanged && !emailAlreadyVerified && emailStatus !== 'available')) {
       setNotice(emailStatus === 'invalid' ? 'Enter a valid email address.' : emailStatus === 'unsupported' ? 'Please use an email address from an accepted email provider.' : emailStatus === 'taken' ? 'That email address is already in use.' : emailStatus === 'checking' ? 'Please wait while we check your email address.' : emailStatus === 'error' ? 'Could not verify your email address. Try again.' : 'Enter an email address from an accepted provider and wait for its check.');
       setNoticeOk(false);
       return false;
@@ -442,7 +443,8 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (!profile.nationality || !regionOptions.length || !selectedRegionIsValid) {
+    const regionUnchanged = savedProfileRef.current?.state === profile.state && savedProfileRef.current?.nationality === profile.nationality;
+    if (!regionUnchanged && (!profile.nationality || !regionOptions.length || !selectedRegionIsValid)) {
       setNotice(!profile.nationality ? 'Select your nationality first.' : !regionOptions.length ? 'No region options are available for this nationality. Please contact support before saving your personal details.' : 'Select a valid state or region for your nationality.');
       setNoticeOk(false);
       return false;
