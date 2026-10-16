@@ -73,7 +73,7 @@ export default function IdentityPage({ user }: Props) {
   const [code, setCode] = useState('');
   const [currentCode, setCurrentCode] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
-  function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value })); }
+  function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
   useEffect(() => {
     let live = true;
     request('/api/identity').then(data => { if (live && data.profile) setProfile(data.profile); })
