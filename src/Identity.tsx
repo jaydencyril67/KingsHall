@@ -15,6 +15,21 @@ type IdentityProfile = {
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
+/** Add ImageKit URL transformations only to URLs hosted beneath the configured ImageKit endpoint. */
+function imageKitDeliveryUrl(url: string, transformations: string, endpoint: string): string {
+  if (!url || !endpoint || !transformations) return url;
+  try {
+    const source = new URL(url);
+    const base = new URL(endpoint);
+    const basePath = base.pathname.replace(/\/+$/, '');
+    if (source.origin !== base.origin || (basePath && source.pathname !== basePath && !source.pathname.startsWith(basePath + '/'))) return url;
+    const relativePath = source.pathname.slice(basePath.length).replace(/^\/+/, '');
+    if (!relativePath) return url;
+    return base.origin + basePath + '/tr:' + transformations + '/' + relativePath + source.search + source.hash;
+  } catch {
+    return url;
+  }
+}
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
   'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
@@ -195,6 +210,7 @@ export default function IdentityPage({ user }: Props) {
   const [regionSearch, setRegionSearch] = useState('');
   const [genderOpen, setGenderOpen] = useState(false);
   const [genderSearch, setGenderSearch] = useState('');
+  const [imageKitEndpoint, setImageKitEndpoint] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
@@ -502,7 +518,8 @@ export default function IdentityPage({ user }: Props) {
     if (kind === 'profile') setPhotoBusy(true); else setCoverBusy(true);
     setNotice('');
     try {
-      const auth = await request('/api/identity/imagekit-auth') as { token?: string; signature?: string; publicKey?: string; expire?: number };
+      const auth = await request('/api/identity/imagekit-auth') as { token?: string; signature?: string; publicKey?: string; expire?: number; urlEndpoint?: string };
+      if (auth.urlEndpoint) setImageKitEndpoint(auth.urlEndpoint.replace(/\/+$/, ''));
       if (!auth.token || !auth.signature || !auth.publicKey || !auth.expire) throw new Error('Image upload authentication is incomplete. Check the KingsHall API ImageKit setup.');
       const formData = new FormData();
       formData.append('file', file, kind === 'profile' ? 'profile-picture.jpg' : 'cover-photo.jpg');
@@ -552,7 +569,7 @@ export default function IdentityPage({ user }: Props) {
           <div className="kh-identity-photo-stack">
             <div className="kh-identity-cover-frame">
               <button type="button" className="kh-identity-cover-trigger" aria-label="Cover photo actions" aria-expanded={coverActionsOpen} onClick={() => { setCoverActionsOpen(open => !open); setPhotoActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={coverBusy || photoBusy}>
-                {profile.coverPhoto ? <img src={profile.coverPhoto} alt="Your cover photo" /> : <span className="kh-identity-cover-empty"><span className="kh-photo-symbol">▧</span><small>Cover photo</small></span>}
+                {profile.coverPhoto ? <img src={imageKitDeliveryUrl(profile.coverPhoto, "w-1600,h-520,fo-auto", imageKitEndpoint)} alt="Your cover photo" /> : <span className="kh-identity-cover-empty"><span className="kh-photo-symbol">▧</span><small>Cover photo</small></span>}
                 <span className="kh-identity-cover-hint">{coverBusy ? 'Uploading…' : 'Cover photo options'}</span>
               </button>
               {coverActionsOpen && <div className="kh-photo-popout kh-photo-popout-cover" role="group" aria-label="Cover photo actions">
@@ -564,7 +581,7 @@ export default function IdentityPage({ user }: Props) {
             </div>
             <div className="kh-identity-avatar-wrap">
               <button type="button" className="kh-identity-avatar kh-identity-avatar-trigger" aria-label="Profile picture actions" aria-expanded={photoActionsOpen} onClick={() => { setPhotoActionsOpen(open => !open); setCoverActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={photoBusy || coverBusy}>
-                {profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}
+                {profile.avatarData ? <img src={imageKitDeliveryUrl(profile.avatarData, "w-320,h-320,fo-auto", imageKitEndpoint)} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}
               </button>
               {photoActionsOpen && <div className="kh-photo-popout kh-photo-popout-avatar" role="group" aria-label="Profile picture actions">
                 <button type="button" onClick={() => { setPhotoActionsOpen(false); photoInputRef.current?.click(); }}><span>↑</span> Upload</button>
