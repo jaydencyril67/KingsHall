@@ -548,34 +548,8 @@ export default function IdentityPage({ user }: Props) {
           <div className="kh-identity-section-save"><span>Every social field is optional. Save only the social links in this section.</span><button className="submit-button" type="button" onClick={saveSocials} disabled={savingSocials || saving || savingPersonal}>{savingSocials ? 'Saving social links…' : 'Save Socials'}</button></div>
         </section>
         
-        <section className="kh-identity-card">
-          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="wallet" /></span><div><h2>Wallets</h2><p>Save receiving addresses by network. KingsHall stores addresses only; it never needs your seed phrase or private key.</p></div></div>
-          <div className="kh-identity-wallets">
-            {profile.wallets.map((wallet, index) => <div className="kh-identity-wallet" key={wallet.id}>
-              <div className="kh-identity-wallet-title"><strong>Wallet {index + 1}</strong><button type="button" onClick={() => setProfile(old => ({ ...old, wallets: old.wallets.filter(item => item.id !== wallet.id) }))}>Remove</button></div>
-              <div className="kh-identity-grid">
-                <div className="field"><label htmlFor={'wallet-label-' + wallet.id}>Label <span className="optional">(optional)</span></label><input id={'wallet-label-' + wallet.id} maxLength={40} placeholder="e.g. Main USDT wallet" value={wallet.label} onChange={e => patchWallet(wallet.id, 'label', e.target.value)} /></div>
-                <div className="field"><label htmlFor={'wallet-network-' + wallet.id}>Network</label><select id={'wallet-network-' + wallet.id} value={wallet.network} onChange={e => patchWallet(wallet.id, 'network', e.target.value)}>{NETWORKS.map(network => <option key={network} value={network}>{network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network}</option>)}</select></div>
-                <div className="field kh-identity-span"><label htmlFor={'wallet-address-' + wallet.id}>Wallet address</label><input id={'wallet-address-' + wallet.id} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={wallet.address} onChange={e => patchWallet(wallet.id, 'address', e.target.value)} /></div>
-              </div>
-            </div>)}
-          </div>
-          <button className="secondary-button kh-identity-add-wallet" type="button" disabled={profile.wallets.length >= 20} onClick={() => setProfile(old => ({ ...old, wallets: [...old.wallets, newWallet()] }))}>+ Add wallet address</button>
-        </section>
         <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving || savingPersonal || savingSocials}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
       </form>
-      <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Enter or edit these fields here for now. Security settings will be connected to their proper account-protection flows in a later step.</p></div></div>
-        <div className="kh-identity-grid kh-identity-security-fields">
-          <div className="field"><label htmlFor="identity-password">Password</label><input id="identity-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
-          <div className="field"><label htmlFor="identity-kui">KUI (6-digit KingsHall Unique ID)</label><input id="identity-kui" inputMode="numeric" autoComplete="off" maxLength={6} pattern="[0-9]{0,6}" placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
-          <div className="field"><label htmlFor="identity-security-code">Security Code</label><input id="identity-security-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Enter security code" value={securityDraft.securityCode} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
-          <div className="field"><label htmlFor="identity-access-code">Access Code</label><input id="identity-access-code" type="password" autoComplete="off" placeholder="Enter access code" value={securityDraft.accessCode} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value }))} /></div>
-          <div className="field"><label htmlFor="identity-two-factor">2FA</label><select id="identity-two-factor" value={securityDraft.twoFactor} onChange={e => setSecurityDraft(old => ({ ...old, twoFactor: e.target.value }))}><option value="">Choose status</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></div>
-          <div className="field"><label htmlFor="identity-funding-code">Funding Code</label><input id="identity-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={8} placeholder="Enter funding code" value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
-        </div>
-        <p className="kh-identity-help">These are editable interface fields only at this stage. Changes here are not yet saved or applied to your account security.</p>
-      </section>
       <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
     </>}
   </div>;
