@@ -1,4 +1,6 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import StoryImageCropModal from './components/StoryImageCropModal';
+import ImagePreviewModal from './components/ImagePreviewModal';
 import { Country, State } from 'country-state-city';
 import Toast from './Toast';
 
@@ -9,7 +11,7 @@ type IdentityProfile = {
   postalCode: string; nationality: string; gender: string; occupation: string; bio: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
-  avatarData: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null;
+  avatarData: string; coverPhoto: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -152,7 +154,7 @@ const blankProfile = (user: Props['user']): IdentityProfile => ({
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '', bio: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
   language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
-  avatarData: '', wallets: [], securityCodeSet: false, updatedAt: null
+  avatarData: '', coverPhoto: '', wallets: [], securityCodeSet: false, updatedAt: null
 });
 async function request(path: string, body?: unknown) {
   const makeRequest = (token: string | null) => fetch(API + path, {
@@ -217,6 +219,16 @@ export default function IdentityPage({ user }: Props) {
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [photoCropSource, setPhotoCropSource] = useState<string | null>(null);
+  const [coverCropSource, setCoverCropSource] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [photoActionsOpen, setPhotoActionsOpen] = useState(false);
+  const [coverActionsOpen, setCoverActionsOpen] = useState(false);
+  const [deletePhotoConfirm, setDeletePhotoConfirm] = useState<'profile' | 'cover' | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   const parsedDobForStatus = parseDobInput(dobInput);
@@ -346,7 +358,7 @@ export default function IdentityPage({ user }: Props) {
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook, xHandle: profile.xHandle,
         telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
         language: profile.language, timeZone: profile.timeZone, preferredCurrency: profile.preferredCurrency,
-        pronouns: profile.pronouns, relationshipStatus: profile.relationshipStatus, wallets: profile.wallets
+        pronouns: profile.pronouns, relationshipStatus: profile.relationshipStatus, wallets: profile.wallets, coverPhoto: profile.coverPhoto
       });
       if (data.profile) { setProfile(data.profile); setDobInput(formatDobInput(data.profile.dateOfBirth)); }
       setNotice(data.message || 'Your identity has been saved.'); setNoticeOk(true);
@@ -368,11 +380,11 @@ export default function IdentityPage({ user }: Props) {
         phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
         address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
         gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
-        avatarData: saved.avatarData || '',
+        avatarData: saved.avatarData || '', coverPhoto: saved.coverPhoto || '',
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook,
         xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
         language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
-        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || [], coverPhoto: saved.coverPhoto || '', coverPhoto: saved.coverPhoto || ''
       });
       const savedProfile = data.profile;
       if (savedProfile) {
@@ -438,7 +450,7 @@ export default function IdentityPage({ user }: Props) {
         phone: profile.phone, country: saved.country || '', state: profile.state,
         city: saved.city || '', address: saved.address || '', postalCode: profile.postalCode,
         nationality: profile.nationality, gender: profile.gender, occupation: saved.occupation || '',
-        bio: profile.bio, avatarData: profile.avatarData,
+        bio: profile.bio, avatarData: profile.avatarData, coverPhoto: profile.coverPhoto,
         website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
         xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
         linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
@@ -467,13 +479,81 @@ export default function IdentityPage({ user }: Props) {
       setSavingPersonal(false);
     }
   }
-  async function uploadPhoto(event: ChangeEvent<HTMLInputElement>) {
+  function selectPhoto(event: ChangeEvent<HTMLInputElement>, kind: 'profile' | 'cover') {
     const file = event.target.files?.[0]; event.target.value = '';
     if (!file) return;
-    setPhotoBusy(true); setNotice('');
-    try { update('avatarData', await preparePhoto(file)); setNotice('Photo ready. Save your identity to keep it.'); setNoticeOk(true); }
-    catch (error) { setNotice((error as Error).message || 'Could not load that photo.'); setNoticeOk(false); }
-    finally { setPhotoBusy(false); }
+    if (!file.type.startsWith('image/')) { setNotice('Choose an image file.'); setNoticeOk(false); return; }
+    if (file.size > 10 * 1024 * 1024) { setNotice('Choose an image smaller than 10 MB.'); setNoticeOk(false); return; }
+    const source = URL.createObjectURL(file);
+    if (kind === 'profile') setPhotoCropSource(source); else setCoverCropSource(source);
+    setNotice('');
+  }
+  async function uploadCroppedPhoto(file: File, kind: 'profile' | 'cover') {
+    const source = kind === 'profile' ? photoCropSource : coverCropSource;
+    if (source) URL.revokeObjectURL(source);
+    setPhotoCropSource(null); setCoverCropSource(null);
+    if (kind === 'profile') setPhotoBusy(true); else setCoverBusy(true);
+    setNotice('');
+    try {
+      const auth = await request('/api/media/imagekit-auth') as { token?: string; signature?: string; publicKey?: string; expire?: number };
+      if (!auth.token || !auth.signature || !auth.publicKey || !auth.expire) throw new Error('Image upload authentication is incomplete. Check the KingsHall API ImageKit setup.');
+      const formData = new FormData();
+      formData.append('file', file, kind === 'profile' ? 'profile-picture.jpg' : 'cover-photo.jpg');
+      formData.append('fileName', `kingshall-${kind}-${profile.id || 'member'}-${Date.now()}.jpg`);
+      formData.append('publicKey', auth.publicKey); formData.append('token', auth.token);
+      formData.append('signature', auth.signature); formData.append('expire', String(auth.expire));
+      formData.append('useUniqueFileName', 'true');
+      const uploaded = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: formData });
+      const result = await uploaded.json().catch(() => ({})) as { url?: string; message?: string };
+      if (!uploaded.ok || !result.url) throw new Error(result.message || 'ImageKit could not upload this photo.');
+      const latest = await request('/api/identity');
+      const saved = latest.profile || profile;
+      const payload = {
+        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
+        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
+        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
+        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
+        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
+        avatarData: kind === 'profile' ? result.url : (saved.avatarData || ''),
+        coverPhoto: kind === 'cover' ? result.url : (saved.coverPhoto || ''),
+        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
+        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
+        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
+        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
+        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+      };
+      const response = await request('/api/identity', payload);
+      if (response.profile) setProfile(old => ({ ...old, ...response.profile }));
+      else update(kind === 'profile' ? 'avatarData' : 'coverPhoto', result.url);
+      setNotice(kind === 'profile' ? 'Profile picture updated.' : 'Cover photo updated.'); setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not upload this photo.'); setNoticeOk(false);
+    } finally { setPhotoBusy(false); setCoverBusy(false); }
+  }
+  async function deletePhoto(kind: 'profile' | 'cover') {
+    setDeletePhotoConfirm(null); setPhotoActionsOpen(false); setCoverActionsOpen(false);
+    try {
+      const latest = await request('/api/identity');
+      const saved = latest.profile || profile;
+      const payload = {
+        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
+        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
+        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
+        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
+        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
+        avatarData: kind === 'profile' ? '' : (saved.avatarData || ''),
+        coverPhoto: kind === 'cover' ? '' : (saved.coverPhoto || ''),
+        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
+        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
+        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
+        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
+        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+      };
+      const response = await request('/api/identity', payload);
+      if (response.profile) setProfile(old => ({ ...old, ...response.profile }));
+      else update(kind === 'profile' ? 'avatarData' : 'coverPhoto', '');
+      setNotice(kind === 'profile' ? 'Profile picture removed.' : 'Cover photo removed.'); setNoticeOk(true);
+    } catch (error) { setNotice((error as Error).message || 'Could not remove this photo.'); setNoticeOk(false); }
   }
   const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
@@ -490,10 +570,32 @@ export default function IdentityPage({ user }: Props) {
       <form className="kh-identity-form" onSubmit={save}>
         <section className="kh-identity-card kh-identity-personal">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
-          <div className="kh-identity-avatar-row">
-            <div className="kh-identity-avatar">{profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}</div>
-            <div className="kh-identity-avatar-copy"><strong>Profile photo</strong><small>Square or portrait image · automatically resized</small><label className="kh-identity-upload">{photoBusy ? 'Preparing photo…' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={photoBusy} /></label></div>
-            {profile.avatarData && <button className="kh-identity-remove-photo" type="button" onClick={() => update('avatarData', '')}>Remove</button>}
+          <div className="kh-identity-photo-stack">
+            <div className="kh-identity-cover-frame">
+              <button type="button" className="kh-identity-cover-trigger" aria-label="Cover photo actions" aria-expanded={coverActionsOpen} onClick={() => { setCoverActionsOpen(open => !open); setPhotoActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={coverBusy || photoBusy}>
+                {profile.coverPhoto ? <img src={profile.coverPhoto} alt="Your cover photo" /> : <span className="kh-identity-cover-empty"><span className="kh-photo-symbol">▧</span><small>Cover photo</small></span>}
+                <span className="kh-identity-cover-hint">{coverBusy ? 'Uploading…' : 'Cover photo options'}</span>
+              </button>
+              {coverActionsOpen && <div className="kh-photo-popout kh-photo-popout-cover" role="group" aria-label="Cover photo actions">
+                <button type="button" onClick={() => { setCoverActionsOpen(false); coverInputRef.current?.click(); }}><span>↑</span> Upload</button>
+                <button type="button" disabled={!profile.coverPhoto} onClick={() => { setCoverActionsOpen(false); setCoverPreview(profile.coverPhoto); }}><span>◉</span> View</button>
+                <button type="button" className="is-danger" disabled={!profile.coverPhoto} onClick={() => setDeletePhotoConfirm('cover')}><span>×</span> Delete</button>
+              </div>}
+              {deletePhotoConfirm === 'cover' && <div className="kh-photo-confirm" role="alertdialog"><strong>Delete cover photo?</strong><div><button type="button" onClick={() => setDeletePhotoConfirm(null)}>Cancel</button><button type="button" className="is-danger" onClick={() => void deletePhoto('cover')}>Delete</button></div></div>}
+            </div>
+            <div className="kh-identity-avatar-wrap">
+              <button type="button" className="kh-identity-avatar kh-identity-avatar-trigger" aria-label="Profile picture actions" aria-expanded={photoActionsOpen} onClick={() => { setPhotoActionsOpen(open => !open); setCoverActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={photoBusy || coverBusy}>
+                {profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}
+              </button>
+              {photoActionsOpen && <div className="kh-photo-popout kh-photo-popout-avatar" role="group" aria-label="Profile picture actions">
+                <button type="button" onClick={() => { setPhotoActionsOpen(false); photoInputRef.current?.click(); }}><span>↑</span> Upload</button>
+                <button type="button" disabled={!profile.avatarData} onClick={() => { setPhotoActionsOpen(false); setPhotoPreview(profile.avatarData); }}><span>◉</span> View</button>
+                <button type="button" className="is-danger" disabled={!profile.avatarData} onClick={() => setDeletePhotoConfirm('profile')}><span>×</span> Delete</button>
+              </div>}
+              {deletePhotoConfirm === 'profile' && <div className="kh-photo-confirm kh-photo-confirm-avatar" role="alertdialog"><strong>Delete profile picture?</strong><div><button type="button" onClick={() => setDeletePhotoConfirm(null)}>Cancel</button><button type="button" className="is-danger" onClick={() => void deletePhoto('profile')}>Delete</button></div></div>}
+            </div>
+            <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={event => selectPhoto(event, 'profile')} />
+            <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={event => selectPhoto(event, 'cover')} />
           </div>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required /></div>
@@ -547,6 +649,11 @@ export default function IdentityPage({ user }: Props) {
       </form>
       <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
     </>}
+
+      {photoCropSource && <StoryImageCropModal imageUrl={photoCropSource} title="Edit profile photo" aspectRatio={1} onCancel={() => { URL.revokeObjectURL(photoCropSource); setPhotoCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'profile')} />}
+      {coverCropSource && <StoryImageCropModal imageUrl={coverCropSource} title="Edit cover photo" aspectRatio={3} onCancel={() => { URL.revokeObjectURL(coverCropSource); setCoverCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'cover')} />}
+      {photoPreview && <ImagePreviewModal imageUrl={photoPreview} onClose={() => setPhotoPreview(null)} />}
+      {coverPreview && <ImagePreviewModal imageUrl={coverPreview} onClose={() => setCoverPreview(null)} />}
   </div>;
 }
 function FeatureIconPlaceholder({ type }: { type: 'person' | 'wallet' | 'lock' }) {
