@@ -547,7 +547,8 @@ export default function IdentityPage({ user }: Props) {
   const nationalityDaysLeft = cooldownDaysRemaining(profile.nationalityChangedAt, 7);
   const phoneDaysLeft = cooldownDaysRemaining(profile.phoneChangedAt, 7);
   const postalDaysLeft = cooldownDaysRemaining(profile.postalCodeChangedAt, 7);
-  const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
+  const storedPhoneCode = phoneDaysLeft > 0 ? Object.values(CALLING_CODES).sort((a, b) => b.length - a.length).find(code => profile.phone.startsWith(code)) : '';
+  const phoneCallingCode = storedPhoneCode || CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
     ? profile.phone.slice(phoneCallingCode.length).trim()
     : profile.phone;
