@@ -440,8 +440,8 @@ input,textarea{font-size:12px}
 .social-image-modal-download-spinner{width:17px;height:17px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:kh-username-spin .65s linear infinite}
 @media(max-width:480px){.kh-identity-cover-frame{height:144px;margin-top:-14px}.kh-identity-photo-stack{max-width:100%}.kh-identity-avatar-wrap{bottom:-27px;width:126px;height:126px}.kh-identity-avatar-trigger{width:126px!important;height:126px!important;min-width:126px;min-height:126px}.kh-photo-popout button{min-width:58px;padding:6px 7px}.social-story-crop-frame{max-width:92vw}}
 
-/* Local data loading: keep page structure visible while fetched values arrive. */
-.kh-identity-inline-loading{display:flex;align-items:center;justify-content:center;min-height:24px;margin:8px 0 12px;color:var(--theme-primary-hover,#b8c7ff)}
+/* Keep loading feedback beside the specific data section, as in CryBots. */
+.kh-identity-section-loading{display:inline-flex;align-items:center;vertical-align:middle;margin-left:8px;color:var(--theme-primary-hover,currentColor)}
 .submit-button .worldscope-dot-loader,.secondary-button .worldscope-dot-loader{margin-right:5px;vertical-align:middle}
 
 /* Identity fields stay visually stable while locked; section actions toggle edit mode. */
