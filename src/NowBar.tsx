@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react';
 
 type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
-type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY') => void; onExit: () => void };
+type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY' | 'SECURITY') => void; onExit: () => void };
 
 const actions: { label: Section; icon: string }[] = [
   { label: 'HOME', icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6' },
@@ -79,7 +79,7 @@ export default function NowBar({ section, onNavigate }: Props) {
   const activate = (label: Section) => {
     try { window.localStorage.setItem(STORAGE_KEY, label); } catch {}
     resetIdle();
-    if (label !== 'HOME' && label !== 'IDENTITY') return;
+    if (label !== 'HOME' && label !== 'IDENTITY' && label !== 'SECURITY') return;
     if (label === section) {
       setView('title');
       setMode('compact');
@@ -167,7 +167,7 @@ export default function NowBar({ section, onNavigate }: Props) {
                   aria-label={action.label}
                   onClick={() => {
                     if (holdTriggered.current) { holdTriggered.current = false; return; }
-                    if (action.label === 'HOME' || action.label === 'IDENTITY') activate(action.label);
+                    if (action.label === 'HOME' || action.label === 'IDENTITY' || action.label === 'SECURITY') activate(action.label);
                   }}
                 >
                   <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
