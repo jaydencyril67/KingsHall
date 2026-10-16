@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="721" viewBox="0 0 720 721">
 <rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>
+<circle id="launch-logo-disc" cx="360" cy="360.5" r="282" fill="#151515" stroke="#3A3A3A" stroke-width="10"/>
 <g transform="translate(79.2 79.3) scale(0.78)"><g id="object-1" data-name="Object 1" transform="translate(54 166)">
   <path id="object-1-1" data-name="Region 1" fill="rgb(166,166,170)" stroke="rgb(166,166,170)" stroke-width="1" d="M 269.5 0 L 272 3.5 L 271 6.5 L 272 9.5 L 271 9.5 Q 271.8 7.3 269.5 8 L 269 5.5 L 268 1.5 L 269.5 0 Z " />
   <path id="object-1-2" data-name="Region 2" fill="rgb(248,249,249)" stroke="rgb(248,249,249)" stroke-width="1" d="M 271 5 L 274 6.5 L 277 11.5 L 275.5 12 L 272.5 11 L 271 10.5 L 272 7.5 L 271 5 Z " />
