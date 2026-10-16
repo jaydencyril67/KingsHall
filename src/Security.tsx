@@ -230,6 +230,19 @@ export default function SecurityPage({ user }: Props) {
     setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false);
   }
 
+  function renderSecurityVerificationPanel(field: 'password' | 'securityCode' | 'accessCode' | 'fundingCode') {
+    if (activeSecurityField !== field) return null;
+    return <div className="kh-security-verification-panel">
+      {!verificationRequested ? <>
+        <button type="button" className="submit-button kh-security-verification-action" disabled={savingSecuritySettings} onClick={() => void requestSecurityVerification()}>{savingSecuritySettings ? <LoadingDots /> : 'Send code'}</button>
+        <button type="button" className="secondary-button kh-security-verification-action" disabled={savingSecuritySettings} onClick={cancelSecurityEdit}>Cancel</button>
+      </> : <>
+        <input className="kh-security-verification-code-input" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter 6-digit code" value={emailVerificationCode} onChange={e => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} />
+        <button type="button" className="submit-button kh-security-verification-action" disabled={savingSecuritySettings || emailVerificationCode.length !== 6} onClick={() => void saveActiveSecurityField()}>{savingSecuritySettings ? <LoadingDots /> : 'Verify'}</button>
+        <small className="kh-security-verification-help">Check your verified KingsHall email. The code expires in 10 minutes.</small>
+      </>}
+    </div>;
+  }
 
   async function startAuthenticator() {
     if (twoFactorBusy) return;
@@ -334,6 +347,7 @@ export default function SecurityPage({ user }: Props) {
               {activeSecurityField === 'password' && passwordValid && <span className="kh-security-code-check" aria-label="Password meets requirements"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}
               {securityFieldMenu === 'password' && <button type="button" className="kh-security-edit-trigger kh-security-edit-popout" onClick={event => { event.stopPropagation(); setSecurityFieldMenu(null); setActiveSecurityField('password'); setVerificationRequested(false); setEmailVerificationCode(''); setNotice(''); }}>✎ Edit</button>}
             </div>
+            {renderSecurityVerificationPanel('password')}
             {activeSecurityField === 'password' && <small className="kh-postal-feedback">12–128 characters, with uppercase, lowercase, a number and a symbol.</small>}
           </div>
           <div className="field kh-security-kui-field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} value={kui} readOnly disabled aria-disabled="true" /></div>
@@ -344,6 +358,7 @@ export default function SecurityPage({ user }: Props) {
               {securityCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}
               {securityFieldMenu === 'securityCode' && securityCodeCooldownMs <= 0 && <button type="button" className="kh-security-edit-trigger kh-security-edit-popout" onClick={event => { event.stopPropagation(); setSecurityFieldMenu(null); setActiveSecurityField('securityCode'); setSecurityDraft(old => ({ ...old, securityCode: '' })); setVerificationRequested(false); setEmailVerificationCode(''); setNotice(''); }}>✎ Edit</button>}
             </div>
+            {renderSecurityVerificationPanel('securityCode')}
             {securityCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(securityCodeCooldownMs)}.</small>}
           </div>
           <div className="field kh-security-editable-field">
@@ -353,6 +368,7 @@ export default function SecurityPage({ user }: Props) {
               {accessCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}
               {securityFieldMenu === 'accessCode' && accessCodeCooldownMs <= 0 && <button type="button" className="kh-security-edit-trigger kh-security-edit-popout" onClick={event => { event.stopPropagation(); setSecurityFieldMenu(null); setActiveSecurityField('accessCode'); setSecurityDraft(old => ({ ...old, accessCode: '' })); setVerificationRequested(false); setEmailVerificationCode(''); setNotice(''); }}>✎ Edit</button>}
             </div>
+            {renderSecurityVerificationPanel('accessCode')}
             {accessCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(accessCodeCooldownMs)}.</small>}
           </div>
           <div className="field kh-security-editable-field">
@@ -362,13 +378,11 @@ export default function SecurityPage({ user }: Props) {
               {fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}
               {securityFieldMenu === 'fundingCode' && fundingCodeCooldownMs <= 0 && <button type="button" className="kh-security-edit-trigger kh-security-edit-popout" onClick={event => { event.stopPropagation(); setSecurityFieldMenu(null); setActiveSecurityField('fundingCode'); setSecurityDraft(old => ({ ...old, fundingCode: '' })); setVerificationRequested(false); setEmailVerificationCode(''); setNotice(''); }}>✎ Edit</button>}
             </div>
+            {renderSecurityVerificationPanel('fundingCode')}
             {fundingCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(fundingCodeCooldownMs)}.</small>}
           </div>
         </div>
-        {activeSecurityField && <div className="kh-security-verification-panel">
-          {!verificationRequested ? <button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={() => void requestSecurityVerification()}>{savingSecuritySettings ? <LoadingDots /> : 'Send email verification code'}</button> : <><div className="field"><label htmlFor="security-email-verification-code">Email verification code</label><input id="security-email-verification-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter the 6-digit code" value={emailVerificationCode} onChange={e => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><small className="kh-postal-feedback">Check your verified KingsHall email. The code expires in 10 minutes.</small></div><button type="button" className="submit-button" disabled={savingSecuritySettings || emailVerificationCode.length !== 6} onClick={() => void saveActiveSecurityField()}>{savingSecuritySettings ? <LoadingDots /> : 'Verify & Save'}</button></>}
-          <button type="button" className="secondary-button" onClick={cancelSecurityEdit}>Cancel</button>
-        </div>}
+
       </section>
 
       <section className="kh-identity-card kh-identity-security">
