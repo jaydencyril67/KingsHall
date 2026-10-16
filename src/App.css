@@ -349,7 +349,7 @@ input,textarea{font-size:12px}
    Gender is last in this section, which is why it was not being covered. */
 .kh-nationality-field.is-open{z-index:60!important}
 .kh-country-field.is-open,.kh-region-field.is-open{z-index:60!important}
-.kh-country-field .kh-nationality-trigger,.kh-region-field .kh-nationality-trigger{background:linear-gradient(180deg,#171b22,#0b0d11);border-color:rgba(210,216,225,.22)}
+.kh-country-field .kh-nationality-trigger,.kh-region-field .kh-nationality-trigger{background:#090a0c;border-color:rgba(210,216,225,.15)}
 .kh-country-field .kh-nationality-popout,.kh-region-field .kh-nationality-popout{background:linear-gradient(155deg,#202734 0%,#111620 55%,#0b0e14 100%);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);box-shadow:0 20px 48px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.06)}
 .kh-country-field .kh-nationality-search,.kh-region-field .kh-nationality-search{background:#10141b;border-color:rgba(210,216,225,.2)}
 .kh-postal-input-wrap{position:relative;width:100%}
