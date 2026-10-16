@@ -50,8 +50,7 @@ export default function SecurityPage({ user }: Props) {
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', currentSecurityCode: '', accessCode: '', twoFactor: '', currentFundingCode: '', fundingCode: '' });
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
-  const [savingFundingCode, setSavingFundingCode] = useState(false);
-  const [savingSecurityCode, setSavingSecurityCode] = useState(false);
+  const [savingSecuritySettings, setSavingSecuritySettings] = useState(false);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [openNetworkId, setOpenNetworkId] = useState<string | null>(null);
@@ -97,48 +96,65 @@ export default function SecurityPage({ user }: Props) {
     setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
   }
 
-  async function saveSecurityCode() {
-    if (savingSecurityCode || securityDraft.securityCode.length < 4 || securityDraft.securityCode.length > 8) return;
-    if (securityCodeSet && (securityDraft.currentSecurityCode.length < 4 || securityDraft.currentSecurityCode.length > 8)) {
-      setNotice('Enter your current 4–8 digit security code first.'); setNoticeOk(false); return;
+  async function saveSecuritySettings() {
+    if (savingSecuritySettings) return;
+    const wantsSecurityCode = securityDraft.securityCode.length > 0;
+    const wantsFundingCode = securityDraft.fundingCode.length > 0;
+    if (!wantsSecurityCode && !wantsFundingCode) {
+      setNotice('Enter a new Security Code or Funding Code to save.');
+      setNoticeOk(false);
+      return;
     }
-    setSavingSecurityCode(true); setNotice('');
-    try {
-      const result = await request('/api/identity/security-code', {
-        code: securityDraft.securityCode,
-        ...(securityCodeSet ? { currentCode: securityDraft.currentSecurityCode } : {})
-      });
-      setSecurityCodeSet(Boolean(result.securityCodeSet));
-      setSecurityDraft(old => ({ ...old, currentSecurityCode: '', securityCode: '' }));
-      setNotice(result.message || 'Security code saved securely.'); setNoticeOk(true);
-    } catch (error) {
-      setNotice((error as Error).message || 'Could not save your security code.'); setNoticeOk(false);
-    } finally { setSavingSecurityCode(false); }
-  }
-
-  async function saveFundingCode() {
-    if (savingFundingCode || securityDraft.fundingCode.length !== 4) return;
-    if (fundingCodeSet && securityDraft.currentFundingCode.length !== 4) {
+    if (wantsSecurityCode && (securityDraft.securityCode.length < 4 || securityDraft.securityCode.length > 8)) {
+      setNotice('Security Code must contain 4–8 digits.');
+      setNoticeOk(false);
+      return;
+    }
+    if (wantsSecurityCode && securityCodeSet && (securityDraft.currentSecurityCode.length < 4 || securityDraft.currentSecurityCode.length > 8)) {
+      setNotice('Enter your current 4–8 digit security code first.');
+      setNoticeOk(false);
+      return;
+    }
+    if (wantsFundingCode && securityDraft.fundingCode.length !== 4) {
+      setNotice('Funding Code must contain exactly 4 digits.');
+      setNoticeOk(false);
+      return;
+    }
+    if (wantsFundingCode && fundingCodeSet && securityDraft.currentFundingCode.length !== 4) {
       setNotice('Enter your current 4-digit funding code first.');
       setNoticeOk(false);
       return;
     }
-    setSavingFundingCode(true);
+
+    setSavingSecuritySettings(true);
     setNotice('');
+    let savedAny = false;
     try {
-      const result = await request('/api/identity/funding-code', {
-        code: securityDraft.fundingCode,
-        ...(fundingCodeSet ? { currentCode: securityDraft.currentFundingCode } : {})
-      });
-      setFundingCodeSet(Boolean(result.fundingCodeSet));
-      setSecurityDraft(old => ({ ...old, currentFundingCode: '', fundingCode: '' }));
-      setNotice(result.message || 'Funding code saved securely.');
+      if (wantsSecurityCode) {
+        const result = await request('/api/identity/security-code', {
+          code: securityDraft.securityCode,
+          ...(securityCodeSet ? { currentCode: securityDraft.currentSecurityCode } : {})
+        });
+        setSecurityCodeSet(Boolean(result.securityCodeSet));
+        setSecurityDraft(old => ({ ...old, currentSecurityCode: '', securityCode: '' }));
+        savedAny = true;
+      }
+      if (wantsFundingCode) {
+        const result = await request('/api/identity/funding-code', {
+          code: securityDraft.fundingCode,
+          ...(fundingCodeSet ? { currentCode: securityDraft.currentFundingCode } : {})
+        });
+        setFundingCodeSet(Boolean(result.fundingCodeSet));
+        setSecurityDraft(old => ({ ...old, currentFundingCode: '', fundingCode: '' }));
+        savedAny = true;
+      }
+      setNotice(savedAny ? 'Security settings saved.' : 'No security code changes to save.');
       setNoticeOk(true);
     } catch (error) {
-      setNotice((error as Error).message || 'Could not save your funding code.');
+      setNotice((error as Error).message || 'Could not save security settings.');
       setNoticeOk(false);
     } finally {
-      setSavingFundingCode(false);
+      setSavingSecuritySettings(false);
     }
   }
 
@@ -192,8 +208,7 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-funding-code">{fundingCodeSet ? 'New 4-digit Funding Code' : '4-digit Funding Code'}</label><input id="security-funding-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder={fundingCodeSet ? 'Enter new 4-digit code' : 'Create a 4-digit code'} value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} /></div>
         </div>
         <p className="kh-identity-help">Security and Funding Codes are saved by ApiKingshall in Neon as secure one-way hashes. Password changes, KUI management, Access Code, and 2FA still require their dedicated account-security flows; this button will not pretend those settings were saved.</p>
-        <div className="kh-identity-section-save"><span>{securityCodeSet ? 'Enter your current security code to replace it.' : 'Security code must contain 4–8 digits.'}</span><button type="button" className="submit-button" disabled={savingSecurityCode || securityDraft.securityCode.length < 4 || (securityCodeSet && securityDraft.currentSecurityCode.length < 4)} onClick={saveSecurityCode}>{savingSecurityCode ? <LoadingDots /> : securityCodeSet ? 'Update Security Code' : 'Save Security Code'}</button></div>
-        <div className="kh-identity-section-save"><span>{fundingCodeSet ? 'Enter your current code to replace it.' : 'Choose a code you can remember; it will not be stored as plain text.'}</span><button type="button" className="submit-button" disabled={savingFundingCode || securityDraft.fundingCode.length !== 4 || (fundingCodeSet && securityDraft.currentFundingCode.length !== 4)} onClick={saveFundingCode}>{savingFundingCode ? <LoadingDots /> : fundingCodeSet ? 'Update Funding Code' : 'Save Funding Code'}</button></div>
+        <div className="kh-identity-section-save"><span>Only enter codes you want to create or change. Saved codes are stored securely as one-way hashes.</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={saveSecuritySettings}>{savingSecuritySettings ? <LoadingDots /> : 'Save Security Settings'}</button></div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
