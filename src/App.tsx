@@ -8,7 +8,7 @@ import LoadingDots from './components/LoadingDots';
 import type { FormEvent } from 'react';
 import './App.css';
 
-type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home';
+type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
 type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
@@ -53,13 +53,13 @@ function FeatureIcon({ type }: { type: 'lock' | 'apps' | 'shield' | 'chat' | 'sp
 }
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
-  const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : window.location.pathname === '/verify-email' ? 'verify' : (window.location.pathname === '/home' || window.location.pathname === '/account') ? 'home' : 'landing');
+  const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : window.location.pathname === '/verify-email' ? 'verify' : window.location.pathname === '/onboard' ? 'onboard' : window.location.pathname === '/access-review' ? 'review' : (window.location.pathname === '/home' || window.location.pathname === '/account') ? 'home' : 'landing');
   const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null);
+  const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   useEffect(() => {
-    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setHomeSection(sectionFromHash()); setNotice(''); };
+    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/onboard' ? 'onboard' : p === '/access-review' ? 'review' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setReviewProcessed(false); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
     const refresh = sessionStorage.getItem('kh_refresh');
     if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
@@ -67,7 +67,7 @@ export default function App() {
   }, []);
   function say(s: string, ok = false) { setNotice(s); setSuccess(ok); }
   function navigate(next: Mode) {
-    const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : (next === 'account' || next === 'home') ? '/home' : '/';
+    const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : next === 'onboard' ? '/onboard' : next === 'review' ? '/access-review' : (next === 'account' || next === 'home') ? '/home' : '/';
     setMode(next); setPath(route); setNotice(''); go(route);
   }
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -75,8 +75,24 @@ export default function App() {
     const f = new FormData(e.currentTarget);
     try {
       if (mode === 'request') {
-        // Deliberately frontend-only until the access-request API is designed.
-        say('Your form is ready. Access requests are not being sent yet; this page will be connected to the server later.', true);
+        const data = await api('/api/access/request', { name: f.get('name'), email: f.get('email'), purpose: f.get('purpose') });
+        say(data.message || 'Your access request has been sent for review.', true);
+      } else if (mode === 'review') {
+        const token = new URLSearchParams(window.location.search).get('token') || '';
+        const decision = new URLSearchParams(window.location.search).get('decision') || '';
+        if (!token || !['accept', 'reject'].includes(decision)) throw new Error('This access review link is invalid.');
+        const data = await api('/api/access/review', { token, decision });
+        setReviewProcessed(true);
+        say(data.message || 'Your decision has been recorded.', true);
+      } else if (mode === 'onboard') {
+        const token = new URLSearchParams(window.location.search).get('token') || '';
+        const password = String(f.get('password') || '');
+        const confirmation = String(f.get('confirmPassword') || '');
+        if (password !== confirmation) throw new Error('Your passwords do not match.');
+        if (!token) throw new Error('This onboarding link is missing or invalid.');
+        const data = await api('/api/access/complete', { token, password });
+        navigate('login');
+        say(data.message || 'Your KingsHall account has been created. You can now sign in.', true);
       } else if (mode === 'verify') {
         const data = await api('/api/auth/verify-email', { email: verifyEmail, code: f.get('code') });
         navigate('login'); say(data.message || 'Email verified. You can sign in.', true);
@@ -108,7 +124,7 @@ export default function App() {
     try { await api('/api/auth/logout', { refreshToken }); } catch {}
     clear(); setUser(null); setBusy(false); navigate('landing'); say('You have signed out.', true);
   }
-  const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/account' && path !== '/home');
+  const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/onboard' && path !== '/access-review' && path !== '/account' && path !== '/home');
   function navigateHomeSection(section: HomeSection) {
     setHomeSection(section);
     const hash = `#${section.toLowerCase()}`;
