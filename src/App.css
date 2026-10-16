@@ -307,6 +307,8 @@ input,textarea{font-size:12px}
 /* Compact username availability icons inside the input */
 .kh-username-input-wrap{position:relative;width:100%}
 .kh-username-input-wrap>input{width:100%;padding-right:39px}
+.kh-email-input-wrap{position:relative;width:100%}
+.kh-email-input-wrap>input{width:100%;padding-right:39px}
 .kh-username-indicator{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none}
 .kh-username-spinner{width:13px;height:13px;border:1.5px solid rgba(205,212,222,.25);border-top-color:#dce2ea;border-radius:50%;animation:kh-username-spin .65s linear infinite}
 .kh-username-check{width:18px;height:18px;stroke:#73d69a;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
