@@ -54,7 +54,7 @@ async function request(path: string, body?: unknown) {
       } catch { /* Keep the original API response so the user receives a useful error. */ }
     }
   }
-  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean };
+  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
@@ -84,7 +84,23 @@ export default function IdentityPage({ user }: Props) {
   const [noticeOk, setNoticeOk] = useState(false);
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
+  useEffect(() => {
+    const username = profile.username;
+    if (loading || username.length < 3 || !/^[a-z0-9]{3,24}$/.test(username)) {
+      setUsernameStatus('idle');
+      return;
+    }
+    let current = true;
+    setUsernameStatus('checking');
+    const timer = window.setTimeout(() => {
+      request('/api/identity/username-availability?username=' + encodeURIComponent(username))
+        .then(data => { if (current) setUsernameStatus(data.available ? 'available' : 'taken'); })
+        .catch(() => { if (current) setUsernameStatus('error'); });
+    }, 350);
+    return () => { current = false; window.clearTimeout(timer); };
+  }, [profile.username, loading, user?.id]);
   useEffect(() => {
     let live = true;
     request('/api/identity').then(data => { if (live && data.profile) setProfile(data.profile); })
@@ -142,7 +158,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required /></div>
             <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
             <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', capitalizeNameInput(e.target.value))} required /></div>
-            <div className="field"><label htmlFor="identity-username">KingsHall username</label><input id="identity-username" type="text" maxLength={24} pattern="[a-z0-9]*" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.username} onChange={e => update('username', e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())} /></div>
+            <div className="field"><label htmlFor="identity-username">KingsHall username</label><input id="identity-username" type="text" minLength={3} maxLength={24} pattern="[a-z0-9]{3,24}" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.username} onChange={e => update('username', e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())} required />{profile.username.length > 0 && <small className={`kh-username-status is-${usernameStatus}`} aria-live="polite">{usernameStatus === 'checking' ? <><span className="kh-username-spinner" aria-hidden="true" />Checking availability…</> : usernameStatus === 'available' ? <><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3 8 3.1 3.1L13 4.5" /></svg>Username available</> : usernameStatus === 'taken' ? 'That username is already taken.' : usernameStatus === 'error' ? 'Could not check availability. Try again.' : profile.username.length < 3 ? 'Use at least 3 letters or numbers.' : ''}</small>}</div>
             <div className="field"><label htmlFor="identity-email">Email address</label><input id="identity-email" type="email" maxLength={254} autoComplete="email" value={profile.email} onChange={e => update('email', e.target.value)} /><small className="kh-identity-help">{profile.emailVerified ? 'Currently verified. Email verification controls will be added in the security pass.' : 'Email verification is pending.'}</small></div>
           </div>
           <div className="kh-identity-grid">
