@@ -379,8 +379,8 @@ export default function IdentityPage({ user }: Props) {
   async function verifyEmailChange(): Promise<void> {
     const email = emailChangePending.trim().toLowerCase();
     const code = emailChangeCode.trim();
-    if (!email || !/^\\d{6}$/.test(code) || verifyingEmailCode || savingPersonal || savingSocials) {
-      if (!/^\\d{6}$/.test(code)) { setNotice('Enter the six-digit code sent to your new email address.'); setNoticeOk(false); }
+    if (!email || !/^\d{6}$/.test(code) || verifyingEmailCode || savingPersonal || savingSocials) {
+      if (!/^\d{6}$/.test(code)) { setNotice('Enter the six-digit code sent to your new email address.'); setNoticeOk(false); }
       return;
     }
     setVerifyingEmailCode(true);
