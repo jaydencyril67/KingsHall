@@ -106,7 +106,7 @@ export default function App() {
   const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/account' && path !== '/home');
   function navigateHomeSection(section: HomeSection) {
     setHomeSection(section);
-    if (section === 'IDENTITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'SECURITY' ? 'kh-home-security' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
