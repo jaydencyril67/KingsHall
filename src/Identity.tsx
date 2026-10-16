@@ -13,7 +13,6 @@ type IdentityProfile = {
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
-const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
   'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
@@ -218,7 +217,6 @@ export default function IdentityPage({ user }: Props) {
   const [savingSocials, setSavingSocials] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
-  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [photoBusy, setPhotoBusy] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
@@ -377,13 +375,14 @@ export default function IdentityPage({ user }: Props) {
         language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
         pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
       });
-      if (data.profile) {
+      const savedProfile = data.profile;
+      if (savedProfile) {
         setProfile(old => ({
           ...old,
-          website: data.profile.website || '', instagram: data.profile.instagram || '',
-          facebook: data.profile.facebook || '', xHandle: data.profile.xHandle || '',
-          telegram: data.profile.telegram || '', discord: data.profile.discord || '',
-          linkedin: data.profile.linkedin || ''
+          website: savedProfile.website || '', instagram: savedProfile.instagram || '',
+          facebook: savedProfile.facebook || '', xHandle: savedProfile.xHandle || '',
+          telegram: savedProfile.telegram || '', discord: savedProfile.discord || '',
+          linkedin: savedProfile.linkedin || ''
         }));
       }
       setNotice(data.message || 'Social links saved. All social fields are optional.');
@@ -476,9 +475,6 @@ export default function IdentityPage({ user }: Props) {
     try { update('avatarData', await preparePhoto(file)); setNotice('Photo ready. Save your identity to keep it.'); setNoticeOk(true); }
     catch (error) { setNotice((error as Error).message || 'Could not load that photo.'); setNoticeOk(false); }
     finally { setPhotoBusy(false); }
-  }
-  function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
-    setProfile(old => ({ ...old, wallets: old.wallets.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet) }));
   }
   const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
