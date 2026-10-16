@@ -122,6 +122,7 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-funding-code">Funding Code</label><input id="security-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={8} placeholder="Enter funding code" value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
         </div>
         <p className="kh-identity-help">These fields are interface-only for now. Do not enter real passwords, access codes, or funding codes until the related secure account flows are connected.</p>
+        <div className="kh-identity-section-save"><span>Account-protection actions are not connected yet.</span><button type="button" className="submit-button" onClick={() => { setNotice('Account security settings are not connected yet. No changes were saved.'); setNoticeOk(false); }}>Save Security Settings</button></div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
