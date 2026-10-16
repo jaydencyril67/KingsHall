@@ -220,6 +220,7 @@ export default function IdentityPage({ user }: Props) {
   const [loading, setLoading] = useState(true);
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalEditing, setPersonalEditing] = useState(false);
+  const [personalBound, setPersonalBound] = useState(false);
   const [savingSocials, setSavingSocials] = useState(false);
 
   useEffect(() => {
@@ -244,7 +245,6 @@ export default function IdentityPage({ user }: Props) {
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, []);
-  const [socialEditing, setSocialEditing] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -375,7 +375,7 @@ export default function IdentityPage({ user }: Props) {
   }, [profile.email, loading, user?.id]);
   useEffect(() => {
     let live = true;
-    request('/api/identity').then(data => { if (live && data.profile) { setProfile(data.profile); savedProfileRef.current = { ...data.profile }; savedEmailRef.current = data.profile.email || ''; setDobInput(formatDobInput(data.profile.dateOfBirth)); } })
+    request('/api/identity').then(data => { if (live && data.profile) { setProfile(data.profile); savedProfileRef.current = { ...data.profile }; savedEmailRef.current = data.profile.email || ''; setDobInput(formatDobInput(data.profile.dateOfBirth)); const bound = Boolean(data.profile.dateOfBirth); setPersonalBound(bound); setPersonalEditing(!bound); } })
       .catch(error => { if (live) { setProfile(blankProfile(user)); setDobInput(''); setNotice(error.message || 'Could not load your identity.'); setNoticeOk(false); } })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
@@ -522,6 +522,8 @@ export default function IdentityPage({ user }: Props) {
       }
       setNotice(data.message || 'Personal details saved.');
       setNoticeOk(true);
+      setPersonalBound(true);
+      setPersonalEditing(false);
       return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save your personal details.');
@@ -628,7 +630,7 @@ export default function IdentityPage({ user }: Props) {
             <input ref={photoInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'profile')} />
             <input ref={coverInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'cover')} />
           </div>
-          <fieldset className="kh-identity-editable-fields" disabled={!personalEditing}>
+          <fieldset className="kh-identity-editable-fields" disabled={!personalEditing || loading || personalBound}>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" disabled={namesDaysLeft > 0} maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required />{personalEditing && namesDaysLeft > 0 && <small className="kh-postal-feedback">All three name fields unlock in {namesDaysLeft} day(s).</small>}</div>
             <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" disabled={namesDaysLeft > 0} maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
@@ -662,11 +664,11 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-identity-span"><label htmlFor="identity-bio">Bio <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
           </fieldset>
-          <div className="kh-identity-section-save"><span>{personalEditing ? 'Edit your details, then save to lock them again.' : 'Your personal details are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!personalEditing) { setPersonalEditing(true); setNotice(''); } else void savePersonal().then(saved => { if (saved) setPersonalEditing(false); }); }} disabled={savingPersonal || savingSocials}>{savingPersonal ? <LoadingDots /> : personalEditing ? 'Save Personal' : 'Edit Personal'}</button></div>
+          {!personalBound && <div className="kh-identity-section-save"><span>Bind your personal details once. After the first successful save, they stay locked.</span><button className="submit-button" type="button" onClick={() => void savePersonal()} disabled={savingPersonal || savingSocials || loading}>{savingPersonal ? <LoadingDots /> : 'Save Personal'}</button></div>}
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
-          <fieldset className="kh-identity-editable-fields" disabled={!socialEditing}>
+          <fieldset className="kh-identity-editable-fields">
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-website">Website</label><input id="identity-website" type="url" maxLength={240} placeholder="https://…" value={profile.website} onChange={e => update('website', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-instagram">Instagram</label><input id="identity-instagram" maxLength={100} placeholder="@username or profile URL" value={profile.instagram} onChange={e => update('instagram', e.target.value)} /></div>
@@ -677,7 +679,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
           </fieldset>
-          <div className="kh-identity-section-save"><span>{socialEditing ? 'Edit your links, then save to lock them again.' : 'Your social links are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!socialEditing) { setSocialEditing(true); setNotice(''); } else void saveSocials().then(saved => { if (saved) setSocialEditing(false); }); }} disabled={savingSocials || savingPersonal}>{savingSocials ? <LoadingDots /> : socialEditing ? 'Save Socials' : 'Edit Socials'}</button></div>
+          <div className="kh-identity-section-save"><span>Social links stay editable. Save to update the links stored in your KingsHall account.</span><button className="submit-button" type="button" onClick={() => void saveSocials()} disabled={savingSocials || savingPersonal || loading}>{savingSocials ? <LoadingDots /> : 'Save Socials'}</button></div>
         </section>
         
       </form>
