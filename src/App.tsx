@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import NowBar from './NowBar';
 import IdentityPage from './Identity';
+import Toast from './Toast';
 import type { FormEvent } from 'react';
 import './App.css';
 
@@ -148,7 +149,7 @@ export default function App() {
           <h1>Your digital <em>home base.</em></h1>
           <p className="kh-home-intro">Your KingsHall identity, device account, and ecosystem entry points — together in one place.</p>
         </div>
-        {notice && <div className={success ? 'notice notice-success kh-home-notice' : 'notice kh-home-notice'} role="status" aria-live="polite">{notice}</div>}
+
         <section className="kh-home-overview" aria-label="Account overview">
           <article className="kh-home-card kh-home-identity" id="kh-home-identity">
             <div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="shield" /></span><span className="kh-home-tag">IDENTITY ACTIVE</span></div>
@@ -190,7 +191,7 @@ export default function App() {
         <div className="card-top"><span className="card-symbol"><FeatureIcon type={mode === 'request' ? 'apps' : mode === 'verify' ? 'shield' : 'lock'} /></span><span className="secure"><i />{mode === 'request' ? 'REQUEST FORM' : mode === 'account' ? 'SIGNED IN' : 'KINGSHALL ACCESS'}</span></div>
         <h2>{mode === 'login' ? 'Sign in' : mode === 'request' ? 'Request access' : mode === 'verify' ? 'Email verification' : `Welcome, ${user?.name?.split(' ')[0] || 'back'}`}</h2>
         <p className="card-subtitle">{mode === 'login' ? 'Use your existing KingsHall credentials.' : mode === 'request' ? 'All fields below are for your access request.' : mode === 'verify' ? 'Enter the code from your email.' : 'You are signed in to KingsHall.'}</p>
-        {notice && <div className={success ? 'notice notice-success' : 'notice'} role="status" aria-live="polite">{notice}</div>}
+
         {mode === 'login' && <form onSubmit={submit}><div className="field"><label htmlFor="login-identity">Email or username</label><input id="login-identity" name="identity" autoComplete="username" placeholder="Enter your email or username" required /></div><div className="field"><label htmlFor="login-password">Password</label><input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? 'Please wait…' : 'Sign In'} <ArrowIcon /></button><p className="form-footnote">New here? <button type="button" onClick={() => navigate('request')}>Request access</button></p></form>}
         {mode === 'request' && <form onSubmit={submit}><div className="field"><label htmlFor="request-name">Full name</label><input id="request-name" name="name" autoComplete="name" minLength={2} maxLength={80} placeholder="Your full name" required /></div><div className="field"><label htmlFor="request-username">Preferred username</label><input id="request-username" name="username" autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_.]+" placeholder="Choose a username" required /></div><div className="field"><label htmlFor="request-email">Email address</label><input id="request-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" required /></div><div className="field"><label htmlFor="request-purpose">What interests you about KingsHall? <span className="optional">(optional)</span></label><textarea id="request-purpose" name="purpose" rows={3} maxLength={500} placeholder="Tell us what you hope to explore…" /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? 'Please wait…' : 'Submit Request'} <ArrowIcon /></button></form>}
         {mode === 'verify' && <><form onSubmit={submit}><div className="field"><label htmlFor="verify-code">Six-digit code</label><input id="verify-code" name="code" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="one-time-code" placeholder="000000" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Verify Email'} <ArrowIcon /></button></form><button className="text-button" type="button" disabled={busy} onClick={resend}>Resend verification code</button></>}
@@ -199,5 +200,6 @@ export default function App() {
       </section>
     </section>}
     <footer className="footer"><span>© {new Date().getFullYear()} KingsHall</span><span><FeatureIcon type="shield" /> Identity · Access · Ecosystem</span></footer>
+    <Toast message={notice} tone={success ? 'success' : 'error'} onClose={() => setNotice('')} />
   </main>;
 }
