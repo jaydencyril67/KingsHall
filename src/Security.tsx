@@ -51,6 +51,7 @@ export default function SecurityPage({ user }: Props) {
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
   const [savingSecuritySettings, setSavingSecuritySettings] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
@@ -97,6 +98,33 @@ export default function SecurityPage({ user }: Props) {
 
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
+  }
+
+  const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
+
+  async function updatePassword() {
+    if (savingPassword) return;
+    if (!passwordValid) {
+      setNotice('Password must be 12–128 characters and include uppercase, lowercase, a number and a symbol.');
+      setNoticeOk(false);
+      return;
+    }
+    setSavingPassword(true);
+    setNotice('');
+    try {
+      const result = await request('/api/auth/change-password', {
+        password: securityDraft.password,
+        refreshToken: sessionStorage.getItem('kh_refresh') || ''
+      });
+      setSecurityDraft(old => ({ ...old, password: '' }));
+      setNotice(result.message || 'Password updated successfully.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not update your password.');
+      setNoticeOk(false);
+    } finally {
+      setSavingPassword(false);
+    }
   }
 
   async function saveSecuritySettings() {
@@ -173,7 +201,7 @@ export default function SecurityPage({ user }: Props) {
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security</h2><p>Manage your account security settings below.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
-          <div className="field"><label htmlFor="security-password">Password</label><input id="security-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
+          <div className="field kh-security-password-field"><label htmlFor="security-password">Password</label><div className="kh-security-code-input-wrap"><input id="security-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} placeholder="Enter a new password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} />{passwordValid && <span className="kh-security-code-check" aria-label="Password meets requirements"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div><small className="kh-postal-feedback">12–128 characters, with uppercase, lowercase, a number and a symbol.</small><button type="button" className="submit-button kh-security-password-save" disabled={!passwordValid || savingPassword} onClick={() => void updatePassword()}>{savingPassword ? <LoadingDots /> : 'Update Password'}</button></div>
           <div className="field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
           <div className="field"><label htmlFor="security-code">8-digit Security Code</label><div className="kh-security-code-input-wrap"><input id="security-code" type={securityCodeSet && focusedCodeField !== 'security' && !securityDraft.securityCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Create an 8-digit code" value={securityDraft.securityCode || (securityCodeSet && focusedCodeField !== 'security' ? '*'.repeat(8) : '')} onFocus={() => setFocusedCodeField('security')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} />{securityCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           <div className="field"><label htmlFor="security-access-code">6-digit Access Code</label><div className="kh-security-code-input-wrap"><input id="security-access-code" type={accessCodeSet && focusedCodeField !== 'access' && !securityDraft.accessCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={6} placeholder="Create a 6-digit code" value={securityDraft.accessCode || (accessCodeSet && focusedCodeField !== 'access' ? '*'.repeat(6) : '')} onFocus={() => setFocusedCodeField('access')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} />{accessCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
