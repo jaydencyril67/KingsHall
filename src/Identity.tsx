@@ -182,7 +182,7 @@ async function request(path: string, body?: unknown) {
       } catch { /* Keep the original API response so the user receives a useful error. */ }
     }
   }
-  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean };
+  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean; token?: string; signature?: string; publicKey?: string; expire?: number };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
@@ -489,25 +489,11 @@ export default function IdentityPage({ user }: Props) {
       const uploaded = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: formData });
       const result = await uploaded.json().catch(() => ({})) as { url?: string; message?: string };
       if (!uploaded.ok || !result.url) throw new Error(result.message || 'ImageKit could not upload this photo.');
-      const latest = await request('/api/identity');
-      const saved = latest.profile || profile;
-      const payload = {
-        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
-        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
-        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
-        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
-        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
-        avatarData: kind === 'profile' ? result.url : (saved.avatarData || ''),
-        coverPhoto: kind === 'cover' ? result.url : (saved.coverPhoto || ''),
-        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
-        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
-        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
-        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
-        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
-      };
-      const response = await request('/api/identity', payload);
-      if (response.profile) setProfile(old => ({ ...old, ...response.profile }));
-      else update(kind === 'profile' ? 'avatarData' : 'coverPhoto', result.url);
+      const savedResponse = await request('/api/identity/photos', {
+        avatarData: kind === 'profile' ? result.url : (profile.avatarData || ''),
+        coverPhoto: kind === 'cover' ? result.url : (profile.coverPhoto || '')
+      });
+      if (savedResponse.profile) setProfile(old => ({ ...old, avatarData: savedResponse.profile!.avatarData || '', coverPhoto: savedResponse.profile!.coverPhoto || '' }));
       setNotice(kind === 'profile' ? 'Profile picture updated.' : 'Cover photo updated.'); setNoticeOk(true);
     } catch (error) {
       setNotice((error as Error).message || 'Could not upload this photo.'); setNoticeOk(false);
@@ -516,25 +502,11 @@ export default function IdentityPage({ user }: Props) {
   async function deletePhoto(kind: 'profile' | 'cover') {
     setDeletePhotoConfirm(null); setPhotoActionsOpen(false); setCoverActionsOpen(false);
     try {
-      const latest = await request('/api/identity');
-      const saved = latest.profile || profile;
-      const payload = {
-        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
-        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
-        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
-        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
-        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
-        avatarData: kind === 'profile' ? '' : (saved.avatarData || ''),
-        coverPhoto: kind === 'cover' ? '' : (saved.coverPhoto || ''),
-        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
-        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
-        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
-        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
-        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
-      };
-      const response = await request('/api/identity', payload);
-      if (response.profile) setProfile(old => ({ ...old, ...response.profile }));
-      else update(kind === 'profile' ? 'avatarData' : 'coverPhoto', '');
+      const savedResponse = await request('/api/identity/photos', {
+        avatarData: kind === 'profile' ? '' : (profile.avatarData || ''),
+        coverPhoto: kind === 'cover' ? '' : (profile.coverPhoto || '')
+      });
+      if (savedResponse.profile) setProfile(old => ({ ...old, avatarData: savedResponse.profile!.avatarData || '', coverPhoto: savedResponse.profile!.coverPhoto || '' }));
       setNotice(kind === 'profile' ? 'Profile picture removed.' : 'Cover photo removed.'); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Could not remove this photo.'); setNoticeOk(false); }
   }
