@@ -80,6 +80,7 @@ export default function IdentityPage({ user }: Props) {
   const [noticeOk, setNoticeOk] = useState(false);
   const [code, setCode] = useState('');
   const [currentCode, setCurrentCode] = useState('');
+  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [photoBusy, setPhotoBusy] = useState(false);
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
   useEffect(() => {
@@ -203,21 +204,16 @@ export default function IdentityPage({ user }: Props) {
         <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
       </form>
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Your KingsHall account protection methods. Individual setup and editing controls will be connected in the security pass.</p></div></div>
-        <div className="kh-identity-security-list">
-          <div className="kh-identity-security-item"><div><strong>Password</strong><small>Account sign-in password</small></div><span className="kh-identity-code-status">SIGN-IN</span></div>
-          <div className="kh-identity-security-item"><div><strong>KUI</strong><small>6-digit KingsHall Unique ID</small></div><span className="kh-identity-code-status">NOT ASSIGNED</span></div>
-          <div className="kh-identity-security-item"><div><strong>Security Code</strong><small>Extra code for sensitive actions</small></div><span className="kh-identity-code-status">{profile.securityCodeSet ? 'SET' : 'NOT SET'}</span></div>
-          <div className="kh-identity-security-item"><div><strong>Access Code</strong><small>Additional access verification</small></div><span className="kh-identity-code-status">NOT SET</span></div>
-          <div className="kh-identity-security-item"><div><strong>2FA</strong><small>Two-factor authentication</small></div><span className="kh-identity-code-status">NOT ENABLED</span></div>
-          <div className="kh-identity-security-item"><div><strong>Funding Code</strong><small>Confirmation for funding actions</small></div><span className="kh-identity-code-status">NOT SET</span></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Enter or edit these fields here for now. Security settings will be connected to their proper account-protection flows in a later step.</p></div></div>
+        <div className="kh-identity-grid kh-identity-security-fields">
+          <div className="field"><label htmlFor="identity-password">Password</label><input id="identity-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
+          <div className="field"><label htmlFor="identity-kui">KUI (6-digit KingsHall Unique ID)</label><input id="identity-kui" inputMode="numeric" autoComplete="off" maxLength={6} pattern="[0-9]{0,6}" placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\\D/g, '').slice(0, 6) }))} /></div>
+          <div className="field"><label htmlFor="identity-security-code">Security Code</label><input id="identity-security-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Enter security code" value={securityDraft.securityCode} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\\D/g, '').slice(0, 8) }))} /></div>
+          <div className="field"><label htmlFor="identity-access-code">Access Code</label><input id="identity-access-code" type="password" autoComplete="off" placeholder="Enter access code" value={securityDraft.accessCode} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value }))} /></div>
+          <div className="field"><label htmlFor="identity-two-factor">2FA</label><select id="identity-two-factor" value={securityDraft.twoFactor} onChange={e => setSecurityDraft(old => ({ ...old, twoFactor: e.target.value }))}><option value="">Choose status</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></div>
+          <div className="field"><label htmlFor="identity-funding-code">Funding Code</label><input id="identity-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={8} placeholder="Enter funding code" value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\\D/g, '').slice(0, 8) }))} /></div>
         </div>
-        <div className="kh-identity-security-code-head"><h3>Security Code Setup</h3><p>Stored as a one-way password hash, never as readable digits.</p></div>
-        <form onSubmit={saveCode}>
-          {profile.securityCodeSet && <div className="field"><label htmlFor="identity-current-code">Current security code</label><input id="identity-current-code" type="password" inputMode="numeric" autoComplete="current-password" pattern="[0-9]{4,8}" minLength={4} maxLength={8} value={currentCode} onChange={e => setCurrentCode(e.target.value)} required /></div>}
-          <div className="field"><label htmlFor="identity-new-code">{profile.securityCodeSet ? 'New security code' : 'Create security code'}</label><input id="identity-new-code" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{4,8}" minLength={4} maxLength={8} value={code} onChange={e => setCode(e.target.value)} placeholder="4–8 digits" required /></div>
-          <button className="secondary-button" type="submit">{profile.securityCodeSet ? 'Update security code' : 'Set security code'}</button>
-        </form>
+        <p className="kh-identity-help">These are editable interface fields only at this stage. Changes here are not yet saved or applied to your account security.</p>
       </section>
       <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
     </>}
