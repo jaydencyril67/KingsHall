@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react';
 
 type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
-type Props = { section: string; onNavigate: (section: 'HOME') => void; onExit: () => void };
+type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY') => void; onExit: () => void };
 
 const actions: { label: Section; icon: string }[] = [
   { label: 'HOME', icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6' },
@@ -79,7 +79,7 @@ export default function NowBar({ section, onNavigate }: Props) {
   const activate = (label: Section) => {
     try { window.localStorage.setItem(STORAGE_KEY, label); } catch {}
     resetIdle();
-    if (label !== 'HOME') return;
+    if (label !== 'HOME' && label !== 'IDENTITY') return;
     if (label === section) {
       setView('title');
       setMode('compact');
@@ -87,7 +87,7 @@ export default function NowBar({ section, onNavigate }: Props) {
     }
     setView('title');
     setMode('compact');
-    onNavigate('HOME');
+    onNavigate(label);
   };
 
   const finishSwipe = (event: TouchEvent<HTMLDivElement>) => {
@@ -162,12 +162,12 @@ export default function NowBar({ section, onNavigate }: Props) {
               <div className={`kh-nowbar-slot ${mode === 'expanded' ? 'is-expanded' : ''}`} key={action.label}>
                 <button
                   data-nowbar-label={action.label}
-                  className={`kh-nowbar-action ${action.label === 'HOME' ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
+                  className={`kh-nowbar-action ${action.label === section ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
                   type="button"
                   aria-label={action.label}
                   onClick={() => {
                     if (holdTriggered.current) { holdTriggered.current = false; return; }
-                    if (action.label === 'HOME') activate('HOME');
+                    if (action.label === 'HOME' || action.label === 'IDENTITY') activate(action.label);
                   }}
                 >
                   <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
