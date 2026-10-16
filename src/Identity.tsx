@@ -393,14 +393,14 @@ export default function IdentityPage({ user }: Props) {
       setEmailChangeCode('');
       setNotice(data.message || 'Email verified successfully. Saving your personal details…');
       setNoticeOk(true);
-      await savePersonal();
+      await savePersonal(true);
     } catch (error) {
       setNotice((error as Error).message || 'Could not verify the new email address.');
       setNoticeOk(false);
     } finally { setVerifyingEmailCode(false); }
   }
 
-  async function savePersonal(): Promise<boolean> {
+  async function savePersonal(emailAlreadyVerified = false): Promise<boolean> {
     if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
     if (!profile.firstName.trim() || !profile.lastName.trim() ||
@@ -420,7 +420,7 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (!profile.email || emailStatus !== 'available') {
+    if (!profile.email || (!emailAlreadyVerified && emailStatus !== 'available')) {
       setNotice(emailStatus === 'invalid' ? 'Enter a valid email address.' : emailStatus === 'unsupported' ? 'Please use an email address from an accepted email provider.' : emailStatus === 'taken' ? 'That email address is already in use.' : emailStatus === 'checking' ? 'Please wait while we check your email address.' : emailStatus === 'error' ? 'Could not verify your email address. Try again.' : 'Enter an email address from an accepted provider and wait for its check.');
       setNoticeOk(false);
       return false;
