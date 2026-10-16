@@ -540,6 +540,7 @@ export default function IdentityPage({ user }: Props) {
       setNotice(kind === 'profile' ? 'Profile picture removed.' : 'Cover photo removed.'); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Could not remove this photo.'); setNoticeOk(false); }
   }
+  const usernameDaysLeft = cooldownDaysRemaining(profile.usernameChangedAt, 30);
   const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
     ? profile.phone.slice(phoneCallingCode.length).trim()
