@@ -8,7 +8,7 @@ import LoadingDots from './components/LoadingDots';
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
   id: string; firstName: string; middleName: string; lastName: string; username: string; email: string; emailVerified: boolean; memberSince: string;
-  dateOfBirth: string; phone: string; country: string; state: string; city: string; address: string;
+  dateOfBirth: string; phone: string; phoneVerified: boolean; country: string; state: string; city: string; address: string;
   postalCode: string; nationality: string; gender: string; occupation: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
@@ -141,7 +141,7 @@ function formatDobInput(isoDate: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(isoDate || '');
   return match ? match[3] + '/' + match[2] + '/' + match[1] : '';
 }
-function parseDobInput(value: string): string | null {
+function normalizePhone(value: string): string {\n  const digits = value.replace(/\\D/g, '');\n  return digits ? '+' + digits : '';\n}\nfunction parseDobInput(value: string): string | null {
   if (!value.trim()) return '';
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
   if (!match) return null;
@@ -167,7 +167,7 @@ function isAdultDob(isoDate: string): boolean {
 }
 const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', firstName: '', middleName: '', lastName: '', username: user?.username || '', email: user?.email || '',
-  emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
+  emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', phoneVerified: false, country: '',
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
   language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
@@ -290,7 +290,7 @@ export default function IdentityPage({ user }: Props) {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   const [emailChangePending, setEmailChangePending] = useState('');
   const [emailChangeCode, setEmailChangeCode] = useState('');
-  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);
+  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);\n  const [phoneVerificationCode, setPhoneVerificationCode] = useState('');\n  const [phoneCodeSentFor, setPhoneCodeSentFor] = useState('');\n  const [phoneVerifiedFor, setPhoneVerifiedFor] = useState('');\n  const [sendingPhoneCode, setSendingPhoneCode] = useState(false);\n  const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
   const savedEmailRef = useRef('');
   const savedProfileRef = useRef<IdentityProfile | null>(null);
   const parsedDobForStatus = parseDobInput(dobInput);
@@ -425,6 +425,57 @@ export default function IdentityPage({ user }: Props) {
     } finally { setVerifyingEmailCode(false); }
   }
 
+  async function sendPhoneVerificationCode(): Promise<void> {
+    const phone = normalizePhone(profile.phone);
+    if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) {
+      setNotice('Enter a valid mobile number with its country calling code first.');
+      setNoticeOk(false);
+      return;
+    }
+    if (sendingPhoneCode || verifyingPhoneCode || savingPersonal || savingSocials) return;
+    setSendingPhoneCode(true);
+    setNotice('');
+    try {
+      const data = await request('/api/identity/phone-verification/request', { phone });
+      if (data.verified) {
+        setPhoneVerifiedFor(phone);
+        setPhoneCodeSentFor('');
+        setPhoneVerificationCode('');
+      } else {
+        setPhoneCodeSentFor(phone);
+        setPhoneVerificationCode('');
+      }
+      setNotice(data.message || 'A WhatsApp verification code has been sent.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not send the WhatsApp verification code.');
+      setNoticeOk(false);
+    } finally { setSendingPhoneCode(false); }
+  }
+
+  async function verifyPhoneVerificationCode(): Promise<void> {
+    const phone = normalizePhone(profile.phone);
+    const code = phoneVerificationCode.trim();
+    if (!/^\\d{6}$/.test(code)) {
+      setNotice('Enter the six-digit code sent to your WhatsApp.');
+      setNoticeOk(false);
+      return;
+    }
+    if (phone !== phoneCodeSentFor || verifyingPhoneCode || sendingPhoneCode || savingPersonal || savingSocials) return;
+    setVerifyingPhoneCode(true);
+    setNotice('');
+    try {
+      const data = await request('/api/identity/phone-verification/verify', { phone, code });
+      setPhoneVerifiedFor(phone);
+      setPhoneVerificationCode('');
+      setNotice(data.message || 'Phone number verified. You can now save your Personal details.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not verify this phone number.');
+      setNoticeOk(false);
+    } finally { setVerifyingPhoneCode(false); }
+  }
+
   async function savePersonal(emailAlreadyVerified = false): Promise<boolean> {
     if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
@@ -432,6 +483,14 @@ export default function IdentityPage({ user }: Props) {
         !profile.phone.trim() || !profile.nationality || !profile.state.trim() ||
         !profile.postalCode.trim()) {
       setNotice('Complete every field in the Personal section before saving.');
+      setNoticeOk(false);
+      return false;
+    }
+    const normalizedPhoneDraft = normalizePhone(profile.phone);
+    const existingVerifiedPhone = Boolean(profile.phoneVerified && savedProfileRef.current &&
+      normalizePhone(savedProfileRef.current.phone) === normalizedPhoneDraft);
+    if (!existingVerifiedPhone && phoneVerifiedFor !== normalizedPhoneDraft) {
+      setNotice('Verify this mobile number through WhatsApp before saving your Personal details.');
       setNoticeOk(false);
       return false;
     }
@@ -653,7 +712,7 @@ export default function IdentityPage({ user }: Props) {
   setNationalityOpen(false);
   setNationalitySearch('');
 }}>{country}{profile.nationality === country && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{SORTED_COUNTRIES.filter(country => country.toLowerCase().includes(nationalitySearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching country found.</p>}</div></div>}</div>
-            <div className="field kh-phone-field"><label htmlFor="identity-phone">Mobile Number</label><div className="kh-phone-input-wrap"><span className="kh-phone-code" aria-label={phoneCallingCode ? 'Country calling code ' + phoneCallingCode : 'Select a nationality to set the calling code'}>{phoneCallingCode || 'Code'}</span><input id="identity-phone" type="tel" disabled={phoneDaysLeft > 0} inputMode="tel" autoComplete="tel-national" maxLength={32} placeholder={phoneCallingCode ? 'Enter your number' : 'Select nationality first'} value={phoneInputValue} onChange={e => update('phone', phoneCallingCode ? phoneCallingCode + ' ' + e.target.value.replace(/^\s+/, '') : e.target.value)} /></div>{personalEditing && phoneDaysLeft > 0 && <small className="kh-postal-feedback">Mobile number unlocks in {phoneDaysLeft} day(s).</small>}</div>
+            <div className="field kh-phone-field"><label htmlFor="identity-phone">Mobile Number</label><div className="kh-phone-input-wrap"><span className="kh-phone-code" aria-label={phoneCallingCode ? 'Country calling code ' + phoneCallingCode : 'Select a nationality to set the calling code'}>{phoneCallingCode || 'Code'}</span><input id="identity-phone" type="tel" disabled={phoneDaysLeft > 0} inputMode="tel" autoComplete="tel-national" maxLength={32} placeholder={phoneCallingCode ? 'Enter your number' : 'Select nationality first'} value={phoneInputValue} onChange={e => { const nextPhone = phoneCallingCode ? phoneCallingCode + ' ' + e.target.value.replace(/^\\s+/, '') : e.target.value; if (normalizePhone(nextPhone) !== normalizePhone(profile.phone)) { setPhoneVerificationCode(''); setPhoneCodeSentFor(''); setPhoneVerifiedFor(''); } update('phone', nextPhone); }} /></div>{personalEditing && phoneDaysLeft > 0 && <small className="kh-postal-feedback">Mobile number unlocks in {phoneDaysLeft} day(s).</small>}{personalEditing && phoneDaysLeft === 0 && <div className="kh-phone-verification">{(phoneVerifiedFor === normalizePhone(profile.phone) || (profile.phoneVerified && savedProfileRef.current && normalizePhone(savedProfileRef.current.phone) === normalizePhone(profile.phone))) ? <p className="kh-phone-verification-status is-verified"><span aria-hidden="true">✓</span> WhatsApp number verified</p> : <>{phoneCodeSentFor === normalizePhone(profile.phone) && <label htmlFor="identity-phone-verification-code">WhatsApp verification code</label>}{phoneCodeSentFor === normalizePhone(profile.phone) && <input id="identity-phone-verification-code" className="kh-phone-verification-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter 6-digit code" value={phoneVerificationCode} onChange={e => setPhoneVerificationCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} />}<div className="kh-phone-verification-actions">{phoneCodeSentFor === normalizePhone(profile.phone) ? <button type="button" className="submit-button" disabled={verifyingPhoneCode || sendingPhoneCode || phoneVerificationCode.length !== 6} onClick={() => void verifyPhoneVerificationCode()}>{verifyingPhoneCode ? 'Verifying…' : 'Verify code'}</button> : null}<button type="button" className="submit-button" disabled={sendingPhoneCode || verifyingPhoneCode || !/^\\+[1-9]\\d{7,14}$/.test(normalizePhone(profile.phone))} onClick={() => void sendPhoneVerificationCode()}>{sendingPhoneCode ? 'Sending…' : phoneCodeSentFor === normalizePhone(profile.phone) ? 'Resend code' : 'Send WhatsApp code'}</button></div></>}</div>}</div>
             <div className={`field kh-nationality-field kh-region-field${regionOpen ? ' is-open' : ''}`}><label id="identity-state-label">State / Region</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-state-label" aria-haspopup="listbox" aria-expanded={regionOpen} disabled={!profile.nationality || regionOptions.length === 0 || regionDaysLeft > 0} onClick={() => { setRegionOpen(open => !open); setRegionSearch(''); }}><span className={profile.state ? '' : 'is-placeholder'}>{profile.state || (!profile.nationality ? 'Select nationality first' : regionOptions.length ? 'Select state or region' : 'No regions available')}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{personalEditing && regionDaysLeft > 0 && <small className="kh-postal-feedback">State / Region unlocks in {regionDaysLeft} day(s).</small>}{regionOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search states or regions" placeholder="Search states or regions…" autoComplete="off" value={regionSearch} onChange={e => setRegionSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="States and regions in alphabetical order">{regionOptions.filter(region => region.toLowerCase().includes(regionSearch.trim().toLowerCase())).map(region => <button type="button" role="option" aria-selected={profile.state === region} className="kh-nationality-option" key={region} onClick={() => { update('state', region); setRegionOpen(false); setRegionSearch(''); }}>{region}{profile.state === region && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{regionOptions.filter(region => region.toLowerCase().includes(regionSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching state or region found.</p>}</div></div>}</div>
             <div className={`field kh-postal-field is-${personalEditing ? postalCodeStatus : 'idle'}`}><label htmlFor="identity-postal">Postal code</label><div className="kh-postal-input-wrap"><input id="identity-postal" disabled={postalDaysLeft > 0} maxLength={12} autoComplete="postal-code" autoCapitalize="characters" spellCheck={false} placeholder={profile.nationality === 'Nigeria' ? 'e.g. 100001' : profile.nationality === 'United States' ? 'e.g. 10001 or 10001-1234' : profile.nationality === 'United Kingdom' ? 'e.g. SW1A 1AA' : 'Postal code'} value={profile.postalCode} onChange={e => update('postalCode', e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g, '').replace(/ {2,}/g, ' ').slice(0, 12))} />{personalEditing && profile.postalCode.trim() && (postalCodeStatus === 'valid' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Postal code format valid"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : postalCodeStatus === 'invalid' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Postal code format invalid"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div>{personalEditing && postalCodeStatus === 'invalid' && <small className="kh-postal-feedback is-invalid">{postalCodeMessage}</small>}{personalEditing && postalCodeStatus === 'not-required' && <small className="kh-postal-feedback">{postalCodeMessage}</small>}{personalEditing && postalCodeStatus === 'valid' && <small className="kh-postal-feedback is-valid">{postalCodeMessage}</small>}{personalEditing && postalDaysLeft > 0 && <small className="kh-postal-feedback">Postal code unlocks in {postalDaysLeft} day(s).</small>}</div>
             <div className="field kh-nationality-field kh-gender-field"><label id="identity-gender-label">Gender</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-gender-label" aria-haspopup="listbox" aria-expanded={genderOpen} disabled={genderDaysLeft > 0} onClick={() => { setGenderOpen(open => !open); setGenderSearch(''); }}><span className={profile.gender ? '' : 'is-placeholder'}>{profile.gender || 'Select gender'}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{personalEditing && genderDaysLeft > 0 && <small className="kh-postal-feedback">Gender unlocks in {genderDaysLeft} day(s).</small>}{genderOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search gender options" placeholder="Search gender…" autoComplete="off" value={genderSearch} onChange={e => setGenderSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Gender options">{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).map(gender => <button type="button" role="option" aria-selected={profile.gender === gender} className="kh-nationality-option" key={gender} onClick={() => { update('gender', gender); setGenderOpen(false); setGenderSearch(''); }}>{gender}{profile.gender === gender && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching gender option found.</p>}</div></div>}</div>
