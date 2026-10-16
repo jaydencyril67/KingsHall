@@ -375,7 +375,7 @@ export default function IdentityPage({ user }: Props) {
   async function savePersonal(): Promise<boolean> {
     if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
-    if (!profile.firstName.trim() || !profile.middleName.trim() || !profile.lastName.trim() ||
+    if (!profile.firstName.trim() || !profile.lastName.trim() ||
         !profile.phone.trim() || !profile.nationality || !profile.state.trim() ||
         !profile.postalCode.trim()) {
       setNotice('Complete every field in the Personal section before saving.');
