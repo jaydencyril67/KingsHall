@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Toast from './Toast';
+import LoadingDots from './components/LoadingDots';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type Profile = {
@@ -103,7 +104,7 @@ export default function SecurityPage({ user }: Props) {
       <p>Manage your wallet addresses and review account-protection settings from one dedicated page.</p>
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
-    {loading ? <div className="kh-identity-loading">Loading your saved security details…</div> : <>
+    {loading && <div className="kh-identity-inline-loading" aria-live="polite"><LoadingDots /></div>}
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security</h2><p>Security settings are displayed here; the fields below are not yet connected to account-protection actions.</p></div></div>
         <div className="kh-identity-security-list">
@@ -133,10 +134,9 @@ export default function SecurityPage({ user }: Props) {
           </div>)}
         </div>
         <button className="secondary-button kh-identity-add-wallet" type="button" disabled={wallets.length >= 20} onClick={() => setWallets(old => [...old, newWallet()])}>+ Add wallet address</button>
-        <div className="kh-identity-section-save"><span>Wallet addresses are saved separately from your personal and social details.</span><button className="submit-button" type="button" onClick={saveWallets} disabled={savingWallets}>{savingWallets ? 'Saving wallets…' : 'Save Wallets'}</button></div>
+        <div className="kh-identity-section-save"><span>Wallet addresses are saved separately from your personal and social details.</span><button className="submit-button" type="button" onClick={saveWallets} disabled={savingWallets}>{savingWallets ? <><LoadingDots /> Saving wallets…</> : 'Save Wallets'}</button></div>
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
-    </>}
   </div>;
 }
 
