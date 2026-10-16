@@ -465,3 +465,10 @@ input,textarea{font-size:12px}
 /* Security page password update control */
 .kh-security-password-save{margin-top:10px;width:100%}
 .kh-security-password-field .kh-postal-feedback{display:block;margin-top:7px}
+
+.kh-two-factor-secret-row{display:flex;align-items:stretch;gap:8px;width:100%}
+.kh-two-factor-secret-row input{flex:1;min-width:0}
+.kh-copy-secret-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;min-height:42px;padding:0;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.045);color:#e9e9ed;cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.kh-copy-secret-button:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.28)}
+.kh-copy-secret-button:focus-visible{outline:2px solid rgba(210,210,220,.8);outline-offset:2px}
+.kh-copy-secret-button svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
