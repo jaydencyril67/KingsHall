@@ -271,3 +271,14 @@ input,textarea{font-size:12px}
 .kh-identity-security form .secondary-button{min-height:42px;margin:0 0 12px;font-size:11px}
 .kh-identity-footnote{margin:0;color:#858a94;font-size:10px;line-height:1.7}
 @media(max-width:560px){.kh-identity-card{padding:14px;border-radius:15px}.kh-identity-readonly-grid{grid-template-columns:1fr}.kh-identity-readonly{padding:9px 10px}.kh-identity-save-row{align-items:stretch;flex-direction:column}.kh-identity-save-row .submit-button{width:100%}.kh-identity-security form{grid-template-columns:1fr}.kh-identity-security form .secondary-button{width:100%}.kh-identity-heading h1{font-size:29px}}
+
+.kh-identity-security-list{display:grid;gap:0;margin:2px 0 18px;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
+.kh-identity-security-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.015)}
+.kh-identity-security-item:last-child{border-bottom:0}
+.kh-identity-security-item>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.kh-identity-security-item strong{font-size:11px;color:#edf0f4;font-weight:600}
+.kh-identity-security-item small{font-size:10px;line-height:1.4;color:#9296a0}
+.kh-identity-security-code-head{margin:0 0 12px;padding-top:3px}
+.kh-identity-security-code-head h3{margin:0 0 5px;color:#e9edf3;font-size:12px;font-weight:600}
+.kh-identity-security-code-head p{margin:0;color:#9296a0;font-size:10px;line-height:1.55}
+@media(max-width:380px){.kh-identity-security-item{align-items:flex-start;flex-direction:column;gap:8px}}
