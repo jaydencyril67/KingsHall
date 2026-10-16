@@ -1,19 +1,32 @@
-name: KingsHall Signed Production APK
+name: Build KingsHall Production Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      build_apk:
+        description: 'Build and publish the signed KingsHall production APK'
+        required: true
+        default: true
+        type: boolean
+      app_version:
+        description: 'KingsHall version for the APK and GitHub Release (for example 1.0.0)'
+        required: true
+        default: '1.0.0'
+        type: string
 
 permissions:
-  contents: read
+  contents: write
+  actions: read
 
 concurrency:
-  group: kingshall-android-${{ github.ref }}
+  group: kingshall-release-apk
   cancel-in-progress: true
 
 jobs:
   build-signed-release-apk:
+    if: inputs.build_apk
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -23,11 +36,27 @@ jobs:
         with:
           node-version: 20
 
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-kingshall-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-kingshall-
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
 
       - name: Verify signing secrets
         env:
@@ -48,7 +77,7 @@ jobs:
             @capacitor/assets@3.0.5 \
             sharp
 
-      - name: Build React frontend
+      - name: Verify KingsHall web build
         run: npm run build
 
       - name: Add Android wrapper
@@ -156,6 +185,41 @@ jobs:
           </resources>
           XML
 
+      - name: Set KingsHall Android version
+        env:
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          version = os.environ["APP_VERSION"].strip()
+          version_code = os.environ["APP_VERSION_CODE"]
+          if not re.fullmatch(r"\\d+\\.\\d+\\.\\d+", version):
+              raise SystemExit("APP_VERSION must use semantic version format such as 1.0.0")
+
+          path = Path("android/app/build.gradle")
+          text = path.read_text()
+          text, code_count = re.subn(
+              r"(?m)^\\s*versionCode\\s+\\d+\\s*$",
+              f"        versionCode {version_code}",
+              text,
+              count=1,
+          )
+          text, name_count = re.subn(
+              r"""(?m)^\\s*versionName\\s+["'][^"']*["']\\s*$""",
+              f'versionName "{version}"',
+              text,
+              count=1,
+          )
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Could not safely set Android versionCode and versionName")
+          path.write_text(text)
+          print(f"Configured KingsHall {version} (versionCode {version_code})")
+          PY
+
       - name: Install native KingsHall device-account provider
         run: python3 scripts/install-android-account-provider.py
 
@@ -205,12 +269,38 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon assembleRelease
+        run: ./gradlew --no-daemon --stacktrace --console=plain assembleRelease
 
-      - name: Upload signed production APK
+      - name: Prepare versioned KingsHall APK
+        env:
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          cp android/app/build/outputs/apk/release/app-release.apk KingsHall.apk
+          echo "Prepared KingsHall.apk for version ${APP_VERSION}"
+
+      - name: Upload signed production APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KingsHall-production-signed-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: KingsHall-v${{ inputs.app_version }}-signed-apk
+          path: KingsHall.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish versioned GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.app_version }}
+          name: KingsHall v${{ inputs.app_version }}
+          body: |
+            ## KingsHall v${{ inputs.app_version }}
+
+            Signed production Android APK.
+
+            - APK: `KingsHall.apk`
+            - Android version: ${{ inputs.app_version }}
+            - Android version code: ${{ github.run_number }}
+          files: KingsHall.apk
+          fail_on_unmatched_files: true
+          generate_release_notes: true
