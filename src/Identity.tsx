@@ -229,6 +229,14 @@ export default function IdentityPage({ user }: Props) {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    let active = true;
+    void request('/api/identity/imagekit-config').then((config: { urlEndpoint?: string }) => {
+      if (active && config.urlEndpoint) setImageKitEndpoint(config.urlEndpoint.replace(/\/+$/, ''));
+    }).catch(() => { /* Existing photos remain visible using their original URLs if ImageKit config is unavailable. */ });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     const closePhotoPopouts = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element) || !target.closest('.kh-identity-photo-stack')) {
