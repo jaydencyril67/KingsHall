@@ -217,14 +217,14 @@ export default function SecurityPage({ user }: Props) {
         setNotice(result.message || 'Security setting updated.');
       }
       setSecurityDraft(old => ({ ...old, [field]: '' }));
-      setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false) setNoticeOk(true);
+      setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Could not save this security setting.'); setNoticeOk(false); }
     finally { setSavingSecuritySettings(false); }
   }
 
   function cancelSecurityEdit() {
     if (activeSecurityField) setSecurityDraft(old => ({ ...old, [activeSecurityField]: '' }));
-    setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false)
+    setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false);
   }
 
 
