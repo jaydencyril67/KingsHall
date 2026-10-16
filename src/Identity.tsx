@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
-  id: string; name: string; username: string; email: string; emailVerified: boolean; memberSince: string;
+  id: string; firstName: string; middleName: string; lastName: string; username: string; email: string; emailVerified: boolean; memberSince: string;
   dateOfBirth: string; phone: string; country: string; state: string; city: string; address: string;
   postalCode: string; nationality: string; gender: string; occupation: string; bio: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
@@ -12,8 +12,12 @@ type IdentityProfile = {
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
+function splitName(value: string | undefined) {
+  const parts = (value || '').trim().split(/\\s+/).filter(Boolean);
+  return { firstName: parts[0] || '', middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '', lastName: parts.length > 1 ? parts[parts.length - 1] : '' };
+}
 const blankProfile = (user: Props['user']): IdentityProfile => ({
-  id: user?.id || '', name: user?.name || '', username: user?.username || '', email: user?.email || '',
+  id: user?.id || '', ...splitName(user?.name), username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '', bio: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
@@ -90,7 +94,7 @@ export default function IdentityPage({ user }: Props) {
     setSaving(true); setNotice('');
     try {
       const data = await request('/api/identity', {
-        name: profile.name, username: profile.username, email: profile.email,
+        firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName, username: profile.username, email: profile.email,
         dateOfBirth: profile.dateOfBirth, phone: profile.phone, country: profile.country, state: profile.state,
         city: profile.city, address: profile.address, postalCode: profile.postalCode, nationality: profile.nationality,
         gender: profile.gender, occupation: profile.occupation, bio: profile.bio, avatarData: profile.avatarData,
@@ -135,12 +139,12 @@ export default function IdentityPage({ user }: Props) {
         <section className="kh-identity-card kh-identity-personal">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
           <div className="kh-identity-avatar-row">
-            <div className="kh-identity-avatar">{profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.name || 'K').trim().charAt(0).toUpperCase()}</span>}</div>
+            <div className="kh-identity-avatar">{profile.avatarData ? <img src={profile.avatarData} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}</div>
             <div className="kh-identity-avatar-copy"><strong>Profile photo</strong><small>Square or portrait image · automatically resized</small><label className="kh-identity-upload">{photoBusy ? 'Preparing photo…' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} disabled={photoBusy} /></label></div>
             {profile.avatarData && <button className="kh-identity-remove-photo" type="button" onClick={() => update('avatarData', '')}>Remove</button>}
           </div>
           <div className="kh-identity-grid">
-            <div className="field"><label htmlFor="identity-name">Full name</label><input id="identity-name" maxLength={80} autoComplete="name" value={profile.name} onChange={e => update('name', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', e.target.value)} required /></div>\n            <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', e.target.value)} /></div>\n            <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', e.target.value)} required /></div>
             <div className="field"><label htmlFor="identity-username">KingsHall username</label><input id="identity-username" maxLength={24} autoComplete="username" value={profile.username} onChange={e => update('username', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-email">Email address</label><input id="identity-email" type="email" maxLength={254} autoComplete="email" value={profile.email} onChange={e => update('email', e.target.value)} /><small className="kh-identity-help">{profile.emailVerified ? 'Currently verified. Email verification controls will be added in the security pass.' : 'Email verification is pending.'}</small></div>
           </div>
