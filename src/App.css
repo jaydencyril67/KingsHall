@@ -438,3 +438,7 @@ input,textarea{font-size:12px}
 .social-image-modal-download-note{position:absolute;top:65px;left:12px;right:12px;z-index:4;margin:0;padding:10px;border:1px solid rgba(230,120,120,.25);border-radius:10px;background:rgba(30,15,18,.95);color:#ffd0d0;font-size:11px}
 .social-image-modal-download-spinner{width:17px;height:17px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:kh-username-spin .65s linear infinite}
 @media(max-width:480px){.kh-identity-cover-frame{height:144px;margin-top:-14px}.kh-identity-photo-stack{max-width:100%}.kh-identity-avatar-wrap{bottom:-27px;width:126px;height:126px}.kh-identity-avatar-trigger{width:126px!important;height:126px!important;min-width:126px;min-height:126px}.kh-photo-popout button{min-width:58px;padding:6px 7px}.social-story-crop-frame{max-width:92vw}}
+
+/* Local data loading: keep page structure visible while fetched values arrive. */
+.kh-identity-inline-loading{display:flex;align-items:center;justify-content:center;min-height:24px;margin:8px 0 12px;color:var(--theme-primary-hover,#b8c7ff)}
+.submit-button .worldscope-dot-loader,.secondary-button .worldscope-dot-loader{margin-right:5px;vertical-align:middle}
