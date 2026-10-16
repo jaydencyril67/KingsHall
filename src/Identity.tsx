@@ -367,7 +367,7 @@ export default function IdentityPage({ user }: Props) {
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook,
         xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
         language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
-        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || [], coverPhoto: saved.coverPhoto || '', coverPhoto: saved.coverPhoto || ''
+        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || [], coverPhoto: saved.coverPhoto || ''
       });
       const savedProfile = data.profile;
       if (savedProfile) {
@@ -532,9 +532,9 @@ export default function IdentityPage({ user }: Props) {
                 <span className="kh-identity-cover-hint">{coverBusy ? 'Uploading…' : 'Cover photo options'}</span>
               </button>
               {coverActionsOpen && <div className="kh-photo-popout kh-photo-popout-cover" role="group" aria-label="Cover photo actions">
-                <button type="button" onClick={() => { setCoverActionsOpen(false); coverInputRef.current?.click(); }}><span>↑</span> Upload</button>
-                <button type="button" disabled={!profile.coverPhoto} onClick={() => { setCoverActionsOpen(false); setCoverPreview(profile.coverPhoto); }}><span>◉</span> View</button>
-                <button type="button" className="is-danger" disabled={!profile.coverPhoto} onClick={() => setDeletePhotoConfirm('cover')}><span>×</span> Delete</button>
+                <button type="button" onClick={() => { setCoverActionsOpen(false); coverInputRef.current?.click(); }}><PhotoActionGlyph type="upload" /> Upload</button>
+                <button type="button" disabled={!profile.coverPhoto} onClick={() => { setCoverActionsOpen(false); setCoverPreview(profile.coverPhoto); }}><PhotoActionGlyph type="view" /> View</button>
+                <button type="button" className="is-danger" disabled={!profile.coverPhoto} onClick={() => setDeletePhotoConfirm('cover')}><PhotoActionGlyph type="delete" /> Delete</button>
               </div>}
               {deletePhotoConfirm === 'cover' && <div className="kh-photo-confirm" role="alertdialog"><strong>Delete cover photo?</strong><div><button type="button" onClick={() => setDeletePhotoConfirm(null)}>Cancel</button><button type="button" className="is-danger" onClick={() => void deletePhoto('cover')}>Delete</button></div></div>}
             </div>
@@ -613,5 +613,10 @@ export default function IdentityPage({ user }: Props) {
 }
 function FeatureIconPlaceholder({ type }: { type: 'person' | 'wallet' | 'lock' }) {
   const path = type === 'person' ? 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' : type === 'wallet' ? 'M4 6h15a2 2 0 0 1 2 2v11H5a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12 M16 12h5' : 'M5 10h14v11H5z M8 10V7a4 4 0 0 1 8 0v3';
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={path} /></svg>;
+}
+
+function PhotoActionGlyph({ type }: { type: 'upload' | 'view' | 'delete' }) {
+  const path = type === 'upload' ? 'M12 16V4 M7 9l5-5 5 5 M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4' : type === 'view' ? 'M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z' : 'M4 7h16 M9 7V4h6v3 M7 7l1 13h8l1-13 M10 10v7 M14 10v7';
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={path} /></svg>;
 }
