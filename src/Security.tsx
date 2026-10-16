@@ -180,12 +180,7 @@ export default function SecurityPage({ user }: Props) {
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
     {loading && <div className="kh-identity-inline-loading" aria-live="polite"><LoadingDots /></div>}
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security</h2><p>Security settings are displayed here; the fields below are not yet connected to account-protection actions.</p></div></div>
-        <div className="kh-identity-security-list">
-          <div className="kh-identity-security-item"><div><strong>Verified email</strong><small>{user?.isEmailVerified ? 'Your account email is verified.' : 'Email verification status is not confirmed.'}</small></div><span className="kh-identity-code-status">{user?.isEmailVerified ? 'VERIFIED' : 'UNVERIFIED'}</span></div>
-          <div className="kh-identity-security-item"><div><strong>Security code</strong><small>{securityCodeSet ? 'Your security code is saved securely.' : 'Create a 4–8 digit code to protect sensitive account actions.'}</small></div><span className="kh-identity-code-status">{securityCodeSet ? 'SET' : 'NOT SET'}</span></div>
-          <div className="kh-identity-security-item"><div><strong>Funding Code</strong><small>{fundingCodeSet ? 'Your four-digit funding code is saved securely.' : 'Create a four-digit code to protect funding actions.'}</small></div><span className="kh-identity-code-status">{fundingCodeSet ? 'SET' : 'NOT SET'}</span></div>
-        </div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security</h2><p>Manage your account security settings below.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field"><label htmlFor="security-password">Password</label><input id="security-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
           <div className="field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
