@@ -13,6 +13,32 @@ type IdentityProfile = {
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
+const COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
+  'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
+  'Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo','Costa Rica','Côte d’Ivoire','Croatia','Cuba','Cyprus','Czechia',
+  'Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic',
+  'Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia',
+  'Fiji','Finland','France',
+  'Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana',
+  'Haiti','Honduras','Hungary',
+  'Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy',
+  'Jamaica','Japan','Jordan',
+  'Kazakhstan','Kenya','Kiribati','Kuwait','Kyrgyzstan',
+  'Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg',
+  'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar',
+  'Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway',
+  'Oman',
+  'Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal',
+  'Qatar',
+  'Romania','Russia','Rwanda',
+  'Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','São Tomé and Príncipe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria',
+  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Türkiye','Turkmenistan','Tuvalu',
+  'Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan',
+  'Vanuatu','Vatican City','Venezuela','Vietnam',
+  'Yemen',
+  'Zambia','Zimbabwe'
+];
 function splitName(value: string | undefined) {
   const parts = (value || '').trim().split(/\s+/).filter(Boolean);
   return { firstName: parts[0] || '', middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '', lastName: parts.length > 1 ? parts[parts.length - 1] : '' };
@@ -107,6 +133,8 @@ async function preparePhoto(file: File): Promise<string> {
 export default function IdentityPage({ user }: Props) {
   const [profile, setProfile] = useState<IdentityProfile>(() => blankProfile(user));
   const [dobInput, setDobInput] = useState('');
+  const [nationalityOpen, setNationalityOpen] = useState(false);
+  const [nationalitySearch, setNationalitySearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -241,7 +269,7 @@ export default function IdentityPage({ user }: Props) {
           </div>
           <div className="kh-identity-grid">
             <div className={`field kh-dob-field is-${dobStatus}`}><label htmlFor="identity-dob">Date of birth</label><div className="kh-username-input-wrap"><input id="identity-dob" type="text" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/YYYY" maxLength={10} value={dobInput} aria-invalid={dobStatus === 'invalid' || dobStatus === 'underage'} onChange={e => { const value = maskDobInput(e.target.value); setDobInput(value); const parsed = parseDobInput(value); update('dateOfBirth', typeof parsed === 'string' ? parsed : ''); }} />{dobStatus === 'valid' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Date of birth verified: 18 or older"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : dobStatus === 'invalid' || dobStatus === 'underage' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label={dobStatus === 'underage' ? 'Must be at least 18 years old' : 'Enter a valid date of birth' }><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null}</div></div>
-            <div className="field"><label htmlFor="identity-nationality">Nationality</label><input id="identity-nationality" maxLength={80} autoComplete="country-name" placeholder="e.g. Nigerian" value={profile.nationality} onChange={e => update('nationality', e.target.value)} /></div>
+            <div className="field kh-nationality-field"><label id="identity-nationality-label">Nationality</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-nationality-label" aria-haspopup="listbox" aria-expanded={nationalityOpen} onClick={() => { setNationalityOpen(open => !open); setNationalitySearch(''); }}><span className={profile.nationality ? '' : 'is-placeholder'}>{profile.nationality || 'Select nationality'}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{nationalityOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search countries" placeholder="Search countries…" autoComplete="off" value={nationalitySearch} onChange={e => setNationalitySearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Countries in alphabetical order">{COUNTRIES.filter(country => country.toLowerCase().includes(nationalitySearch.trim().toLowerCase())).map(country => <button type="button" role="option" aria-selected={profile.nationality === country} className="kh-nationality-option" key={country} onClick={() => { update('nationality', country); setNationalityOpen(false); setNationalitySearch(''); }}>{country}{profile.nationality === country && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{COUNTRIES.filter(country => country.toLowerCase().includes(nationalitySearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching country found.</p>}</div></div>}</div>
             <div className="field"><label htmlFor="identity-phone">Phone number</label><input id="identity-phone" type="tel" autoComplete="tel" maxLength={32} placeholder="+234…" value={profile.phone} onChange={e => update('phone', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-country">Country of residence</label><input id="identity-country" maxLength={80} placeholder="Country" value={profile.country} onChange={e => update('country', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-state">State / region</label><input id="identity-state" maxLength={80} placeholder="State or region" value={profile.state} onChange={e => update('state', e.target.value)} /></div>
