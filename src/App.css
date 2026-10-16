@@ -383,3 +383,9 @@ input,textarea{font-size:12px}
   opacity:.55;
   cursor:not-allowed;
 }
+
+
+/* Dedicated Security page reuses the Identity page's compact glass cards and controls. */
+.kh-security-page .kh-identity-security-list{margin-top:0}
+.kh-security-page .kh-identity-card{scroll-margin-top:90px}
+.kh-security-page .kh-identity-section-save{margin-top:14px}
