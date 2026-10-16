@@ -352,45 +352,36 @@ export default function IdentityPage({ user }: Props) {
     setSavingSocials(true);
     setNotice('');
     try {
-      // Preserve other sections from the latest saved profile; only replace social fields.
-      const latest = await request('/api/identity');
-      const saved = latest.profile || blankProfile(user);
-      const data = await request('/api/identity', {
-        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
-        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
-        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
-        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
-        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
-        avatarData: saved.avatarData || '', coverPhoto: saved.coverPhoto || '',
+      const data = await request('/api/identity/socials', {
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook,
-        xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
-        language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
-        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+        xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin
       });
       const savedProfile = data.profile;
-      if (savedProfile) {
-        setProfile(old => ({
-          ...old,
-          website: savedProfile.website || '', instagram: savedProfile.instagram || '',
-          facebook: savedProfile.facebook || '', xHandle: savedProfile.xHandle || '',
-          telegram: savedProfile.telegram || '', discord: savedProfile.discord || '',
-          linkedin: savedProfile.linkedin || ''
-        }));
-      }
-      setNotice(data.message || 'Social links saved. All social fields are optional.');
+      if (savedProfile) setProfile(old => ({ ...old,
+        website: savedProfile.website || '', instagram: savedProfile.instagram || '',
+        facebook: savedProfile.facebook || '', xHandle: savedProfile.xHandle || '',
+        telegram: savedProfile.telegram || '', discord: savedProfile.discord || '',
+        linkedin: savedProfile.linkedin || ''
+      }));
+      setNotice(data.message || 'Social links saved.');
       setNoticeOk(true);
       return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save your social links.');
       setNoticeOk(false);
       return false;
-    } finally {
-      setSavingSocials(false);
-    }
+    } finally { setSavingSocials(false); }
   }
   async function savePersonal(): Promise<boolean> {
     if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
+    if (!profile.firstName.trim() || !profile.middleName.trim() || !profile.lastName.trim() ||
+        !profile.phone.trim() || !profile.nationality || !profile.state.trim() ||
+        !profile.postalCode.trim() || !profile.bio.trim()) {
+      setNotice('Complete every field in the Personal section before saving.');
+      setNoticeOk(false);
+      return false;
+    }
     if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
       setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
       setNoticeOk(false);
@@ -406,7 +397,7 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
-    if (profile.postalCode.trim() && postalCodeStatus === 'invalid') {
+    if (postalCodeStatus === 'invalid') {
       setNotice('Check the postal code format for your selected nationality before saving.');
       setNoticeOk(false);
       return false;
@@ -424,32 +415,19 @@ export default function IdentityPage({ user }: Props) {
     setSavingPersonal(true);
     setNotice('');
     try {
-      // Read the latest persisted profile first so this section save cannot overwrite unsaved edits in other sections.
-      const latest = await request('/api/identity');
-      const saved = latest.profile || blankProfile(user);
-      const payload = {
+      const data = await request('/api/identity/personal', {
         firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName,
-        username: profile.username, email: profile.email, dateOfBirth: parsedDob,
-        phone: profile.phone, country: saved.country || '', state: profile.state,
-        city: saved.city || '', address: saved.address || '', postalCode: profile.postalCode,
-        nationality: profile.nationality, gender: profile.gender, occupation: saved.occupation || '',
-        bio: profile.bio, avatarData: profile.avatarData, coverPhoto: profile.coverPhoto,
-        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
-        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
-        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
-        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
-        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
-      };
-      const data = await request('/api/identity', payload);
+        username: profile.username, email: profile.email, dateOfBirth: parsedDob, phone: profile.phone,
+        nationality: profile.nationality, state: profile.state, postalCode: profile.postalCode,
+        gender: profile.gender, bio: profile.bio
+      });
       const savedProfile = data.profile;
       if (savedProfile) {
-        setProfile(old => ({
-          ...old,
+        setProfile(old => ({ ...old,
           firstName: savedProfile.firstName, middleName: savedProfile.middleName, lastName: savedProfile.lastName,
           username: savedProfile.username, email: savedProfile.email, dateOfBirth: savedProfile.dateOfBirth,
           phone: savedProfile.phone, state: savedProfile.state, postalCode: savedProfile.postalCode,
-          nationality: savedProfile.nationality, gender: savedProfile.gender, bio: savedProfile.bio,
-          avatarData: savedProfile.avatarData
+          nationality: savedProfile.nationality, gender: savedProfile.gender, bio: savedProfile.bio
         }));
         setDobInput(formatDobInput(savedProfile.dateOfBirth));
       }
@@ -460,9 +438,7 @@ export default function IdentityPage({ user }: Props) {
       setNotice((error as Error).message || 'Could not save your personal details.');
       setNoticeOk(false);
       return false;
-    } finally {
-      setSavingPersonal(false);
-    }
+    } finally { setSavingPersonal(false); }
   }
   function selectPhoto(event: ChangeEvent<HTMLInputElement>, kind: 'profile' | 'cover') {
     const file = event.target.files?.[0]; event.target.value = '';
