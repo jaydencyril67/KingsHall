@@ -78,8 +78,6 @@ export default function IdentityPage({ user }: Props) {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
-  const [code, setCode] = useState('');
-  const [currentCode, setCurrentCode] = useState('');
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [photoBusy, setPhotoBusy] = useState(false);
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
@@ -116,14 +114,6 @@ export default function IdentityPage({ user }: Props) {
     try { update('avatarData', await preparePhoto(file)); setNotice('Photo ready. Save your identity to keep it.'); setNoticeOk(true); }
     catch (error) { setNotice((error as Error).message || 'Could not load that photo.'); setNoticeOk(false); }
     finally { setPhotoBusy(false); }
-  }
-  async function saveCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setNotice('');
-    try {
-      const data = await request('/api/identity/security-code', { code, currentCode });
-      setProfile(old => ({ ...old, securityCodeSet: Boolean(data.securityCodeSet) }));
-      setCode(''); setCurrentCode(''); setNotice(data.message || 'Security code saved.'); setNoticeOk(true);
-    } catch (error) { setNotice((error as Error).message || 'Could not save your security code.'); setNoticeOk(false); }
   }
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setProfile(old => ({ ...old, wallets: old.wallets.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet) }));
