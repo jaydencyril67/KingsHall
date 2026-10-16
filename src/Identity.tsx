@@ -12,7 +12,7 @@ type IdentityProfile = {
   postalCode: string; nationality: string; gender: string; occupation: string; bio: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
-  avatarData: string; coverPhoto: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null; usernameChangedAt: string | null; namesChangedAt: string | null; nationalityChangedAt: string | null; phoneChangedAt: string | null; postalCodeChangedAt: string | null;
+  avatarData: string; coverPhoto: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null; usernameChangedAt: string | null; namesChangedAt: string | null; nationalityChangedAt: string | null; phoneChangedAt: string | null; postalCodeChangedAt: string | null; regionChangedAt: string | null; genderChangedAt: string | null;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -175,7 +175,7 @@ const blankProfile = (user: Props['user']): IdentityProfile => ({
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '', bio: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
   language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
-  avatarData: '', coverPhoto: '', wallets: [], securityCodeSet: false, updatedAt: null, usernameChangedAt: null, namesChangedAt: null, nationalityChangedAt: null, phoneChangedAt: null, postalCodeChangedAt: null
+  avatarData: '', coverPhoto: '', wallets: [], securityCodeSet: false, updatedAt: null, usernameChangedAt: null, namesChangedAt: null, nationalityChangedAt: null, phoneChangedAt: null, postalCodeChangedAt: null, regionChangedAt: null, genderChangedAt: null
 });
 async function request(path: string, body?: unknown) {
   const makeRequest = (token: string | null) => fetch(API + path, {
