@@ -197,7 +197,7 @@ async function request(path: string, body?: unknown) {
       } catch { /* Keep the original API response so the user receives a useful error. */ }
     }
   }
-  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean; token?: string; signature?: string; publicKey?: string; expire?: number };
+  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean; token?: string; signature?: string; publicKey?: string; expire?: number; urlEndpoint?: string };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
@@ -230,7 +230,7 @@ export default function IdentityPage({ user }: Props) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     let active = true;
-    void request('/api/identity/imagekit-config').then((config: { urlEndpoint?: string }) => {
+    void request('/api/identity/imagekit-config').then(config => {
       if (active && config.urlEndpoint) setImageKitEndpoint(config.urlEndpoint.replace(/\/+$/, ''));
     }).catch(() => { /* Existing photos remain visible using their original URLs if ImageKit config is unavailable. */ });
     return () => { active = false; };
