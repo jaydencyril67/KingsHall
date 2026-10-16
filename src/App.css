@@ -317,22 +317,3 @@ input,textarea{font-size:12px}
 .kh-username-unavailable circle{stroke:#ef8585;stroke-width:1.5}
 @keyframes kh-username-spin{to{transform:translateY(-50%) rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.kh-username-spinner{animation:none;border-color:#dce2ea}}
-
-
-/* Identity email validation must reflect the live availability state, not a generic invalid-input style. */
-.kh-identity-page .kh-email-field.is-available .kh-email-input-wrap > input,
-.kh-identity-page .kh-email-field.is-available .kh-email-input-wrap > input:focus {
-  border-color: rgba(115,214,154,.78) !important;
-  box-shadow: 0 0 0 1px rgba(115,214,154,.12);
-}
-.kh-identity-page .kh-email-field.is-taken .kh-email-input-wrap > input,
-.kh-identity-page .kh-email-field.is-invalid .kh-email-input-wrap > input,
-.kh-identity-page .kh-email-field.is-unsupported .kh-email-input-wrap > input,
-.kh-identity-page .kh-email-field.is-error .kh-email-input-wrap > input {
-  border-color: rgba(239,133,133,.82) !important;
-  box-shadow: 0 0 0 1px rgba(239,133,133,.1);
-}
-.kh-identity-page .kh-email-field.is-checking .kh-email-input-wrap > input {
-  border-color: rgba(205,212,222,.35) !important;
-  box-shadow: none;
-}
