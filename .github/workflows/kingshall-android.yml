@@ -81,16 +81,16 @@ jobs:
             // Reuse the exact app-wide KingsHall mark, removing only its black canvas
             // so it sits cleanly inside the native splash's circular backdrop.
             const crown = Buffer.from(markSvg.replace('<rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>', ''));
-            const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#0b0b0b" stroke="#262626" stroke-width="10"/></svg>');
+            const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#151515" stroke="#3A3A3A" stroke-width="12"/></svg>');
             // Match CryBots' native splash artwork scale: keep the mark centered
             // inside a transparent 512px canvas instead of letting it fill the canvas.
             // This preserves Android 12+ system splash sizing and the legacy 213dp layout.
-            const crownLayer = await sharp(crown).resize(256, 256, { fit: 'fill' }).png().toBuffer();
+            const crownLayer = await sharp(crown).resize(208, 208, { fit: 'contain' }).png().toBuffer();
             const circleLayer = await sharp(circle).resize(256, 256, { fit: 'fill' }).png().toBuffer();
             await sharp({ create: { width: 512, height: 512, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
               .composite([
                 { input: circleLayer, left: 128, top: 128 },
-                { input: crownLayer, left: 128, top: 128 }
+                { input: crownLayer, left: 152, top: 152 }
               ])
               .png()
               .toFile('android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
