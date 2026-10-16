@@ -215,6 +215,7 @@ export default function IdentityPage({ user }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingSocials, setSavingSocials] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
@@ -355,8 +356,47 @@ export default function IdentityPage({ user }: Props) {
     } catch (error) { setNotice((error as Error).message || 'Could not save your identity.'); setNoticeOk(false); }
     finally { setSaving(false); }
   }
+
+  async function saveSocials() {
+    if (savingSocials || saving || savingPersonal) return;
+    setSavingSocials(true);
+    setNotice('');
+    try {
+      // Preserve other sections from the latest saved profile; only replace social fields.
+      const latest = await request('/api/identity');
+      const saved = latest.profile || blankProfile(user);
+      const data = await request('/api/identity', {
+        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
+        username: saved.username || '', email: saved.email || '', dateOfBirth: saved.dateOfBirth || '',
+        phone: saved.phone || '', country: saved.country || '', state: saved.state || '', city: saved.city || '',
+        address: saved.address || '', postalCode: saved.postalCode || '', nationality: saved.nationality || '',
+        gender: saved.gender || '', occupation: saved.occupation || '', bio: saved.bio || '',
+        avatarData: saved.avatarData || '',
+        website: profile.website, instagram: profile.instagram, facebook: profile.facebook,
+        xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
+        language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
+        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+      });
+      if (data.profile) {
+        setProfile(old => ({
+          ...old,
+          website: data.profile.website || '', instagram: data.profile.instagram || '',
+          facebook: data.profile.facebook || '', xHandle: data.profile.xHandle || '',
+          telegram: data.profile.telegram || '', discord: data.profile.discord || '',
+          linkedin: data.profile.linkedin || ''
+        }));
+      }
+      setNotice(data.message || 'Social links saved. All social fields are optional.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not save your social links.');
+      setNoticeOk(false);
+    } finally {
+      setSavingSocials(false);
+    }
+  }
   async function savePersonal() {
-    if (savingPersonal || saving) return;
+    if (savingPersonal || saving || savingSocials) return;
     const parsedDob = parseDobInput(dobInput);
     if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
       setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
@@ -505,6 +545,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-discord">Discord</label><input id="identity-discord" maxLength={100} placeholder="Username" value={profile.discord} onChange={e => update('discord', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
+          <div className="kh-identity-section-save"><span>Every social field is optional. Save only the social links in this section.</span><button className="submit-button" type="button" onClick={saveSocials} disabled={savingSocials || saving || savingPersonal}>{savingSocials ? 'Saving social links…' : 'Save Socials'}</button></div>
         </section>
         
         <section className="kh-identity-card">
@@ -521,7 +562,7 @@ export default function IdentityPage({ user }: Props) {
           </div>
           <button className="secondary-button kh-identity-add-wallet" type="button" disabled={profile.wallets.length >= 20} onClick={() => setProfile(old => ({ ...old, wallets: [...old.wallets, newWallet()] }))}>+ Add wallet address</button>
         </section>
-        <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving || savingPersonal}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
+        <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving || savingPersonal || savingSocials}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
       </form>
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Enter or edit these fields here for now. Security settings will be connected to their proper account-protection flows in a later step.</p></div></div>
