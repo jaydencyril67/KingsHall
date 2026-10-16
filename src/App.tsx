@@ -17,7 +17,7 @@ type KingsHallAccountPlugin = { addAccount(options: { email: string; username: s
 const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount');
 async function registerDeviceAccount(user: User) {
   if (!Capacitor.isNativePlatform()) return;
-  await DeviceAccount.addAccount({ email: user.email, username: user.username, displayName: user.name });
+  await DeviceAccount.addAccount({ email: user.email, username: user.username, displayName: user.name || user.username });
 }
 async function api(path: string, body?: unknown): Promise<Result> {
   let response: Response;
