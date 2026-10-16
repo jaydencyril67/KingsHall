@@ -197,19 +197,19 @@ jobs:
 
           version = os.environ["APP_VERSION"].strip()
           version_code = os.environ["APP_VERSION_CODE"]
-          if not re.fullmatch(r"\\d+\\.\\d+\\.\\d+", version):
+          if not re.fullmatch(r"\d+\.\d+\.\d+", version):
               raise SystemExit("APP_VERSION must use semantic version format such as 1.0.0")
 
           path = Path("android/app/build.gradle")
           text = path.read_text()
           text, code_count = re.subn(
-              r"(?m)^\\s*versionCode\\s+\\d+\\s*$",
+              r"(?m)^\s*versionCode\s+\d+\s*$",
               f"        versionCode {version_code}",
               text,
               count=1,
           )
           text, name_count = re.subn(
-              r"""(?m)^\\s*versionName\\s+["'][^"']*["']\\s*$""",
+              r"""(?m)^\s*versionName\s+["'][^"']*["']\s*$""",
               f'versionName "{version}"',
               text,
               count=1,
