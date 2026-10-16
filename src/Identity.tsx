@@ -565,7 +565,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-identity-span"><label htmlFor="identity-bio">Bio <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
           </fieldset>
-          <div className="kh-identity-section-save"><span>{personalEditing ? 'Edit your details, then save to lock them again.' : 'Your personal details are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!personalEditing) { setPersonalEditing(true); setNotice(''); } else void savePersonal().then(saved => { if (saved) setPersonalEditing(false); }); }} disabled={savingPersonal || savingSocials}>{savingPersonal ? <><LoadingDots /> Saving…</> : personalEditing ? 'Save Personal' : 'Edit Personal'}</button></div>
+          <div className="kh-identity-section-save"><span>{personalEditing ? 'Edit your details, then save to lock them again.' : 'Your personal details are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!personalEditing) { setPersonalEditing(true); setNotice(''); } else void savePersonal().then(saved => { if (saved) setPersonalEditing(false); }); }} disabled={savingPersonal || savingSocials}>{savingPersonal ? <LoadingDots /> : personalEditing ? 'Save Personal' : 'Edit Personal'}</button></div>
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
@@ -580,7 +580,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
           </fieldset>
-          <div className="kh-identity-section-save"><span>{socialEditing ? 'Edit your links, then save to lock them again.' : 'Your social links are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!socialEditing) { setSocialEditing(true); setNotice(''); } else void saveSocials().then(saved => { if (saved) setSocialEditing(false); }); }} disabled={savingSocials || savingPersonal}>{savingSocials ? <><LoadingDots /> Saving…</> : socialEditing ? 'Save Socials' : 'Edit Socials'}</button></div>
+          <div className="kh-identity-section-save"><span>{socialEditing ? 'Edit your links, then save to lock them again.' : 'Your social links are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!socialEditing) { setSocialEditing(true); setNotice(''); } else void saveSocials().then(saved => { if (saved) setSocialEditing(false); }); }} disabled={savingSocials || savingPersonal}>{savingSocials ? <LoadingDots /> : socialEditing ? 'Save Socials' : 'Edit Socials'}</button></div>
         </section>
         
       </form>
