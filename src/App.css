@@ -459,4 +459,4 @@ input,textarea{font-size:12px}
 .kh-security-code-input-wrap{position:relative;width:100%}
 .kh-security-code-input-wrap input{width:100%;padding-right:42px!important}
 .kh-security-code-check{position:absolute;right:13px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:19px;height:19px;color:#35d07f;pointer-events:none}
-.kh-security-code-check svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.kh-security-code-check svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.kh-security-code-check svg circle{stroke:currentColor;stroke-width:1.7}
