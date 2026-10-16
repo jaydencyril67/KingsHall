@@ -9,10 +9,10 @@ type Profile = {
   postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string; coverPhoto?: string;
   website?: string; instagram?: string; facebook?: string; xHandle?: string; telegram?: string; discord?: string;
   linkedin?: string; language?: string; timeZone?: string; preferredCurrency?: string; pronouns?: string;
-  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; fundingCodeSet?: boolean;
+  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; fundingCodeSet?: boolean; accessCodeSet?: boolean;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
-type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean };
+type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
@@ -47,12 +47,13 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', currentSecurityCode: '', accessCode: '', twoFactor: '', currentFundingCode: '', fundingCode: '' });
+  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', currentSecurityCode: '', accessCode: '', currentAccessCode: '', twoFactor: '', currentFundingCode: '', fundingCode: '' });
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
   const [savingSecuritySettings, setSavingSecuritySettings] = useState(false);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
+  const [accessCodeSet, setAccessCodeSet] = useState(false);
   const [openNetworkId, setOpenNetworkId] = useState<string | null>(null);
   const [networkSearch, setNetworkSearch] = useState('');
   const [notice, setNotice] = useState('');
@@ -86,6 +87,7 @@ export default function SecurityPage({ user }: Props) {
       setWallets(data.profile?.wallets || []);
       setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
       setSecurityCodeSet(Boolean(data.profile?.securityCodeSet));
+      setAccessCodeSet(Boolean(data.profile?.accessCodeSet));
     }).catch(error => {
       if (current) { setNotice((error as Error).message || 'Could not load your security details.'); setNoticeOk(false); }
     }).finally(() => { if (current) setLoading(false); });
@@ -100,62 +102,43 @@ export default function SecurityPage({ user }: Props) {
     if (savingSecuritySettings) return;
     const wantsSecurityCode = securityDraft.securityCode.length > 0;
     const wantsFundingCode = securityDraft.fundingCode.length > 0;
-    if (!wantsSecurityCode && !wantsFundingCode) {
-      setNotice('Enter a new Security Code or Funding Code to save.');
-      setNoticeOk(false);
-      return;
+    const wantsAccessCode = securityDraft.accessCode.length > 0;
+    if (!wantsSecurityCode && !wantsFundingCode && !wantsAccessCode) {
+      setNotice('Enter a new Security Code, Funding Code, or Access Code to save.'); setNoticeOk(false); return;
     }
-    if (wantsSecurityCode && (securityDraft.securityCode.length < 4 || securityDraft.securityCode.length > 8)) {
-      setNotice('Security Code must contain 4–8 digits.');
-      setNoticeOk(false);
-      return;
+    if (wantsSecurityCode && securityDraft.securityCode.length !== 8) {
+      setNotice('Security Code must contain exactly 8 digits.'); setNoticeOk(false); return;
     }
-    if (wantsSecurityCode && securityCodeSet && (securityDraft.currentSecurityCode.length < 4 || securityDraft.currentSecurityCode.length > 8)) {
-      setNotice('Enter your current 4–8 digit security code first.');
-      setNoticeOk(false);
-      return;
+    if (wantsSecurityCode && securityCodeSet && !/^\d{4,8}$/.test(securityDraft.currentSecurityCode)) {
+      setNotice('Enter your current Security Code to change it.'); setNoticeOk(false); return;
     }
     if (wantsFundingCode && securityDraft.fundingCode.length !== 4) {
-      setNotice('Funding Code must contain exactly 4 digits.');
-      setNoticeOk(false);
-      return;
+      setNotice('Funding Code must contain exactly 4 digits.'); setNoticeOk(false); return;
     }
     if (wantsFundingCode && fundingCodeSet && securityDraft.currentFundingCode.length !== 4) {
-      setNotice('Enter your current 4-digit funding code first.');
-      setNoticeOk(false);
-      return;
+      setNotice('Enter your current 4-digit Funding Code to change it.'); setNoticeOk(false); return;
     }
-
-    setSavingSecuritySettings(true);
-    setNotice('');
-    let savedAny = false;
+    if (wantsAccessCode && securityDraft.accessCode.length !== 6) {
+      setNotice('Access Code must contain exactly 6 digits.'); setNoticeOk(false); return;
+    }
+    if (wantsAccessCode && accessCodeSet && securityDraft.currentAccessCode.length !== 6) {
+      setNotice('Enter your current 6-digit Access Code to change it.'); setNoticeOk(false); return;
+    }
+    setSavingSecuritySettings(true); setNotice('');
     try {
-      if (wantsSecurityCode) {
-        const result = await request('/api/identity/security-code', {
-          code: securityDraft.securityCode,
-          ...(securityCodeSet ? { currentCode: securityDraft.currentSecurityCode } : {})
-        });
-        setSecurityCodeSet(Boolean(result.securityCodeSet));
-        setSecurityDraft(old => ({ ...old, currentSecurityCode: '', securityCode: '' }));
-        savedAny = true;
-      }
-      if (wantsFundingCode) {
-        const result = await request('/api/identity/funding-code', {
-          code: securityDraft.fundingCode,
-          ...(fundingCodeSet ? { currentCode: securityDraft.currentFundingCode } : {})
-        });
-        setFundingCodeSet(Boolean(result.fundingCodeSet));
-        setSecurityDraft(old => ({ ...old, currentFundingCode: '', fundingCode: '' }));
-        savedAny = true;
-      }
-      setNotice(savedAny ? 'Security settings saved.' : 'No security code changes to save.');
-      setNoticeOk(true);
+      const result = await request('/api/identity/security-settings', {
+        ...(wantsSecurityCode ? { securityCode: securityDraft.securityCode, ...(securityCodeSet ? { currentSecurityCode: securityDraft.currentSecurityCode } : {}) } : {}),
+        ...(wantsFundingCode ? { fundingCode: securityDraft.fundingCode, ...(fundingCodeSet ? { currentFundingCode: securityDraft.currentFundingCode } : {}) } : {}),
+        ...(wantsAccessCode ? { accessCode: securityDraft.accessCode, ...(accessCodeSet ? { currentAccessCode: securityDraft.currentAccessCode } : {}) } : {})
+      });
+      setSecurityCodeSet(Boolean(result.securityCodeSet));
+      setFundingCodeSet(Boolean(result.fundingCodeSet));
+      setAccessCodeSet(Boolean(result.accessCodeSet));
+      setSecurityDraft(old => ({ ...old, securityCode: '', currentSecurityCode: '', fundingCode: '', currentFundingCode: '', accessCode: '', currentAccessCode: '' }));
+      setNotice(result.message || 'Security settings saved successfully.'); setNoticeOk(true);
     } catch (error) {
-      setNotice((error as Error).message || 'Could not save security settings.');
-      setNoticeOk(false);
-    } finally {
-      setSavingSecuritySettings(false);
-    }
+      setNotice((error as Error).message || 'Could not save security settings.'); setNoticeOk(false);
+    } finally { setSavingSecuritySettings(false); }
   }
 
   async function saveWallets() {
@@ -201,14 +184,15 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-password">Password</label><input id="security-password" type="password" autoComplete="new-password" placeholder="Enter password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} /></div>
           <div className="field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
           {securityCodeSet && <div className="field"><label htmlFor="security-current-code">Current Security Code</label><input id="security-current-code" type="password" inputMode="numeric" autoComplete="off" maxLength={8} placeholder="Enter current security code" value={securityDraft.currentSecurityCode} onChange={e => setSecurityDraft(old => ({ ...old, currentSecurityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>}
-          <div className="field"><label htmlFor="security-code">{securityCodeSet ? 'New Security Code' : 'Security Code'}</label><input id="security-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder={securityCodeSet ? 'Enter new 4–8 digit code' : 'Create 4–8 digit code'} value={securityDraft.securityCode} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
-          <div className="field"><label htmlFor="security-access-code">Access Code</label><input id="security-access-code" type="password" autoComplete="off" placeholder="Enter access code" value={securityDraft.accessCode} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value }))} /></div>
+          <div className="field"><label htmlFor="security-code">{securityCodeSet ? 'New 8-digit Security Code' : '8-digit Security Code'}</label><input id="security-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder={securityCodeSet ? 'Enter new 8-digit code' : 'Create an 8-digit code'} value={securityDraft.securityCode} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} /></div>
+          {accessCodeSet && <div className="field"><label htmlFor="security-current-access-code">Current Access Code</label><input id="security-current-access-code" type="password" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter current 6-digit access code" value={securityDraft.currentAccessCode} onChange={e => setSecurityDraft(old => ({ ...old, currentAccessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>}
+          <div className="field"><label htmlFor="security-access-code">{accessCodeSet ? 'New 6-digit Access Code' : '6-digit Access Code'}</label><input id="security-access-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} placeholder={accessCodeSet ? 'Enter new 6-digit code' : 'Create a 6-digit code'} value={securityDraft.accessCode} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
           <div className="field"><label htmlFor="security-two-factor">2FA</label><select id="security-two-factor" value={securityDraft.twoFactor} onChange={e => setSecurityDraft(old => ({ ...old, twoFactor: e.target.value }))}><option value="">Choose status</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></div>
           {fundingCodeSet && <div className="field"><label htmlFor="security-current-funding-code">Current Funding Code</label><input id="security-current-funding-code" type="password" inputMode="numeric" autoComplete="off" maxLength={4} placeholder="Enter current 4-digit code" value={securityDraft.currentFundingCode} onChange={e => setSecurityDraft(old => ({ ...old, currentFundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} /></div>}
           <div className="field"><label htmlFor="security-funding-code">{fundingCodeSet ? 'New 4-digit Funding Code' : '4-digit Funding Code'}</label><input id="security-funding-code" type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder={fundingCodeSet ? 'Enter new 4-digit code' : 'Create a 4-digit code'} value={securityDraft.fundingCode} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} /></div>
         </div>
-        <p className="kh-identity-help">Security and Funding Codes are saved by ApiKingshall in Neon as secure one-way hashes. Password changes, KUI management, Access Code, and 2FA still require their dedicated account-security flows; this button will not pretend those settings were saved.</p>
-        <div className="kh-identity-section-save"><span>Only enter codes you want to create or change. Saved codes are stored securely as one-way hashes.</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={saveSecuritySettings}>{savingSecuritySettings ? <LoadingDots /> : 'Save Security Settings'}</button></div>
+        <p className="kh-identity-help">Security, Funding, and Access Codes are saved by ApiKingshall in Neon as secure hashes. Password changes, KUI management, and 2FA still require their dedicated account-security flows.</p>
+        <div className="kh-identity-section-save"><span>Security Code: 8 digits. Funding Code: 4 digits. Access Code: 6 digits. Enter only the codes you want to create or change.</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={saveSecuritySettings}>{savingSecuritySettings ? <LoadingDots /> : 'Save Security Settings'}</button></div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
