@@ -544,6 +544,7 @@ export default function IdentityPage({ user }: Props) {
   const namesDaysLeft = cooldownDaysRemaining(profile.namesChangedAt, 30);
   const nationalityDaysLeft = cooldownDaysRemaining(profile.nationalityChangedAt, 7);
   const phoneDaysLeft = cooldownDaysRemaining(profile.phoneChangedAt, 7);
+  const postalDaysLeft = cooldownDaysRemaining(profile.postalCodeChangedAt, 7);
   const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
     ? profile.phone.slice(phoneCallingCode.length).trim()
