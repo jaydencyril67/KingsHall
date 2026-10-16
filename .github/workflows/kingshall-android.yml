@@ -271,36 +271,48 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew --no-daemon --stacktrace --console=plain assembleRelease
 
-      - name: Prepare versioned KingsHall APK
+      - name: Verify and prepare signed KingsHall APK
         env:
           APP_VERSION: ${{ inputs.app_version }}
         run: |
           set -euo pipefail
-          test -s android/app/build/outputs/apk/release/app-release.apk
-          cp android/app/build/outputs/apk/release/app-release.apk KingsHall.apk
-          echo "Prepared KingsHall.apk for version ${APP_VERSION}"
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          cp "$APK" KingsHall.apk
+          test -s KingsHall.apk
+          sha256sum KingsHall.apk > KingsHall.apk.sha256
+          echo "Prepared signed KingsHall.apk for version ${APP_VERSION}"
+          ls -lh KingsHall.apk KingsHall.apk.sha256
 
       - name: Upload signed production APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KingsHall-v${{ inputs.app_version }}-signed-apk
-          path: KingsHall.apk
+          name: kingshall-v${{ inputs.app_version }}-release-apk
+          path: |
+            KingsHall.apk
+            KingsHall.apk.sha256
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
 
       - name: Publish versioned GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ inputs.app_version }}
-          name: KingsHall v${{ inputs.app_version }}
-          body: |
-            ## KingsHall v${{ inputs.app_version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          tag="v${APP_VERSION}"
 
-            Signed production Android APK.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists. Choose a new app_version so each APK has a unique release tag."
+            exit 1
+          fi
 
-            - APK: `KingsHall.apk`
-            - Android version: ${{ inputs.app_version }}
-            - Android version code: ${{ github.run_number }}
-          files: KingsHall.apk
-          fail_on_unmatched_files: true
-          generate_release_notes: true
+          gh release create "$tag" KingsHall.apk KingsHall.apk.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "KingsHall $APP_VERSION" \
+            --notes "KingsHall Android release $APP_VERSION.
+
+          Download KingsHall.apk and install it on Android. Android may ask you to confirm installation.
+
+          Android version code: ${{ github.run_number }}"
