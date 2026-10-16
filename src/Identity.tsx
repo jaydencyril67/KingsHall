@@ -264,6 +264,10 @@ export default function IdentityPage({ user }: Props) {
 
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
+  const [emailChangePending, setEmailChangePending] = useState('');
+  const [emailChangeCode, setEmailChangeCode] = useState('');
+  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);
+  const savedEmailRef = useRef('');
   const parsedDobForStatus = parseDobInput(dobInput);
   const dobStatus: 'idle' | 'valid' | 'invalid' | 'underage' = !dobInput ? 'idle' : parsedDobForStatus === null ? 'invalid' : parsedDobForStatus === '' ? 'idle' : isAdultDob(parsedDobForStatus) ? 'valid' : 'underage';
   const regionOptions = getRegionsForNationality(profile.nationality);
@@ -342,7 +346,7 @@ export default function IdentityPage({ user }: Props) {
   }, [profile.email, loading, user?.id]);
   useEffect(() => {
     let live = true;
-    request('/api/identity').then(data => { if (live && data.profile) { setProfile(data.profile); setDobInput(formatDobInput(data.profile.dateOfBirth)); } })
+    request('/api/identity').then(data => { if (live && data.profile) { setProfile(data.profile); savedEmailRef.current = data.profile.email || ''; setDobInput(formatDobInput(data.profile.dateOfBirth)); } })
       .catch(error => { if (live) { setProfile(blankProfile(user)); setDobInput(''); setNotice(error.message || 'Could not load your identity.'); setNoticeOk(false); } })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
@@ -372,6 +376,30 @@ export default function IdentityPage({ user }: Props) {
       return false;
     } finally { setSavingSocials(false); }
   }
+  async function verifyEmailChange(): Promise<void> {
+    const email = emailChangePending.trim().toLowerCase();
+    const code = emailChangeCode.trim();
+    if (!email || !/^\\d{6}$/.test(code) || verifyingEmailCode || savingPersonal || savingSocials) {
+      if (!/^\\d{6}$/.test(code)) { setNotice('Enter the six-digit code sent to your new email address.'); setNoticeOk(false); }
+      return;
+    }
+    setVerifyingEmailCode(true);
+    setNotice('');
+    try {
+      const data = await request('/api/identity/email-change/verify', { email, code });
+      savedEmailRef.current = email;
+      setProfile(old => ({ ...old, email, emailVerified: true }));
+      setEmailChangePending('');
+      setEmailChangeCode('');
+      setNotice(data.message || 'Email verified successfully. Saving your personal details…');
+      setNoticeOk(true);
+      await savePersonal();
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not verify the new email address.');
+      setNoticeOk(false);
+    } finally { setVerifyingEmailCode(false); }
+  }
+
   async function savePersonal(): Promise<boolean> {
     if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
@@ -412,6 +440,21 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     }
+    if (profile.email.trim().toLowerCase() !== savedEmailRef.current.trim().toLowerCase()) {
+      setSavingPersonal(true);
+      setNotice('');
+      try {
+        const sent = await request('/api/identity/email-change/request', { email: profile.email.trim().toLowerCase() });
+        setEmailChangePending(profile.email.trim().toLowerCase());
+        setEmailChangeCode('');
+        setNotice(sent.message || 'A verification code has been sent to your new email address.');
+        setNoticeOk(true);
+      } catch (error) {
+        setNotice((error as Error).message || 'Could not send an email verification code.');
+        setNoticeOk(false);
+      } finally { setSavingPersonal(false); }
+      return false;
+    }
     setSavingPersonal(true);
     setNotice('');
     try {
@@ -423,6 +466,9 @@ export default function IdentityPage({ user }: Props) {
       });
       const savedProfile = data.profile;
       if (savedProfile) {
+        savedEmailRef.current = savedProfile.email || savedEmailRef.current;
+        setEmailChangePending('');
+        setEmailChangeCode('');
         setProfile(old => ({ ...old,
           firstName: savedProfile.firstName, middleName: savedProfile.middleName, lastName: savedProfile.lastName,
           username: savedProfile.username, email: savedProfile.email, dateOfBirth: savedProfile.dateOfBirth,
@@ -537,7 +583,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
             <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', capitalizeNameInput(e.target.value))} required /></div>
             <div className={`field kh-username-field is-${personalEditing ? usernameStatus : 'idle'}`}><label htmlFor="identity-username">KingsHall username</label><div className="kh-username-input-wrap"><input id="identity-username" type="text" minLength={3} maxLength={24} pattern="[a-z0-9]{3,24}" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.username} onChange={e => update('username', e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())} required />{personalEditing && profile.username.length > 0 && (usernameStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking username availability" /> : usernameStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Username available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : usernameStatus === 'taken' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Username unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div>{personalEditing && usernameFeedback && <small className={`kh-postal-feedback ${usernameFeedbackClass}`}>{usernameFeedback}</small>}</div>
-            <div className={`field kh-email-field is-${personalEditing ? emailStatus : 'idle'}`}><label htmlFor="identity-email">Email address</label><div className="kh-email-input-wrap"><input id="identity-email" type="email" maxLength={254} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.email} onChange={e => update('email', e.target.value.toLowerCase().replace(/\s/g, ''))} required />{personalEditing && profile.email.length > 0 && (emailStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking email address" /> : emailStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email accepted and available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : ['taken', 'invalid', 'unsupported', 'error'].includes(emailStatus) ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email invalid or unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div>{personalEditing && emailFeedback && <small className={`kh-postal-feedback ${emailFeedbackClass}`}>{emailFeedback}</small>}</div>
+            <div className={`field kh-email-field is-${personalEditing ? emailStatus : 'idle'}`}><label htmlFor="identity-email">Email address</label><div className="kh-email-input-wrap"><input id="identity-email" type="email" maxLength={254} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.email} onChange={e => update('email', e.target.value.toLowerCase().replace(/\s/g, ''))} required />{personalEditing && profile.email.length > 0 && (emailStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking email address" /> : emailStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email accepted and available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : ['taken', 'invalid', 'unsupported', 'error'].includes(emailStatus) ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email invalid or unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div>{personalEditing && emailFeedback && <small className={`kh-postal-feedback ${emailFeedbackClass}`}>{emailFeedback}</small>}{personalEditing && emailChangePending === profile.email.trim().toLowerCase() && <div className="kh-email-change-verification"><label htmlFor="identity-email-change-code">Verification code</label><input id="identity-email-change-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter 6-digit code" value={emailChangeCode} onChange={e => setEmailChangeCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} /><button className="submit-button" type="button" onClick={() => void verifyEmailChange()} disabled={verifyingEmailCode || savingPersonal || savingSocials || emailChangeCode.length !== 6}>{verifyingEmailCode ? <LoadingDots /> : 'Verify Email'}</button><small className="kh-postal-feedback">Check your new inbox for the six-digit code. It expires in 10 minutes.</small></div>}</div>
           </div>
           <div className="kh-identity-grid">
             <div className={`field kh-dob-field is-${personalEditing ? dobStatus : 'idle'}`}><label htmlFor="identity-dob">Date of birth</label><div className="kh-username-input-wrap"><input id="identity-dob" type="text" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/YYYY" maxLength={10} value={dobInput} aria-invalid={personalEditing && (dobStatus === 'invalid' || dobStatus === 'underage')} onChange={e => { const value = maskDobInput(e.target.value); setDobInput(value); const parsed = parseDobInput(value); update('dateOfBirth', typeof parsed === 'string' ? parsed : ''); }} />{personalEditing && (dobStatus === 'valid' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Date of birth verified: 18 or older"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : dobStatus === 'invalid' || dobStatus === 'underage' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label={dobStatus === 'underage' ? 'Must be at least 18 years old' : 'Enter a valid date of birth' }><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div>{personalEditing && <small className={`kh-postal-feedback ${dobFeedbackClass}`}>{dobFeedback}</small>}</div>
