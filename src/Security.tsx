@@ -17,6 +17,40 @@ const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online'
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
 
+function validateWalletAddress(network: string, address: string): { valid: boolean; message: string } {
+  const value = address.trim();
+  if (!value) return { valid: false, message: '' };
+  const base58 = /^[1-9A-HJ-NP-Za-km-z]+$/;
+  const evm = /^0x[a-fA-F0-9]{40}$/;
+  let valid = false;
+  switch (network) {
+    case 'TRC20':
+    case 'TRX':
+      valid = /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(value);
+      break;
+    case 'ERC20':
+    case 'BEP20':
+    case 'POLYGON':
+      valid = evm.test(value);
+      break;
+    case 'BTC':
+    case 'BRC20':
+      valid = /^(bc1[ac-hj-np-z02-9]{11,71}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/.test(value);
+      break;
+    case 'SOL':
+      valid = value.length >= 32 && value.length <= 44 && base58.test(value);
+      break;
+    case 'TON':
+      valid = /^(?:EQ|UQ)[A-Za-z0-9_-]{46}$/.test(value) || /^-?\d:[a-fA-F0-9]{64}$/.test(value);
+      break;
+    default:
+      valid = value.length >= 10 && value.length <= 200 && !/\s/.test(value);
+  }
+  return valid
+    ? { valid: true, message: 'Address format looks valid for ' + (network === 'BRC20' ? 'Bitcoin (BRC-20)' : network) + '.' }
+    : { valid: false, message: 'This does not match the expected ' + (network === 'BRC20' ? 'Bitcoin (BRC-20)' : network) + ' address format.' };
+}
+
 async function request(path: string, body?: unknown): Promise<ResponseData> {
   const makeRequest = (token: string | null) => fetch(API + path, {
     method: body === undefined ? 'GET' : 'POST',
@@ -106,6 +140,10 @@ export default function SecurityPage({ user }: Props) {
 
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
+  }
+
+  function walletAddressValidation(wallet: Wallet) {
+    return validateWalletAddress(wallet.network, wallet.address);
   }
 
   const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
@@ -211,6 +249,12 @@ export default function SecurityPage({ user }: Props) {
 
   async function saveWallets(): Promise<boolean> {
     if (savingWallets) return false;
+    const invalidWallet = wallets.find(wallet => wallet.address.trim() && !validateWalletAddress(wallet.network, wallet.address).valid);
+    if (invalidWallet) {
+      setNotice('Please correct the wallet address for ' + (invalidWallet.network === 'BRC20' ? 'Bitcoin (BRC-20)' : invalidWallet.network) + ' before saving.');
+      setNoticeOk(false);
+      return false;
+    }
     setSavingWallets(true); setNotice('');
     try {
       // Preserve the latest saved profile fields; this action changes wallet data only.
@@ -281,7 +325,7 @@ export default function SecurityPage({ user }: Props) {
             <div className="kh-identity-grid">
               <div className="field"><label htmlFor={'security-wallet-label-' + wallet.id}>Label <span className="optional">(optional)</span></label><input id={'security-wallet-label-' + wallet.id} maxLength={40} placeholder="e.g. Main USDT wallet" value={wallet.label} onChange={e => patchWallet(wallet.id, 'label', e.target.value)} /></div>
               <div className={`field kh-nationality-field kh-wallet-network-field${openNetworkId === wallet.id ? ' is-open' : ''}`}><label id={'security-wallet-network-label-' + wallet.id}>Network</label><button className="kh-nationality-trigger" type="button" aria-labelledby={'security-wallet-network-label-' + wallet.id} aria-haspopup="listbox" aria-expanded={openNetworkId === wallet.id} onClick={() => { setOpenNetworkId(current => current === wallet.id ? null : wallet.id); setNetworkSearch(''); }}><span>{wallet.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : wallet.network}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{openNetworkId === wallet.id && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search wallet networks" placeholder="Search networks…" autoComplete="off" value={networkSearch} onChange={e => setNetworkSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Wallet networks">{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).map(network => <button type="button" role="option" aria-selected={wallet.network === network} className="kh-nationality-option" key={network} onClick={() => { patchWallet(wallet.id, 'network', network); setOpenNetworkId(null); setNetworkSearch(''); }}>{network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network}{wallet.network === network && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg>}</button>)}{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching network found.</p>}</div></div>}</div>
-              <div className="field kh-identity-span"><label htmlFor={'security-wallet-address-' + wallet.id}>Wallet address</label><input id={'security-wallet-address-' + wallet.id} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={wallet.address} onChange={e => patchWallet(wallet.id, 'address', e.target.value)} /></div>
+              <div className="field kh-identity-span"><label htmlFor={'security-wallet-address-' + wallet.id}>Wallet address</label><input id={'security-wallet-address-' + wallet.id} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={wallet.address} aria-invalid={Boolean(wallet.address.trim() && !walletAddressValidation(wallet).valid)} onChange={e => patchWallet(wallet.id, 'address', e.target.value)} />{wallet.address.trim() && <small className={walletAddressValidation(wallet).valid ? 'kh-wallet-address-feedback is-valid' : 'kh-wallet-address-feedback is-invalid'} role="status">{walletAddressValidation(wallet).message}</small>}</div>
             </div>
           </div>)}
         </div>
