@@ -541,6 +541,7 @@ export default function IdentityPage({ user }: Props) {
     } catch (error) { setNotice((error as Error).message || 'Could not remove this photo.'); setNoticeOk(false); }
   }
   const usernameDaysLeft = cooldownDaysRemaining(profile.usernameChangedAt, 30);
+  const namesDaysLeft = cooldownDaysRemaining(profile.namesChangedAt, 30);
   const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
   const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
     ? profile.phone.slice(phoneCallingCode.length).trim()
