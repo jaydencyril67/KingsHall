@@ -4,6 +4,7 @@ import LoadingDots from './components/LoadingDots';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type Profile = {
+  securityCodeChangedAt?: string | null; fundingCodeChangedAt?: string | null; accessCodeChangedAt?: string | null;
   id?: string; firstName?: string; middleName?: string; lastName?: string; username?: string; email?: string;
   dateOfBirth?: string; phone?: string; country?: string; state?: string; city?: string; address?: string;
   postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string; coverPhoto?: string;
@@ -16,6 +17,17 @@ type ResponseData = { profile?: Profile; message?: string; error?: string; fundi
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
+function codeCooldownRemaining(changedAt: string | null | undefined): number {
+  if (!changedAt) return 0;
+  const changedTime = new Date(changedAt).getTime();
+  return Number.isFinite(changedTime) ? Math.max(0, changedTime + 30 * 24 * 60 * 60 * 1000 - Date.now()) : 0;
+}
+function formatCodeCooldown(milliseconds: number): string {
+  const totalHours = Math.ceil(milliseconds / (60 * 60 * 1000));
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  return days > 0 ? days + ' day' + (days === 1 ? '' : 's') + (hours ? ' ' + hours + 'h' : '') : totalHours + ' hour' + (totalHours === 1 ? '' : 's');
+}
 
 function validateWalletAddress(network: string, address: string): { valid: boolean; message: string } {
   const value = address.trim();
@@ -90,6 +102,9 @@ export default function SecurityPage({ user }: Props) {
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
+  const [securityCodeChangedAt, setSecurityCodeChangedAt] = useState<string | null>(null);
+  const [fundingCodeChangedAt, setFundingCodeChangedAt] = useState<string | null>(null);
+  const [accessCodeChangedAt, setAccessCodeChangedAt] = useState<string | null>(null);
   const [focusedCodeField, setFocusedCodeField] = useState<'security' | 'funding' | 'access' | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
@@ -130,6 +145,9 @@ export default function SecurityPage({ user }: Props) {
       setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
       setSecurityCodeSet(Boolean(data.profile?.securityCodeSet));
       setAccessCodeSet(Boolean(data.profile?.accessCodeSet));
+      setSecurityCodeChangedAt(data.profile?.securityCodeChangedAt || null);
+      setFundingCodeChangedAt(data.profile?.fundingCodeChangedAt || null);
+      setAccessCodeChangedAt(data.profile?.accessCodeChangedAt || null);
       setTwoFactorEnabled(Boolean(twoFactor.enabled));
       setTwoFactorPending(Boolean(twoFactor.pending));
     }).catch(error => {
@@ -145,6 +163,10 @@ export default function SecurityPage({ user }: Props) {
   function walletAddressValidation(wallet: Wallet) {
     return validateWalletAddress(wallet.network, wallet.address);
   }
+
+  const securityCodeCooldownMs = codeCooldownRemaining(securityCodeChangedAt);
+  const fundingCodeCooldownMs = codeCooldownRemaining(fundingCodeChangedAt);
+  const accessCodeCooldownMs = codeCooldownRemaining(accessCodeChangedAt);
 
   const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
 
@@ -187,6 +209,10 @@ export default function SecurityPage({ user }: Props) {
         setSecurityCodeSet(Boolean(result.securityCodeSet));
         setFundingCodeSet(Boolean(result.fundingCodeSet));
         setAccessCodeSet(Boolean(result.accessCodeSet));
+        const changedAt = new Date().toISOString();
+        if (wantsSecurityCode) setSecurityCodeChangedAt(changedAt);
+        if (wantsFundingCode) setFundingCodeChangedAt(changedAt);
+        if (wantsAccessCode) setAccessCodeChangedAt(changedAt);
         setNotice(result.message || 'Security settings saved successfully.');
       }
       setSecurityDraft(old => ({ ...old, password: '', securityCode: '', fundingCode: '', accessCode: '' }));
@@ -298,9 +324,9 @@ export default function SecurityPage({ user }: Props) {
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field kh-security-password-field"><label htmlFor="security-password">New password</label><div className="kh-security-code-input-wrap"><input id="security-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} placeholder="Enter a new password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} />{passwordValid && <span className="kh-security-code-check" aria-label="Password meets requirements"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div><small className="kh-postal-feedback">Leave blank to keep your current password. 12–128 characters, with uppercase, lowercase, a number and a symbol.</small></div>
           <div className="field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
-          <div className="field"><label htmlFor="security-code">8-digit Security Code</label><div className="kh-security-code-input-wrap"><input id="security-code" type={securityCodeSet && focusedCodeField !== 'security' && !securityDraft.securityCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Create an 8-digit code" value={securityDraft.securityCode || (securityCodeSet && focusedCodeField !== 'security' ? '*'.repeat(8) : '')} onFocus={() => setFocusedCodeField('security')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} />{securityCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
-          <div className="field"><label htmlFor="security-access-code">6-digit Access Code</label><div className="kh-security-code-input-wrap"><input id="security-access-code" type={accessCodeSet && focusedCodeField !== 'access' && !securityDraft.accessCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={6} placeholder="Create a 6-digit code" value={securityDraft.accessCode || (accessCodeSet && focusedCodeField !== 'access' ? '*'.repeat(6) : '')} onFocus={() => setFocusedCodeField('access')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} />{accessCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
-          <div className="field"><label htmlFor="security-funding-code">4-digit Funding Code</label><div className="kh-security-code-input-wrap"><input id="security-funding-code" type={fundingCodeSet && focusedCodeField !== 'funding' && !securityDraft.fundingCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder="Create a 4-digit code" value={securityDraft.fundingCode || (fundingCodeSet && focusedCodeField !== 'funding' ? '*'.repeat(4) : '')} onFocus={() => setFocusedCodeField('funding')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />{fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
+          <div className="field"><label htmlFor="security-code">8-digit Security Code</label><div className="kh-security-code-input-wrap"><input id="security-code" disabled={securityCodeSet && securityCodeCooldownMs > 0} type={securityCodeSet && focusedCodeField !== 'security' && !securityDraft.securityCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Create an 8-digit code" value={securityDraft.securityCode || (securityCodeSet && focusedCodeField !== 'security' ? '*'.repeat(8) : '')} onFocus={() => setFocusedCodeField('security')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} />{securityCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div>{securityCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(securityCodeCooldownMs)}.</small>}</div>
+          <div className="field"><label htmlFor="security-access-code">6-digit Access Code</label><div className="kh-security-code-input-wrap"><input id="security-access-code" disabled={accessCodeSet && accessCodeCooldownMs > 0} type={accessCodeSet && focusedCodeField !== 'access' && !securityDraft.accessCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={6} placeholder="Create a 6-digit code" value={securityDraft.accessCode || (accessCodeSet && focusedCodeField !== 'access' ? '*'.repeat(6) : '')} onFocus={() => setFocusedCodeField('access')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} />{accessCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div>{accessCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(accessCodeCooldownMs)}.</small>}</div>
+          <div className="field"><label htmlFor="security-funding-code">4-digit Funding Code</label><div className="kh-security-code-input-wrap"><input id="security-funding-code" disabled={fundingCodeSet && fundingCodeCooldownMs > 0} type={fundingCodeSet && focusedCodeField !== 'funding' && !securityDraft.fundingCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder="Create a 4-digit code" value={securityDraft.fundingCode || (fundingCodeSet && focusedCodeField !== 'funding' ? '*'.repeat(4) : '')} onFocus={() => setFocusedCodeField('funding')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />{fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div>{fundingCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(fundingCodeCooldownMs)}.</small>}</div>
         </div>
         </fieldset>
         <div className="kh-identity-section-save"><span>{securityEditing ? "Edit your security details, then save to lock them again." : "Your security fields are locked until you choose to edit."}</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={() => { if (!securityEditing) { setSecurityEditing(true); setNotice(""); } else void saveSecuritySettings(); }}>{savingSecuritySettings ? <LoadingDots /> : securityEditing ? "Save Security Settings" : "Edit Security"}</button></div>
