@@ -170,7 +170,7 @@ function isAdultDob(isoDate: string): boolean {
   return age >= 18;
 }
 const blankProfile = (user: Props['user']): IdentityProfile => ({
-  id: user?.id || '', ...splitName(user?.name), username: user?.username || '', email: user?.email || '',
+  id: user?.id || '', firstName: '', middleName: '', lastName: '', username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
