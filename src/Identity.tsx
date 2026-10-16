@@ -261,6 +261,10 @@ export default function IdentityPage({ user }: Props) {
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setProfile(old => ({ ...old, wallets: old.wallets.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet) }));
   }
+  const phoneCallingCode = CALLING_CODES[profile.nationality] || '';
+  const phoneInputValue = phoneCallingCode && profile.phone.startsWith(phoneCallingCode)
+    ? profile.phone.slice(phoneCallingCode.length).trim()
+    : profile.phone;
   return <div className="kh-identity-page">
     <div className="kh-identity-heading">
       <span className="eyebrow"><span className="eyebrow-line" />CENTRAL MEMBER RECORD</span>
@@ -301,7 +305,7 @@ export default function IdentityPage({ user }: Props) {
   setNationalityOpen(false);
   setNationalitySearch('');
 }}>{country}{profile.nationality === country && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{SORTED_COUNTRIES.filter(country => country.toLowerCase().includes(nationalitySearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching country found.</p>}</div></div>}</div>
-            <div className="field kh-phone-field"><label htmlFor="identity-phone">Phone number</label><div className="kh-phone-input-wrap"><span className="kh-phone-code" aria-hidden="true">{CALLING_CODES[profile.nationality] || '+'}</span><input id="identity-phone" type="tel" inputMode="tel" autoComplete="tel-national" maxLength={32} placeholder={profile.nationality && CALLING_CODES[profile.nationality] ? 'Enter your number' : 'Select nationality first'} value={profile.phone} onChange={e => update('phone', e.target.value)} /></div><small className="kh-identity-help">Calling code follows your selected nationality.</small></div>
+            <div className="field kh-phone-field"><label htmlFor="identity-phone">Phone number</label><div className="kh-phone-input-wrap"><span className="kh-phone-code" aria-label={phoneCallingCode ? 'Country calling code ' + phoneCallingCode : 'Select a nationality to set the calling code'}>{phoneCallingCode || 'Code'}</span><input id="identity-phone" type="tel" inputMode="tel" autoComplete="tel-national" maxLength={32} placeholder={phoneCallingCode ? 'Enter your number' : 'Select nationality first'} value={phoneInputValue} onChange={e => update('phone', phoneCallingCode ? phoneCallingCode + ' ' + e.target.value.replace(/^\\s+/, '') : e.target.value)} /></div><small className="kh-identity-help">Calling code follows your selected nationality.</small></div>
             <div className="field"><label htmlFor="identity-country">Country of residence</label><input id="identity-country" maxLength={80} placeholder="Country" value={profile.country} onChange={e => update('country', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-state">State / region</label><input id="identity-state" maxLength={80} placeholder="State or region" value={profile.state} onChange={e => update('state', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-city">City</label><input id="identity-city" maxLength={80} placeholder="City" value={profile.city} onChange={e => update('city', e.target.value)} /></div>
