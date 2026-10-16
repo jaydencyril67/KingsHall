@@ -108,6 +108,11 @@ export default function IdentityPage({ user }: Props) {
       setEmailStatus('idle');
       return;
     }
+    // The current account already owns this address, so it must not be reported as taken.
+    if (user?.email && email.toLowerCase() === user.email.trim().toLowerCase()) {
+      setEmailStatus('available');
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailStatus('invalid');
       return;
