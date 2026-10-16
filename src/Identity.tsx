@@ -214,6 +214,7 @@ export default function IdentityPage({ user }: Props) {
   const [genderSearch, setGenderSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
@@ -354,6 +355,80 @@ export default function IdentityPage({ user }: Props) {
     } catch (error) { setNotice((error as Error).message || 'Could not save your identity.'); setNoticeOk(false); }
     finally { setSaving(false); }
   }
+  async function savePersonal() {
+    if (savingPersonal || saving) return;
+    const parsedDob = parseDobInput(dobInput);
+    if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
+      setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
+      setNoticeOk(false);
+      return;
+    }
+    if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
+      setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
+      setNoticeOk(false);
+      return;
+    }
+    if (!profile.email || emailStatus !== 'available') {
+      setNotice(emailStatus === 'invalid' ? 'Enter a valid email address.' : emailStatus === 'unsupported' ? 'Please use an email address from an accepted email provider.' : emailStatus === 'taken' ? 'That email address is already in use.' : emailStatus === 'checking' ? 'Please wait while we check your email address.' : emailStatus === 'error' ? 'Could not verify your email address. Try again.' : 'Enter an email address from an accepted provider and wait for its check.');
+      setNoticeOk(false);
+      return;
+    }
+    if (profile.postalCode.trim() && postalCodeStatus === 'invalid') {
+      setNotice('Check the postal code format for your selected nationality before saving.');
+      setNoticeOk(false);
+      return;
+    }
+    if (!['Female', 'Male', 'Non-binary', 'Other'].includes(profile.gender)) {
+      setNotice('Select your gender before saving your personal details.');
+      setNoticeOk(false);
+      return;
+    }
+    if (!profile.nationality || !regionOptions.length || !selectedRegionIsValid) {
+      setNotice(!profile.nationality ? 'Select your nationality first.' : !regionOptions.length ? 'No region options are available for this nationality. Please contact support before saving your personal details.' : 'Select a valid state or region for your nationality.');
+      setNoticeOk(false);
+      return;
+    }
+    setSavingPersonal(true);
+    setNotice('');
+    try {
+      // Read the latest persisted profile first so this section save cannot overwrite unsaved edits in other sections.
+      const latest = await request('/api/identity');
+      const saved = latest.profile || blankProfile(user);
+      const payload = {
+        firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName,
+        username: profile.username, email: profile.email, dateOfBirth: parsedDob,
+        phone: profile.phone, country: saved.country || '', state: profile.state,
+        city: saved.city || '', address: saved.address || '', postalCode: profile.postalCode,
+        nationality: profile.nationality, gender: profile.gender, occupation: saved.occupation || '',
+        bio: profile.bio, avatarData: profile.avatarData,
+        website: saved.website || '', instagram: saved.instagram || '', facebook: saved.facebook || '',
+        xHandle: saved.xHandle || '', telegram: saved.telegram || '', discord: saved.discord || '',
+        linkedin: saved.linkedin || '', language: saved.language || '', timeZone: saved.timeZone || '',
+        preferredCurrency: saved.preferredCurrency || 'USD', pronouns: saved.pronouns || '',
+        relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
+      };
+      const data = await request('/api/identity', payload);
+      const savedProfile = data.profile;
+      if (savedProfile) {
+        setProfile(old => ({
+          ...old,
+          firstName: savedProfile.firstName, middleName: savedProfile.middleName, lastName: savedProfile.lastName,
+          username: savedProfile.username, email: savedProfile.email, dateOfBirth: savedProfile.dateOfBirth,
+          phone: savedProfile.phone, state: savedProfile.state, postalCode: savedProfile.postalCode,
+          nationality: savedProfile.nationality, gender: savedProfile.gender, bio: savedProfile.bio,
+          avatarData: savedProfile.avatarData
+        }));
+        setDobInput(formatDobInput(savedProfile.dateOfBirth));
+      }
+      setNotice(data.message || 'Personal details saved.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not save your personal details.');
+      setNoticeOk(false);
+    } finally {
+      setSavingPersonal(false);
+    }
+  }
   async function uploadPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; event.target.value = '';
     if (!file) return;
@@ -417,6 +492,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-nationality-field kh-gender-field"><label id="identity-gender-label">Gender</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-gender-label" aria-haspopup="listbox" aria-expanded={genderOpen} onClick={() => { setGenderOpen(open => !open); setGenderSearch(''); }}><span className={profile.gender ? '' : 'is-placeholder'}>{profile.gender || 'Select gender'}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{genderOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search gender options" placeholder="Search gender…" autoComplete="off" value={genderSearch} onChange={e => setGenderSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Gender options">{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).map(gender => <button type="button" role="option" aria-selected={profile.gender === gender} className="kh-nationality-option" key={gender} onClick={() => { update('gender', gender); setGenderOpen(false); setGenderSearch(''); }}>{gender}{profile.gender === gender && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching gender option found.</p>}</div></div>}</div>
             <div className="field kh-identity-span"><label htmlFor="identity-bio">About you <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
+          <div className="kh-identity-section-save"><span>Save only the personal details in this section.</span><button className="submit-button" type="button" onClick={savePersonal} disabled={savingPersonal || saving}>{savingPersonal ? 'Saving personal details…' : 'Save Personal'}</button></div>
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
