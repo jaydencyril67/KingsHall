@@ -249,13 +249,13 @@ input,textarea{font-size:12px}
 .kh-identity-readonly{min-width:0;display:flex;flex-direction:column;gap:5px;padding:11px;border:1px solid rgba(255,255,255,.065);border-radius:11px;background:rgba(255,255,255,.02)}
 .kh-identity-readonly span,.kh-identity-readonly small{color:#9296a0;font-size:9px}
 .kh-identity-readonly strong{overflow-wrap:anywhere;color:#edf0f4;font-size:11px;font-weight:600}
-.kh-identity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
-.kh-identity-grid .field{min-width:0;margin-bottom:12px}
+.kh-identity-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.kh-identity-grid .field{min-width:0;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.045)}
 .kh-identity-span{grid-column:1/-1}
 .kh-identity-page input,.kh-identity-page textarea,.kh-identity-page select{width:100%;min-width:0;min-height:42px;padding:10px 11px;border:1px solid rgba(210,216,225,.15);border-radius:10px;color:#f3f4f6;background:#090a0c;font:inherit;font-size:12px}
 .kh-identity-page select{appearance:auto}
 .kh-identity-page input[type=date]{color-scheme:dark}
-.kh-identity-page .field label{margin-bottom:6px;font-size:10px}
+.kh-identity-page .field label{display:block;margin-bottom:6px;font-size:10px}.kh-identity-help{display:block;margin-top:6px;color:#9296a0;font-size:10px;line-height:1.55}
 .kh-identity-page textarea{min-height:78px;resize:vertical}
 .kh-identity-wallets{display:grid;gap:10px}
 .kh-identity-wallet{padding:13px 12px 2px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(0,0,0,.18)}
@@ -267,7 +267,7 @@ input,textarea{font-size:12px}
 .kh-identity-save-row>span{max-width:330px;color:#969aa4;font-size:10px;line-height:1.6}
 .kh-identity-save-row .submit-button{width:auto;min-width:145px;min-height:42px;margin:0;font-size:11px}
 .kh-identity-code-status{padding:5px 7px;border:1px solid rgba(220,226,234,.15);border-radius:7px;color:#c9ced7;font-size:8px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
-.kh-identity-security form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:0 12px}
-.kh-identity-security form .secondary-button{min-height:42px;margin-bottom:12px;font-size:11px}
+.kh-identity-security form{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:0}
+.kh-identity-security form .secondary-button{min-height:42px;margin:0 0 12px;font-size:11px}
 .kh-identity-footnote{margin:0;color:#858a94;font-size:10px;line-height:1.7}
 @media(max-width:560px){.kh-identity-card{padding:14px;border-radius:15px}.kh-identity-readonly-grid{grid-template-columns:1fr}.kh-identity-readonly{padding:9px 10px}.kh-identity-save-row{align-items:stretch;flex-direction:column}.kh-identity-save-row .submit-button{width:100%}.kh-identity-security form{grid-template-columns:1fr}.kh-identity-security form .secondary-button{width:100%}.kh-identity-heading h1{font-size:29px}}
