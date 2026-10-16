@@ -12,7 +12,7 @@ type Profile = {
   relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; fundingCodeSet?: boolean; accessCodeSet?: boolean;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
-type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean };
+type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
@@ -57,6 +57,11 @@ export default function SecurityPage({ user }: Props) {
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
   const [focusedCodeField, setFocusedCodeField] = useState<'security' | 'funding' | 'access' | null>(null);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorPending, setTwoFactorPending] = useState(false);
+  const [twoFactorSecret, setTwoFactorSecret] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorBusy, setTwoFactorBusy] = useState(false);
   const [openNetworkId, setOpenNetworkId] = useState<string | null>(null);
   const [networkSearch, setNetworkSearch] = useState('');
   const [notice, setNotice] = useState('');
@@ -85,12 +90,14 @@ export default function SecurityPage({ user }: Props) {
 
   useEffect(() => {
     let current = true;
-    request('/api/identity').then(data => {
+    Promise.all([request('/api/identity'), request('/api/identity/2fa/status')]).then(([data, twoFactor]) => {
       if (!current) return;
       setWallets(data.profile?.wallets || []);
       setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
       setSecurityCodeSet(Boolean(data.profile?.securityCodeSet));
       setAccessCodeSet(Boolean(data.profile?.accessCodeSet));
+      setTwoFactorEnabled(Boolean(twoFactor.enabled));
+      setTwoFactorPending(Boolean(twoFactor.pending));
     }).catch(error => {
       if (current) { setNotice((error as Error).message || 'Could not load your security details.'); setNoticeOk(false); }
     }).finally(() => { if (current) setLoading(false); });
@@ -153,6 +160,42 @@ export default function SecurityPage({ user }: Props) {
     } finally { setSavingSecuritySettings(false); }
   }
 
+
+  async function startAuthenticator() {
+    if (twoFactorBusy) return;
+    setTwoFactorBusy(true);
+    try {
+      const result = await request('/api/identity/2fa/setup', {});
+      setTwoFactorSecret(result.secret || '');
+      setTwoFactorPending(true);
+      setTwoFactorCode('');
+      setNotice(result.message || 'Enter the setup key in your authenticator app.'); setNoticeOk(true);
+    } catch (error) { setNotice((error as Error).message || 'Could not start setup.'); setNoticeOk(false); }
+    finally { setTwoFactorBusy(false); }
+  }
+
+  async function verifyAuthenticator() {
+    if (!/^\d{6}$/.test(twoFactorCode)) { setNotice('Enter the six-digit authenticator code.'); setNoticeOk(false); return; }
+    setTwoFactorBusy(true);
+    try {
+      const result = await request('/api/identity/2fa/verify', { code: twoFactorCode });
+      setTwoFactorEnabled(true); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
+      setNotice(result.message || 'Authenticator bound successfully.'); setNoticeOk(true);
+    } catch (error) { setNotice((error as Error).message || 'Code verification failed.'); setNoticeOk(false); }
+    finally { setTwoFactorBusy(false); }
+  }
+
+  async function removeAuthenticator() {
+    if (!/^\d{6}$/.test(twoFactorCode)) { setNotice('Enter the current six-digit authenticator code.'); setNoticeOk(false); return; }
+    setTwoFactorBusy(true);
+    try {
+      const result = await request('/api/identity/2fa/disable', { code: twoFactorCode });
+      setTwoFactorEnabled(false); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
+      setNotice(result.message || 'Authenticator unbound.'); setNoticeOk(true);
+    } catch (error) { setNotice((error as Error).message || 'Could not unbind authenticator.'); setNoticeOk(false); }
+    finally { setTwoFactorBusy(false); }
+  }
+
   async function saveWallets(): Promise<boolean> {
     if (savingWallets) return false;
     setSavingWallets(true); setNotice('');
@@ -200,11 +243,21 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-kui">KUI (6-digit KingsHall Unique ID)</label><input id="security-kui" inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter 6-digit KUI" value={securityDraft.kui} onChange={e => setSecurityDraft(old => ({ ...old, kui: e.target.value.replace(/\D/g, '').slice(0, 6) }))} /></div>
           <div className="field"><label htmlFor="security-code">8-digit Security Code</label><div className="kh-security-code-input-wrap"><input id="security-code" type={securityCodeSet && focusedCodeField !== 'security' && !securityDraft.securityCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={8} placeholder="Create an 8-digit code" value={securityDraft.securityCode || (securityCodeSet && focusedCodeField !== 'security' ? '*'.repeat(8) : '')} onFocus={() => setFocusedCodeField('security')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, securityCode: e.target.value.replace(/\D/g, '').slice(0, 8) }))} />{securityCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           <div className="field"><label htmlFor="security-access-code">6-digit Access Code</label><div className="kh-security-code-input-wrap"><input id="security-access-code" type={accessCodeSet && focusedCodeField !== 'access' && !securityDraft.accessCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={6} placeholder="Create a 6-digit code" value={securityDraft.accessCode || (accessCodeSet && focusedCodeField !== 'access' ? '*'.repeat(6) : '')} onFocus={() => setFocusedCodeField('access')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, accessCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))} />{accessCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
-          <div className="field"><label htmlFor="security-two-factor">2FA</label><select id="security-two-factor" value={securityDraft.twoFactor} onChange={e => setSecurityDraft(old => ({ ...old, twoFactor: e.target.value }))}><option value="">Choose status</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></div>
           <div className="field"><label htmlFor="security-funding-code">4-digit Funding Code</label><div className="kh-security-code-input-wrap"><input id="security-funding-code" type={fundingCodeSet && focusedCodeField !== 'funding' && !securityDraft.fundingCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder="Create a 4-digit code" value={securityDraft.fundingCode || (fundingCodeSet && focusedCodeField !== 'funding' ? '*'.repeat(4) : '')} onFocus={() => setFocusedCodeField('funding')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />{fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
         </div>
         </fieldset>
         <div className="kh-identity-section-save"><span>{securityEditing ? "Edit your security details, then save to lock them again." : "Your security fields are locked until you choose to edit."}</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={() => { if (!securityEditing) { setSecurityEditing(true); setNotice(""); } else void saveSecuritySettings(); }}>{savingSecuritySettings ? <LoadingDots /> : securityEditing ? "Save Security Settings" : "Edit Security"}</button></div>
+      </section>
+
+      <section className="kh-identity-card kh-identity-security">
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Two-factor authenticator</h2><p>Bind an authenticator app. Sign-in enforcement remains off for now.</p></div></div>
+        <div className="kh-identity-grid kh-identity-security-fields">
+          <div className="field"><label>Binding status</label><input value={twoFactorEnabled ? 'Bound and verified' : twoFactorPending ? 'Setup pending verification' : 'Not bound'} readOnly /></div>
+          {!twoFactorEnabled && !twoFactorSecret && <div className="field"><label>Authenticator setup</label><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : 'Bind Authenticator'}</button></div>}
+          {twoFactorSecret && <div className="field"><label htmlFor="kh-two-factor-secret">Setup key</label><input id="kh-two-factor-secret" value={twoFactorSecret} readOnly /><small className="kh-postal-feedback">In your authenticator app, choose Enter a setup key. Account: {user?.email || 'KingsHall'}. Keep this key private.</small></div>}
+          {(twoFactorSecret || twoFactorEnabled) && <div className="field"><label htmlFor="kh-two-factor-code">{twoFactorEnabled ? 'Current code to unbind' : 'Verify authenticator code'}</label><input id="kh-two-factor-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={twoFactorCode} onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button type="button" className="submit-button" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void (twoFactorEnabled ? removeAuthenticator() : verifyAuthenticator())}>{twoFactorBusy ? <LoadingDots /> : twoFactorEnabled ? 'Unbind Authenticator' : 'Verify & Bind'}</button></div>}
+          {twoFactorPending && !twoFactorSecret && <div className="field"><small className="kh-postal-feedback">The setup key is no longer shown. Restart setup to generate a new key.</small><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>Restart Setup</button></div>}
+        </div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
