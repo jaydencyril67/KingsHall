@@ -203,7 +203,16 @@ export default function IdentityPage({ user }: Props) {
         <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
       </form>
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security code</h2><p>A separate 4–8 digit code for future sensitive actions. It is stored as a one-way password hash, never as readable digits.</p></div><span className="kh-identity-code-status">{profile.securityCodeSet ? 'CODE SET' : 'NOT SET'}</span></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Your KingsHall account protection methods. Individual setup and editing controls will be connected in the security pass.</p></div></div>
+        <div className="kh-identity-security-list">
+          <div className="kh-identity-security-item"><div><strong>Password</strong><small>Account sign-in password</small></div><span className="kh-identity-code-status">SIGN-IN</span></div>
+          <div className="kh-identity-security-item"><div><strong>KUI</strong><small>6-digit KingsHall Unique ID</small></div><span className="kh-identity-code-status">NOT ASSIGNED</span></div>
+          <div className="kh-identity-security-item"><div><strong>Security Code</strong><small>Extra code for sensitive actions</small></div><span className="kh-identity-code-status">{profile.securityCodeSet ? 'SET' : 'NOT SET'}</span></div>
+          <div className="kh-identity-security-item"><div><strong>Access Code</strong><small>Additional access verification</small></div><span className="kh-identity-code-status">NOT SET</span></div>
+          <div className="kh-identity-security-item"><div><strong>2FA</strong><small>Two-factor authentication</small></div><span className="kh-identity-code-status">NOT ENABLED</span></div>
+          <div className="kh-identity-security-item"><div><strong>Funding Code</strong><small>Confirmation for funding actions</small></div><span className="kh-identity-code-status">NOT SET</span></div>
+        </div>
+        <div className="kh-identity-security-code-head"><h3>Security Code Setup</h3><p>Stored as a one-way password hash, never as readable digits.</p></div>
         <form onSubmit={saveCode}>
           {profile.securityCodeSet && <div className="field"><label htmlFor="identity-current-code">Current security code</label><input id="identity-current-code" type="password" inputMode="numeric" autoComplete="current-password" pattern="[0-9]{4,8}" minLength={4} maxLength={8} value={currentCode} onChange={e => setCurrentCode(e.target.value)} required /></div>}
           <div className="field"><label htmlFor="identity-new-code">{profile.securityCodeSet ? 'New security code' : 'Create security code'}</label><input id="identity-new-code" type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{4,8}" minLength={4} maxLength={8} value={code} onChange={e => setCode(e.target.value)} placeholder="4–8 digits" required /></div>
