@@ -597,10 +597,10 @@ export default function IdentityPage({ user }: Props) {
       <p>Your central profile for KingsHall and connected applications. Add the details you want KingsHall to securely retain.</p>
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
-    {loading && <div className="kh-identity-inline-loading" aria-live="polite"><LoadingDots /></div>}
+
       <form className="kh-identity-form" onSubmit={event => event.preventDefault()}>
         <section className="kh-identity-card kh-identity-personal">
-          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
+          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal{loading && <span className="kh-identity-section-loading" aria-label="Loading personal details"><LoadingDots /></span>}</h2><p>Core details connected to your KingsHall account.</p></div></div>
           <div className="kh-identity-photo-stack">
             <div className="kh-identity-cover-frame">
               <button type="button" className="kh-identity-cover-trigger" aria-label="Cover photo actions" aria-expanded={coverActionsOpen} onClick={() => { setCoverActionsOpen(open => !open); setPhotoActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={coverBusy || photoBusy}>
