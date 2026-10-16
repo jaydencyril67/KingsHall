@@ -20,6 +20,26 @@ function splitName(value: string | undefined) {
 function capitalizeNameInput(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value;
 }
+function formatDobInput(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate || '');
+  return match ? match[3] + '/' + match[2] + '/' + match[1] : '';
+}
+function parseDobInput(value: string): string | null {
+  if (!value.trim()) return '';
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return null;
+  const day = Number(match[1]); const month = Number(match[2]); const year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (year < 1900 || date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  const iso = match[3] + '-' + match[2] + '-' + match[1];
+  return iso <= new Date().toISOString().slice(0, 10) ? iso : null;
+}
+function maskDobInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
+  return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+}
 const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', ...splitName(user?.name), username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
@@ -78,6 +98,7 @@ async function preparePhoto(file: File): Promise<string> {
 }
 export default function IdentityPage({ user }: Props) {
   const [profile, setProfile] = useState<IdentityProfile>(() => blankProfile(user));
+  const [dobInput, setDobInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -133,13 +154,19 @@ export default function IdentityPage({ user }: Props) {
   }, [profile.email, loading, user?.id]);
   useEffect(() => {
     let live = true;
-    request('/api/identity').then(data => { if (live && data.profile) setProfile(data.profile); })
-      .catch(error => { if (live) { setProfile(blankProfile(user)); setNotice(error.message || 'Could not load your identity.'); setNoticeOk(false); } })
+    request('/api/identity').then(data => { if (live && data.profile) { setProfile(data.profile); setDobInput(formatDobInput(data.profile.dateOfBirth)); } })
+      .catch(error => { if (live) { setProfile(blankProfile(user)); setDobInput(''); setNotice(error.message || 'Could not load your identity.'); setNoticeOk(false); } })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [user?.id]);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (saving) return;
+    const parsedDob = parseDobInput(dobInput);
+    if (parsedDob === null) {
+      setNotice('Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.');
+      setNoticeOk(false);
+      return;
+    }
     if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
       setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
       setNoticeOk(false);
@@ -155,7 +182,7 @@ export default function IdentityPage({ user }: Props) {
     try {
       const data = await request('/api/identity', {
         firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName, username: profile.username, email: profile.email,
-        dateOfBirth: profile.dateOfBirth, phone: profile.phone, country: profile.country, state: profile.state,
+        dateOfBirth: parsedDob, phone: profile.phone, country: profile.country, state: profile.state,
         city: profile.city, address: profile.address, postalCode: profile.postalCode, nationality: profile.nationality,
         gender: profile.gender, occupation: profile.occupation, bio: profile.bio, avatarData: profile.avatarData,
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook, xHandle: profile.xHandle,
@@ -163,7 +190,7 @@ export default function IdentityPage({ user }: Props) {
         language: profile.language, timeZone: profile.timeZone, preferredCurrency: profile.preferredCurrency,
         pronouns: profile.pronouns, relationshipStatus: profile.relationshipStatus, wallets: profile.wallets
       });
-      if (data.profile) setProfile(data.profile);
+      if (data.profile) { setProfile(data.profile); setDobInput(formatDobInput(data.profile.dateOfBirth)); }
       setNotice(data.message || 'Your identity has been saved.'); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Could not save your identity.'); setNoticeOk(false); }
     finally { setSaving(false); }
@@ -203,7 +230,7 @@ export default function IdentityPage({ user }: Props) {
             <div className={`field kh-email-field is-${emailStatus}`}><label htmlFor="identity-email">Email address</label><div className="kh-email-input-wrap"><input id="identity-email" type="email" maxLength={254} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.email} onChange={e => update('email', e.target.value.toLowerCase().replace(/\s/g, ''))} required />{profile.email.length > 0 && (emailStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking email address" /> : emailStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email accepted and available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : ['taken', 'invalid', 'unsupported', 'error'].includes(emailStatus) ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email invalid or unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div></div>
           </div>
           <div className="kh-identity-grid">
-            <div className="field"><label htmlFor="identity-dob">Date of birth</label><input id="identity-dob" type="date" max={new Date().toISOString().slice(0,10)} value={profile.dateOfBirth} onChange={e => update('dateOfBirth', e.target.value)} /></div>
+            <div className="field"><label htmlFor="identity-dob">Date of birth</label><input id="identity-dob" type="text" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/YYYY" maxLength={10} value={dobInput} onChange={e => { const value = maskDobInput(e.target.value); setDobInput(value); const parsed = parseDobInput(value); update('dateOfBirth', typeof parsed === 'string' ? parsed : ''); }} /></div>
             <div className="field"><label htmlFor="identity-phone">Phone number</label><input id="identity-phone" type="tel" autoComplete="tel" maxLength={32} placeholder="+234…" value={profile.phone} onChange={e => update('phone', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-nationality">Nationality</label><input id="identity-nationality" maxLength={80} autoComplete="country-name" placeholder="e.g. Nigerian" value={profile.nationality} onChange={e => update('nationality', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-country">Country of residence</label><input id="identity-country" maxLength={80} placeholder="Country" value={profile.country} onChange={e => update('country', e.target.value)} /></div>
