@@ -17,15 +17,31 @@ const blankProfile = (user: Props['user']): IdentityProfile => ({
   avatarData: '', wallets: [], securityCodeSet: false, updatedAt: null
 });
 async function request(path: string, body?: unknown) {
-  const token = sessionStorage.getItem('kh_access');
+  const makeRequest = (token: string | null) => fetch(API + path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  });
   let response: Response;
-  try {
-    response = await fetch(API + path, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) })
-    });
-  } catch { throw new Error('Could not reach ApiKingsHall. Check your connection and try again.'); }
+  try { response = await makeRequest(sessionStorage.getItem('kh_access')); }
+  catch { throw new Error('Could not reach ApiKingsHall. Check your connection and try again.'); }
+  if (response.status === 401 && path !== '/api/auth/refresh') {
+    const refreshToken = sessionStorage.getItem('kh_refresh');
+    if (refreshToken) {
+      try {
+        const refresh = await fetch(API + '/api/auth/refresh', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
+        const session = await refresh.json().catch(() => ({})) as { accessToken?: string; refreshToken?: string };
+        if (refresh.ok && session.accessToken && session.refreshToken) {
+          sessionStorage.setItem('kh_access', session.accessToken);
+          sessionStorage.setItem('kh_refresh', session.refreshToken);
+          response = await makeRequest(session.accessToken);
+        }
+      } catch { /* Keep the original API response so the user receives a useful error. */ }
+    }
+  }
   const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
