@@ -186,23 +186,6 @@ async function request(path: string, body?: unknown) {
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
-async function preparePhoto(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new Error('Choose an image file.');
-  const source = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const url = URL.createObjectURL(file); const image = new Image();
-    image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
-    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That image could not be opened.')); };
-    image.src = url;
-  });
-  const scale = Math.min(1, 512 / Math.max(source.naturalWidth, source.naturalHeight));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Photo editing is not available on this device.');
-  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.78);
-}
 export default function IdentityPage({ user }: Props) {
   const [profile, setProfile] = useState<IdentityProfile>(() => blankProfile(user));
   const [dobInput, setDobInput] = useState('');
