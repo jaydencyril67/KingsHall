@@ -55,7 +55,7 @@ body:after{width:min(65vw,760px);height:min(65vw,760px);left:-28vw;top:42vh;back
 .auth-heading{animation:kh-rise-in .65s .04s ease both}
 .auth-card{animation-delay:.1s}
 input,textarea{background:rgba(0,0,0,.28);border-color:rgba(218,225,236,.16);transition:border-color .2s ease,box-shadow .2s ease,background .2s ease}
-input:focus,textarea:focus{background:rgba(0,0,0,.42);border-color:rgba(226,234,246,.65);box-shadow:0 0 0 4px rgba(205,216,233,.075)}
+input:focus,textarea:focus{background:rgba(0,0,0,.34);border-color:rgba(226,234,246,.34);box-shadow:0 0 0 1px rgba(205,216,233,.025)}
 .notice{backdrop-filter:blur(10px)}
 .footer{border-color:rgba(226,232,242,.12)}
 @keyframes kh-rise-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
