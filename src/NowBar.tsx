@@ -1,21 +1,20 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react';
 
-type Section = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'EXIT';
-type Destination = Exclude<Section, 'EXIT'>;
-type Props = { section: Section; onNavigate: (section: Destination) => void; onExit: () => void };
+type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
+type Props = { section: string; onNavigate: (section: 'HOME') => void; onExit: () => void };
 
 const actions: { label: Section; icon: string }[] = [
   { label: 'HOME', icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6' },
   { label: 'IDENTITY', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' },
-  { label: 'APPS', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
+  { label: 'DEVICE', icon: 'M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM10 18h4' },
   { label: 'SECURITY', icon: 'M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6zM9 12l2 2 4-4' },
-  { label: 'PROFILE', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' },
-  { label: 'HELP', icon: 'M9.5 9a2.6 2.6 0 1 1 4.7 1.5c-1.1 1.2-2.2 1.4-2.2 3M12 17.5v.1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
+  { label: 'UPDATES', icon: 'M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 17 6l3 6M4 12l3 6a7 7 0 0 0 11.4-3' },
+  { label: 'ABOUT', icon: 'M12 16v-4M12 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
   { label: 'EXIT', icon: 'M10 4H5v16h5M14 8l4 4-4 4M8 12h10' },
 ];
 
 const STORAGE_KEY = 'kingshall-nowbar-action';
-const ORDER: Destination[] = ['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP'];
+const ORDER: Section[] = ['HOME'];
 
 export default function NowBar({ section, onNavigate, onExit }: Props) {
   const [view, setView] = useState<'title' | 'actions'>('title');
@@ -80,7 +79,7 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
   const activate = (label: Section) => {
     try { window.localStorage.setItem(STORAGE_KEY, label); } catch {}
     resetIdle();
-    if (label === 'EXIT') { onExit(); return; }
+    if (label !== 'HOME') return;
     if (label === section) {
       setView('title');
       setMode('compact');
@@ -88,7 +87,7 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
     }
     setView('title');
     setMode('compact');
-    onNavigate(label);
+    onNavigate('HOME');
   };
 
   const finishSwipe = (event: TouchEvent<HTMLDivElement>) => {
@@ -163,12 +162,12 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
               <div className={`kh-nowbar-slot ${mode === 'expanded' ? 'is-expanded' : ''}`} key={action.label}>
                 <button
                   data-nowbar-label={action.label}
-                  className={`kh-nowbar-action ${section === action.label ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
+                  className={`kh-nowbar-action ${action.label === 'HOME' ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
                   type="button"
                   aria-label={action.label}
                   onClick={() => {
                     if (holdTriggered.current) { holdTriggered.current = false; return; }
-                    activate(action.label);
+                    if (action.label === 'HOME') activate('HOME');
                   }}
                 >
                   <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
