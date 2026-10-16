@@ -606,7 +606,7 @@ export default function IdentityPage({ user }: Props) {
   update('nationality', country);
   const nextRegions = getRegionsForNationality(country);
   if (!nextRegions.includes(profile.state)) update('state', '');
-  if (nextCode) {
+  if (nextCode && phoneDaysLeft === 0) {
     const currentPhone = profile.phone.trim();
     let nationalPart = currentPhone;
     if (previousCode && currentPhone.startsWith(previousCode)) nationalPart = currentPhone.slice(previousCode.length).trim();
