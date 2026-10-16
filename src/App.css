@@ -304,12 +304,12 @@ input,textarea{font-size:12px}
 @media(prefers-reduced-motion:reduce){.kh-toast{animation:none}}
 
 
-/* Live KingsHall username availability */
-.kh-username-status{display:flex;align-items:center;gap:5px;min-height:14px;margin-top:6px;color:#969ba5;font-size:10px;line-height:1.4}
-.kh-username-status:empty{display:none}
-.kh-username-status.is-available{color:#73d69a}
-.kh-username-status.is-taken,.kh-username-status.is-error{color:#e99a9a}
-.kh-username-status>svg{width:13px;height:13px;flex:0 0 13px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.kh-username-spinner{width:11px;height:11px;flex:0 0 11px;border:1.5px solid rgba(205,212,222,.25);border-top-color:#dce2ea;border-radius:50%;animation:kh-username-spin .65s linear infinite}
-@keyframes kh-username-spin{to{transform:rotate(360deg)}}
+/* Compact username availability icons inside the input */
+.kh-username-input-wrap{position:relative;width:100%}
+.kh-username-input-wrap>input{width:100%;padding-right:39px}
+.kh-username-indicator{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none}
+.kh-username-spinner{width:13px;height:13px;border:1.5px solid rgba(205,212,222,.25);border-top-color:#dce2ea;border-radius:50%;animation:kh-username-spin .65s linear infinite}
+.kh-username-check{width:18px;height:18px;stroke:#73d69a;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kh-username-check circle{stroke:currentColor;stroke-width:1.5}
+@keyframes kh-username-spin{to{transform:translateY(-50%) rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.kh-username-spinner{animation:none;border-color:#dce2ea}}
