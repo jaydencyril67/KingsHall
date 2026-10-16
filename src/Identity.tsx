@@ -478,7 +478,7 @@ export default function IdentityPage({ user }: Props) {
     if (kind === 'profile') setPhotoBusy(true); else setCoverBusy(true);
     setNotice('');
     try {
-      const auth = await request('/api/media/imagekit-auth') as { token?: string; signature?: string; publicKey?: string; expire?: number };
+      const auth = await request('/api/identity/imagekit-auth') as { token?: string; signature?: string; publicKey?: string; expire?: number };
       if (!auth.token || !auth.signature || !auth.publicKey || !auth.expire) throw new Error('Image upload authentication is incomplete. Check the KingsHall API ImageKit setup.');
       const formData = new FormData();
       formData.append('file', file, kind === 'profile' ? 'profile-picture.jpg' : 'cover-photo.jpg');
