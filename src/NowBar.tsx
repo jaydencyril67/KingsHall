@@ -16,7 +16,7 @@ const actions: { label: Section; icon: string }[] = [
 const STORAGE_KEY = 'kingshall-nowbar-action';
 const ORDER: Section[] = ['HOME'];
 
-export default function NowBar({ section, onNavigate, onExit }: Props) {
+export default function NowBar({ section, onNavigate }: Props) {
   const [view, setView] = useState<'title' | 'actions'>('title');
   const [mode, setMode] = useState<'compact' | 'expanded'>('compact');
   const [pressing, setPressing] = useState(false);
