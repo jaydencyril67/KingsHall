@@ -98,14 +98,14 @@ function getRegionsForNationality(nationality: string): string[] {
 type PostalCodeStatus = 'idle' | 'valid' | 'invalid' | 'not-required';
 const COUNTRIES_WITHOUT_UNIVERSAL_POSTCODES = new Set(['Ghana', 'Qatar', 'United Arab Emirates']);
 function validatePostalCode(nationality: string, value: string): PostalCodeStatus {
-  const code = value.trim().toUpperCase().replace(/\\s+/g, ' ');
+  const code = value.trim().toUpperCase().replace(/\s+/g, ' ');
   if (!code || !nationality) return 'idle';
   if (COUNTRIES_WITHOUT_UNIVERSAL_POSTCODES.has(nationality)) return 'not-required';
-  if (nationality === 'Nigeria') return /^\\d{6}$/.test(code) ? 'valid' : 'invalid';
-  if (nationality === 'United States') return /^\\d{5}(?:-\\d{4})?$/.test(code) ? 'valid' : 'invalid';
+  if (nationality === 'Nigeria') return /^\d{6}$/.test(code) ? 'valid' : 'invalid';
+  if (nationality === 'United States') return /^\d{5}(?:-\d{4})?$/.test(code) ? 'valid' : 'invalid';
   if (nationality === 'United Kingdom') {
-    const compact = code.replace(/\\s/g, '');
-    return /^(GIR0AA|(?:[A-Z]{1,2}\\d[A-Z\\d]?|[A-Z]{1,2}\\d{2}|[A-Z]{1,2}\\d[A-Z]|[A-Z]{1,2}\\d{2}[A-Z])\\d[A-Z]{2})$/.test(compact) ? 'valid' : 'invalid';
+    const compact = code.replace(/\s/g, '');
+    return /^(GIR0AA|(?:[A-Z]{1,2}\d[A-Z\d]?|[A-Z]{1,2}\d{2}|[A-Z]{1,2}\d[A-Z]|[A-Z]{1,2}\d{2}[A-Z])\d[A-Z]{2})$/.test(compact) ? 'valid' : 'invalid';
   }
   // General country-aware fallback: many national postal systems use 2–12
   // letters/digits with optional internal spaces or hyphens.
