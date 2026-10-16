@@ -472,3 +472,9 @@ input,textarea{font-size:12px}
 .kh-copy-secret-button:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.28)}
 .kh-copy-secret-button:focus-visible{outline:2px solid rgba(210,210,220,.8);outline-offset:2px}
 .kh-copy-secret-button svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* Informational two-factor status; intentionally not interactive. */
+.kh-two-factor-status{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;width:100%;box-sizing:border-box;padding:12px 44px 12px 14px;border:1px solid var(--kh-border,rgba(255,255,255,.12));border-radius:12px;background:var(--kh-input-bg,rgba(255,255,255,.035));color:inherit;cursor:default;user-select:text}
+.kh-two-factor-status-check{right:14px;width:20px;height:20px}
+.kh-two-factor-status-check svg{width:20px;height:20px}
