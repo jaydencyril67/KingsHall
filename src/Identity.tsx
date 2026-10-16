@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import Toast from './Toast';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
@@ -124,7 +125,7 @@ export default function IdentityPage({ user }: Props) {
       <h1>KingsHall <em>Identity.</em></h1>
       <p>Your central profile for KingsHall and connected applications. Add the details you want KingsHall to securely retain.</p>
     </div>
-    {notice && <div className={noticeOk ? 'notice notice-success kh-identity-notice' : 'notice kh-identity-notice'} role="status" aria-live="polite">{notice}</div>}
+    <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
     {loading ? <div className="kh-identity-loading">Loading your saved identity…</div> : <>
       <form className="kh-identity-form" onSubmit={save}>
         <section className="kh-identity-card kh-identity-personal">
