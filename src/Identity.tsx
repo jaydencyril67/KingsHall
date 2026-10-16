@@ -464,12 +464,20 @@ export default function IdentityPage({ user }: Props) {
     setSavingPersonal(true);
     setNotice('');
     try {
-      const data = await request('/api/identity/personal', {
-        firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName,
+      const currentValues = { firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName,
         username: profile.username, email: profile.email, dateOfBirth: parsedDob, phone: profile.phone,
         nationality: profile.nationality, state: profile.state, postalCode: profile.postalCode,
-        gender: profile.gender, bio: profile.bio
-      });
+        gender: profile.gender, bio: profile.bio };
+      const saved = savedProfileRef.current;
+      const changedValues: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(currentValues)) {
+        const oldValue = (saved as unknown as Record<string, unknown> | null)?.[key];
+        if (!saved || String(oldValue ?? '') !== String(value ?? '')) changedValues[key] = value;
+      }
+      if (Object.keys(changedValues).length === 0) {
+        setNotice('No changes to save.'); setNoticeOk(true); return true;
+      }
+      const data = await request('/api/identity/personal', changedValues);
       const savedProfile = data.profile;
       if (savedProfile) {
         savedProfileRef.current = { ...savedProfile };
