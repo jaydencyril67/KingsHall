@@ -54,7 +54,7 @@ async function request(path: string, body?: unknown) {
       } catch { /* Keep the original API response so the user receives a useful error. */ }
     }
   }
-  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean };
+  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
@@ -85,6 +85,7 @@ export default function IdentityPage({ user }: Props) {
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [photoBusy, setPhotoBusy] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
   useEffect(() => {
     const username = profile.username;
@@ -102,6 +103,30 @@ export default function IdentityPage({ user }: Props) {
     return () => { current = false; window.clearTimeout(timer); };
   }, [profile.username, loading, user?.id]);
   useEffect(() => {
+    const email = profile.email;
+    if (loading || !email) {
+      setEmailStatus('idle');
+      return;
+    }
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      setEmailStatus('invalid');
+      return;
+    }
+    let current = true;
+    setEmailStatus('checking');
+    const timer = window.setTimeout(() => {
+      request('/api/identity/email-availability?email=' + encodeURIComponent(email))
+        .then(data => {
+          if (!current) return;
+          if (!data.validFormat) setEmailStatus('invalid');
+          else if (!data.providerAccepted) setEmailStatus('unsupported');
+          else setEmailStatus(data.available ? 'available' : 'taken');
+        })
+        .catch(() => { if (current) setEmailStatus('error'); });
+    }, 350);
+    return () => { current = false; window.clearTimeout(timer); };
+  }, [profile.email, loading, user?.id]);
+  useEffect(() => {
     let live = true;
     request('/api/identity').then(data => { if (live && data.profile) setProfile(data.profile); })
       .catch(error => { if (live) { setProfile(blankProfile(user)); setNotice(error.message || 'Could not load your identity.'); setNoticeOk(false); } })
@@ -112,6 +137,12 @@ export default function IdentityPage({ user }: Props) {
     event.preventDefault(); if (saving) return;
     if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
       setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
+      setNoticeOk(false);
+      return;
+    }
+    if (!profile.email || emailStatus !== 'available') {
+      const emailMessage = emailStatus === 'invalid' ? 'Enter a valid email address.' : emailStatus === 'unsupported' ? 'Please use an email address from an accepted email provider.' : emailStatus === 'taken' ? 'That email address is already in use.' : emailStatus === 'checking' ? 'Please wait while we check your email address.' : emailStatus === 'error' ? 'Could not verify your email address. Try again.' : 'Enter an email address from an accepted provider and wait for its check.';
+      setNotice(emailMessage);
       setNoticeOk(false);
       return;
     }
@@ -164,7 +195,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
             <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', capitalizeNameInput(e.target.value))} required /></div>
             <div className={`field kh-username-field is-${usernameStatus}`}><label htmlFor="identity-username">KingsHall username</label><div className="kh-username-input-wrap"><input id="identity-username" type="text" minLength={3} maxLength={24} pattern="[a-z0-9]{3,24}" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.username} onChange={e => update('username', e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())} required />{profile.username.length > 0 && (usernameStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking username availability" /> : usernameStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Username available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : usernameStatus === 'taken' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Username unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div></div>
-            <div className="field"><label htmlFor="identity-email">Email address</label><input id="identity-email" type="email" maxLength={254} autoComplete="email" value={profile.email} onChange={e => update('email', e.target.value)} /><small className="kh-identity-help">{profile.emailVerified ? 'Currently verified. Email verification controls will be added in the security pass.' : 'Email verification is pending.'}</small></div>
+            <div className={`field kh-email-field is-${emailStatus}`}><label htmlFor="identity-email">Email address</label><div className="kh-email-input-wrap"><input id="identity-email" type="email" maxLength={254} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.email} onChange={e => update('email', e.target.value.toLowerCase().replace(/\\s/g, ''))} required />{profile.email.length > 0 && (emailStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking email address" /> : emailStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email accepted and available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : ['taken', 'invalid', 'unsupported', 'error'].includes(emailStatus) ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email invalid or unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div></div>
           </div>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-dob">Date of birth</label><input id="identity-dob" type="date" max={new Date().toISOString().slice(0,10)} value={profile.dateOfBirth} onChange={e => update('dateOfBirth', e.target.value)} /></div>
