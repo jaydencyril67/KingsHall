@@ -391,7 +391,7 @@ export default function IdentityPage({ user }: Props) {
         website: profile.website, instagram: profile.instagram, facebook: profile.facebook,
         xHandle: profile.xHandle, telegram: profile.telegram, discord: profile.discord, linkedin: profile.linkedin,
         language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
-        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || [], coverPhoto: saved.coverPhoto || ''
+        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets: saved.wallets || []
       });
       const savedProfile = data.profile;
       if (savedProfile) {
