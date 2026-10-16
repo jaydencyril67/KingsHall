@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export type ToastTone = 'success' | 'error' | 'info' | 'warning';
 type Props = { message: string; tone?: ToastTone; onClose: () => void; duration?: number };
@@ -21,11 +21,13 @@ function ToastIcon({ tone }: { tone: ToastTone }) {
 }
 
 export default function Toast({ message, tone = 'info', onClose, duration = 5500 }: Props) {
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
   useEffect(() => {
     if (!message || duration <= 0) return;
-    const timer = window.setTimeout(onClose, duration);
+    const timer = window.setTimeout(() => closeRef.current(), duration);
     return () => window.clearTimeout(timer);
-  }, [message, duration, onClose]);
+  }, [message, duration]);
 
   if (!message) return null;
   return <div className={`kh-toast kh-toast-${tone}`} role={tone === 'error' || tone === 'warning' ? 'alert' : 'status'} aria-live={tone === 'error' || tone === 'warning' ? 'assertive' : 'polite'}>
