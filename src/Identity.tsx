@@ -83,7 +83,7 @@ const COUNTRY_NAME_ALIASES: Record<string, string> = {
   'Vietnam': 'Viet Nam'
 };
 function normalizeCountryName(value: string): string {
-  return value.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 function getRegionsForNationality(nationality: string): string[] {
   if (!nationality) return [];
