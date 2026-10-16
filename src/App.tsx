@@ -107,7 +107,7 @@ export default function App() {
   function navigateHomeSection(section: HomeSection) {
     setHomeSection(section);
     if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
-    const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'SECURITY' ? 'kh-home-security' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
+    const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   return <main className="kh-shell">
