@@ -34,6 +34,10 @@ function go(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'));
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
+function sectionFromHash(): HomeSection {
+  const value = window.location.hash.slice(1).toUpperCase();
+  return (['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
+}
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
 function KingsHallMark() { return <img className="kh-brand-mark-svg" src="/kingshall-mark.svg?v=4" alt="" />; }
 function FeatureIcon({ type }: { type: 'lock' | 'apps' | 'shield' | 'chat' | 'spark' | 'wallet' }) {
@@ -53,9 +57,9 @@ export default function App() {
   const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null);
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
-  const [homeSection, setHomeSection] = useState<HomeSection>('HOME');
+  const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   useEffect(() => {
-    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setNotice(''); };
+    const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
     const refresh = sessionStorage.getItem('kh_refresh');
     if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
@@ -107,6 +111,10 @@ export default function App() {
   const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/account' && path !== '/home');
   function navigateHomeSection(section: HomeSection) {
     setHomeSection(section);
+    const hash = `#${section.toLowerCase()}`;
+    if (window.location.pathname === '/home' && window.location.hash !== hash) {
+      window.history.pushState({}, '', `/home${hash}`);
+    }
     if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
