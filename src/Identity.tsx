@@ -214,7 +214,9 @@ export default function IdentityPage({ user }: Props) {
   const [imageKitEndpoint, setImageKitEndpoint] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingPersonal, setSavingPersonal] = useState(false);
+  const [personalEditing, setPersonalEditing] = useState(false);
   const [savingSocials, setSavingSocials] = useState(false);
+  const [socialEditing, setSocialEditing] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -345,8 +347,8 @@ export default function IdentityPage({ user }: Props) {
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [user?.id]);
-  async function saveSocials() {
-    if (savingSocials || savingPersonal) return;
+  async function saveSocials(): Promise<boolean> {
+    if (savingSocials || savingPersonal) return false;
     setSavingSocials(true);
     setNotice('');
     try {
@@ -377,45 +379,47 @@ export default function IdentityPage({ user }: Props) {
       }
       setNotice(data.message || 'Social links saved. All social fields are optional.');
       setNoticeOk(true);
+      return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save your social links.');
       setNoticeOk(false);
+      return false;
     } finally {
       setSavingSocials(false);
     }
   }
-  async function savePersonal() {
-    if (savingPersonal || savingSocials) return;
+  async function savePersonal(): Promise<boolean> {
+    if (savingPersonal || savingSocials) return false;
     const parsedDob = parseDobInput(dobInput);
     if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
       setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
       setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     if (!profile.email || emailStatus !== 'available') {
       setNotice(emailStatus === 'invalid' ? 'Enter a valid email address.' : emailStatus === 'unsupported' ? 'Please use an email address from an accepted email provider.' : emailStatus === 'taken' ? 'That email address is already in use.' : emailStatus === 'checking' ? 'Please wait while we check your email address.' : emailStatus === 'error' ? 'Could not verify your email address. Try again.' : 'Enter an email address from an accepted provider and wait for its check.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     if (profile.postalCode.trim() && postalCodeStatus === 'invalid') {
       setNotice('Check the postal code format for your selected nationality before saving.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     if (!['Female', 'Male', 'Non-binary', 'Other'].includes(profile.gender)) {
       setNotice('Select your gender before saving your personal details.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     if (!profile.nationality || !regionOptions.length || !selectedRegionIsValid) {
       setNotice(!profile.nationality ? 'Select your nationality first.' : !regionOptions.length ? 'No region options are available for this nationality. Please contact support before saving your personal details.' : 'Select a valid state or region for your nationality.');
       setNoticeOk(false);
-      return;
+      return false;
     }
     setSavingPersonal(true);
     setNotice('');
@@ -451,9 +455,11 @@ export default function IdentityPage({ user }: Props) {
       }
       setNotice(data.message || 'Personal details saved.');
       setNoticeOk(true);
+      return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save your personal details.');
       setNoticeOk(false);
+      return false;
     } finally {
       setSavingPersonal(false);
     }
@@ -522,6 +528,7 @@ export default function IdentityPage({ user }: Props) {
       <form className="kh-identity-form" onSubmit={event => event.preventDefault()}>
         <section className="kh-identity-card kh-identity-personal">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
+          <fieldset className="kh-identity-editable-fields" disabled={!personalEditing}>
           <div className="kh-identity-photo-stack">
             <div className="kh-identity-cover-frame">
               <button type="button" className="kh-identity-cover-trigger" aria-label="Cover photo actions" aria-expanded={coverActionsOpen} onClick={() => { setCoverActionsOpen(open => !open); setPhotoActionsOpen(false); setDeletePhotoConfirm(null); }} disabled={coverBusy || photoBusy}>
@@ -581,10 +588,12 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-nationality-field kh-gender-field"><label id="identity-gender-label">Gender</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-gender-label" aria-haspopup="listbox" aria-expanded={genderOpen} onClick={() => { setGenderOpen(open => !open); setGenderSearch(''); }}><span className={profile.gender ? '' : 'is-placeholder'}>{profile.gender || 'Select gender'}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{genderOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search gender options" placeholder="Search gender…" autoComplete="off" value={genderSearch} onChange={e => setGenderSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Gender options">{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).map(gender => <button type="button" role="option" aria-selected={profile.gender === gender} className="kh-nationality-option" key={gender} onClick={() => { update('gender', gender); setGenderOpen(false); setGenderSearch(''); }}>{gender}{profile.gender === gender && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching gender option found.</p>}</div></div>}</div>
             <div className="field kh-identity-span"><label htmlFor="identity-bio">About you <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
-          <div className="kh-identity-section-save"><span>Save only the personal details in this section.</span><button className="submit-button" type="button" onClick={savePersonal} disabled={savingPersonal || savingSocials}>{savingPersonal ? <><LoadingDots /> Saving personal details…</> : 'Save Personal'}</button></div>
+          </fieldset>
+          <div className="kh-identity-section-save"><span>{personalEditing ? 'Edit your details, then save to lock them again.' : 'Your personal details are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!personalEditing) { setPersonalEditing(true); setNotice(''); } else void savePersonal().then(saved => { if (saved) setPersonalEditing(false); }); }} disabled={savingPersonal || savingSocials}>{savingPersonal ? <><LoadingDots /> Saving…</> : personalEditing ? 'Save Personal' : 'Edit Personal'}</button></div>
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
+          <fieldset className="kh-identity-editable-fields" disabled={!socialEditing}>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-website">Website</label><input id="identity-website" type="url" maxLength={240} placeholder="https://…" value={profile.website} onChange={e => update('website', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-instagram">Instagram</label><input id="identity-instagram" maxLength={100} placeholder="@username or profile URL" value={profile.instagram} onChange={e => update('instagram', e.target.value)} /></div>
@@ -594,7 +603,8 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-discord">Discord</label><input id="identity-discord" maxLength={100} placeholder="Username" value={profile.discord} onChange={e => update('discord', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
-          <div className="kh-identity-section-save"><span>Every social field is optional. Save only the social links in this section.</span><button className="submit-button" type="button" onClick={saveSocials} disabled={savingSocials || savingPersonal}>{savingSocials ? <><LoadingDots /> Saving social links…</> : 'Save Socials'}</button></div>
+          </fieldset>
+          <div className="kh-identity-section-save"><span>{socialEditing ? 'Edit your links, then save to lock them again.' : 'Your social links are locked until you choose to edit.'}</span><button className="submit-button" type="button" onClick={() => { if (!socialEditing) { setSocialEditing(true); setNotice(''); } else void saveSocials().then(saved => { if (saved) setSocialEditing(false); }); }} disabled={savingSocials || savingPersonal}>{savingSocials ? <><LoadingDots /> Saving…</> : socialEditing ? 'Save Socials' : 'Edit Socials'}</button></div>
         </section>
         
       </form>
