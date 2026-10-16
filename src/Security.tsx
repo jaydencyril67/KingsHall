@@ -51,7 +51,6 @@ export default function SecurityPage({ user }: Props) {
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
   const [savingSecuritySettings, setSavingSecuritySettings] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
   const [securityEditing, setSecurityEditing] = useState(false);
   const [walletsEditing, setWalletsEditing] = useState(false);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
@@ -104,33 +103,8 @@ export default function SecurityPage({ user }: Props) {
 
   const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
 
-  async function updatePassword() {
-    if (savingPassword) return;
-    if (!passwordValid) {
-      setNotice('Password must be 12–128 characters and include uppercase, lowercase, a number and a symbol.');
-      setNoticeOk(false);
-      return;
-    }
-    setSavingPassword(true);
-    setNotice('');
-    try {
-      const result = await request('/api/auth/change-password', {
-        password: securityDraft.password,
-        refreshToken: sessionStorage.getItem('kh_refresh') || ''
-      });
-      setSecurityDraft(old => ({ ...old, password: '' }));
-      setNotice(result.message || 'Password updated successfully.');
-      setNoticeOk(true);
-    } catch (error) {
-      setNotice((error as Error).message || 'Could not update your password.');
-      setNoticeOk(false);
-    } finally {
-      setSavingPassword(false);
-    }
-  }
-
   async function saveSecuritySettings() {
-    if (savingSecuritySettings || savingPassword) return;
+    if (savingSecuritySettings) return;
     const wantsPassword = securityDraft.password.length > 0;
     const wantsSecurityCode = securityDraft.securityCode.length > 0;
     const wantsFundingCode = securityDraft.fundingCode.length > 0;
@@ -179,8 +153,8 @@ export default function SecurityPage({ user }: Props) {
     } finally { setSavingSecuritySettings(false); }
   }
 
-  async function saveWallets() {
-    if (savingWallets) return;
+  async function saveWallets(): Promise<boolean> {
+    if (savingWallets) return false;
     setSavingWallets(true); setNotice('');
     try {
       // Preserve the latest saved profile fields; this action changes wallet data only.
@@ -202,9 +176,11 @@ export default function SecurityPage({ user }: Props) {
       setWallets(result.profile?.wallets || wallets);
       setNotice(result.message || 'Wallet addresses saved.');
       setNoticeOk(true);
+      return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save wallet addresses.');
       setNoticeOk(false);
+      return false;
     } finally { setSavingWallets(false); }
   }
 
@@ -228,7 +204,7 @@ export default function SecurityPage({ user }: Props) {
           <div className="field"><label htmlFor="security-funding-code">4-digit Funding Code</label><div className="kh-security-code-input-wrap"><input id="security-funding-code" type={fundingCodeSet && focusedCodeField !== 'funding' && !securityDraft.fundingCode ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder="Create a 4-digit code" value={securityDraft.fundingCode || (fundingCodeSet && focusedCodeField !== 'funding' ? '*'.repeat(4) : '')} onFocus={() => setFocusedCodeField('funding')} onBlur={() => setFocusedCodeField(null)} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />{fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
         </div>
         </fieldset>
-        <div className="kh-identity-section-save"><span>{securityEditing ? "Edit your security details, then save to lock them again." : "Your security fields are locked until you choose to edit."}</span><button type="button" className="submit-button" disabled={savingSecuritySettings || savingPassword} onClick={() => { if (!securityEditing) { setSecurityEditing(true); setNotice(""); } else void saveSecuritySettings(); }}>{savingSecuritySettings || savingPassword ? <LoadingDots /> : securityEditing ? "Save Security Settings" : "Edit Security"}</button></div>
+        <div className="kh-identity-section-save"><span>{securityEditing ? "Edit your security details, then save to lock them again." : "Your security fields are locked until you choose to edit."}</span><button type="button" className="submit-button" disabled={savingSecuritySettings} onClick={() => { if (!securityEditing) { setSecurityEditing(true); setNotice(""); } else void saveSecuritySettings(); }}>{savingSecuritySettings ? <LoadingDots /> : securityEditing ? "Save Security Settings" : "Edit Security"}</button></div>
       </section>
       <section className="kh-identity-card">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
@@ -245,7 +221,7 @@ export default function SecurityPage({ user }: Props) {
         </div>
         <button className="secondary-button kh-identity-add-wallet" type="button" disabled={wallets.length >= 20} onClick={() => setWallets(old => [...old, newWallet()])}>+ Add wallet address</button>
         </fieldset>
-        <div className="kh-identity-section-save"><span>{walletsEditing ? "Edit your wallet addresses, then save to lock them again." : "Wallet addresses are locked until you choose to edit."}</span><button className="submit-button" type="button" onClick={() => { if (!walletsEditing) { setWalletsEditing(true); setNotice(""); } else void saveWallets().then(() => setWalletsEditing(false)); }} disabled={savingWallets}>{savingWallets ? <LoadingDots /> : walletsEditing ? 'Save Wallets' : 'Edit Wallets'}</button></div>
+        <div className="kh-identity-section-save"><span>{walletsEditing ? "Edit your wallet addresses, then save to lock them again." : "Wallet addresses are locked until you choose to edit."}</span><button className="submit-button" type="button" onClick={() => { if (!walletsEditing) { setWalletsEditing(true); setNotice(""); } else void saveWallets().then(saved => { if (saved) setWalletsEditing(false); }); }} disabled={savingWallets}>{savingWallets ? <LoadingDots /> : walletsEditing ? 'Save Wallets' : 'Edit Wallets'}</button></div>
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
