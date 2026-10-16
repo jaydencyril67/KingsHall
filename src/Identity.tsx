@@ -3,6 +3,7 @@ import StoryImageCropModal from './components/StoryImageCropModal';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import { Country, State } from 'country-state-city';
 import Toast from './Toast';
+import LoadingDots from './components/LoadingDots';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
@@ -517,7 +518,7 @@ export default function IdentityPage({ user }: Props) {
       <p>Your central profile for KingsHall and connected applications. Add the details you want KingsHall to securely retain.</p>
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
-    {loading ? <div className="kh-identity-loading">Loading your saved identity…</div> : <>
+    {loading && <div className="kh-identity-inline-loading" aria-live="polite"><LoadingDots /></div>}
       <form className="kh-identity-form" onSubmit={event => event.preventDefault()}>
         <section className="kh-identity-card kh-identity-personal">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Personal</h2><p>Core details connected to your KingsHall account.</p></div></div>
@@ -580,7 +581,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field kh-nationality-field kh-gender-field"><label id="identity-gender-label">Gender</label><button className="kh-nationality-trigger" type="button" aria-labelledby="identity-gender-label" aria-haspopup="listbox" aria-expanded={genderOpen} onClick={() => { setGenderOpen(open => !open); setGenderSearch(''); }}><span className={profile.gender ? '' : 'is-placeholder'}>{profile.gender || 'Select gender'}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{genderOpen && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search gender options" placeholder="Search gender…" autoComplete="off" value={genderSearch} onChange={e => setGenderSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Gender options">{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).map(gender => <button type="button" role="option" aria-selected={profile.gender === gender} className="kh-nationality-option" key={gender} onClick={() => { update('gender', gender); setGenderOpen(false); setGenderSearch(''); }}>{gender}{profile.gender === gender && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{['Female', 'Male', 'Non-binary', 'Other'].filter(gender => gender.toLowerCase().includes(genderSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching gender option found.</p>}</div></div>}</div>
             <div className="field kh-identity-span"><label htmlFor="identity-bio">About you <span className="optional">(optional)</span></label><textarea id="identity-bio" rows={3} maxLength={500} placeholder="A short note about yourself…" value={profile.bio} onChange={e => update('bio', e.target.value)} /></div>
           </div>
-          <div className="kh-identity-section-save"><span>Save only the personal details in this section.</span><button className="submit-button" type="button" onClick={savePersonal} disabled={savingPersonal || savingSocials}>{savingPersonal ? 'Saving personal details…' : 'Save Personal'}</button></div>
+          <div className="kh-identity-section-save"><span>Save only the personal details in this section.</span><button className="submit-button" type="button" onClick={savePersonal} disabled={savingPersonal || savingSocials}>{savingPersonal ? <><LoadingDots /> Saving personal details…</> : 'Save Personal'}</button></div>
         </section>
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Socials</h2><p>Optional public profiles and social contact handles.</p></div></div>
@@ -593,12 +594,11 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-discord">Discord</label><input id="identity-discord" maxLength={100} placeholder="Username" value={profile.discord} onChange={e => update('discord', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
-          <div className="kh-identity-section-save"><span>Every social field is optional. Save only the social links in this section.</span><button className="submit-button" type="button" onClick={saveSocials} disabled={savingSocials || savingPersonal}>{savingSocials ? 'Saving social links…' : 'Save Socials'}</button></div>
+          <div className="kh-identity-section-save"><span>Every social field is optional. Save only the social links in this section.</span><button className="submit-button" type="button" onClick={saveSocials} disabled={savingSocials || savingPersonal}>{savingSocials ? <><LoadingDots /> Saving social links…</> : 'Save Socials'}</button></div>
         </section>
         
       </form>
       <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
-    </>}
 
       {photoCropSource && <StoryImageCropModal imageUrl={photoCropSource} title="Edit profile photo" aspectRatio={1} onCancel={() => { URL.revokeObjectURL(photoCropSource); setPhotoCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'profile')} />}
       {coverCropSource && <StoryImageCropModal imageUrl={coverCropSource} title="Edit cover photo" aspectRatio={3} onCancel={() => { URL.revokeObjectURL(coverCropSource); setCoverCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'cover')} />}
