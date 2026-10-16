@@ -17,6 +17,9 @@ function splitName(value: string | undefined) {
   const parts = (value || '').trim().split(/\s+/).filter(Boolean);
   return { firstName: parts[0] || '', middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '', lastName: parts.length > 1 ? parts[parts.length - 1] : '' };
 }
+function capitalizeNameInput(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value;
+}
 const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', ...splitName(user?.name), username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
@@ -136,9 +139,9 @@ export default function IdentityPage({ user }: Props) {
             {profile.avatarData && <button className="kh-identity-remove-photo" type="button" onClick={() => update('avatarData', '')}>Remove</button>}
           </div>
           <div className="kh-identity-grid">
-            <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', e.target.value)} required /></div>
-            <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', e.target.value)} /></div>
-            <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', e.target.value)} required /></div>
+            <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required /></div>
+            <div className="field"><label htmlFor="identity-middle-name">Middle name <span className="optional">(if any)</span></label><input id="identity-middle-name" maxLength={80} autoComplete="additional-name" value={profile.middleName} onChange={e => update('middleName', capitalizeNameInput(e.target.value))} /></div>
+            <div className="field"><label htmlFor="identity-last-name">Last name</label><input id="identity-last-name" maxLength={80} autoComplete="family-name" value={profile.lastName} onChange={e => update('lastName', capitalizeNameInput(e.target.value))} required /></div>
             <div className="field"><label htmlFor="identity-username">KingsHall username</label><input id="identity-username" maxLength={24} autoComplete="username" value={profile.username} onChange={e => update('username', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-email">Email address</label><input id="identity-email" type="email" maxLength={254} autoComplete="email" value={profile.email} onChange={e => update('email', e.target.value)} /><small className="kh-identity-help">{profile.emailVerified ? 'Currently verified. Email verification controls will be added in the security pass.' : 'Email verification is pending.'}</small></div>
           </div>
