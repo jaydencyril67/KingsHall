@@ -174,6 +174,19 @@ export default function SecurityPage({ user }: Props) {
     finally { setTwoFactorBusy(false); }
   }
 
+  async function copyAuthenticatorSecret() {
+    if (!twoFactorSecret) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable in this browser.');
+      await navigator.clipboard.writeText(twoFactorSecret);
+      setNotice('Authenticator setup key copied to clipboard. Keep it private.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not copy the setup key. You can select and copy it manually.');
+      setNoticeOk(false);
+    }
+  }
+
   async function verifyAuthenticator() {
     if (!/^\d{6}$/.test(twoFactorCode)) { setNotice('Enter the six-digit authenticator code.'); setNoticeOk(false); return; }
     setTwoFactorBusy(true);
@@ -254,7 +267,7 @@ export default function SecurityPage({ user }: Props) {
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field"><label>Binding status</label><input value={twoFactorEnabled ? 'Bound and verified' : twoFactorPending ? 'Setup pending verification' : 'Not bound'} readOnly /></div>
           {!twoFactorEnabled && !twoFactorSecret && <div className="field"><label>Authenticator setup</label><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : 'Bind Authenticator'}</button></div>}
-          {twoFactorSecret && <div className="field"><label htmlFor="kh-two-factor-secret">Setup key</label><input id="kh-two-factor-secret" value={twoFactorSecret} readOnly /><small className="kh-postal-feedback">In your authenticator app, choose Enter a setup key. Account: {user?.email || 'KingsHall'}. Keep this key private.</small></div>}
+          {twoFactorSecret && <div className="field"><label htmlFor="kh-two-factor-secret">Setup key</label><div className="kh-two-factor-secret-row"><input id="kh-two-factor-secret" value={twoFactorSecret} readOnly /><button type="button" className="kh-copy-secret-button" aria-label="Copy authenticator setup key" title="Copy setup key" onClick={() => void copyAuthenticatorSecret()}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8" /></svg></button></div><small className="kh-postal-feedback">In your authenticator app, choose Enter a setup key. Account: {user?.email || 'KingsHall'}. Keep this key private.</small></div>}
           {(twoFactorSecret || twoFactorEnabled) && <div className="field"><label htmlFor="kh-two-factor-code">{twoFactorEnabled ? 'Current code to unbind' : 'Verify authenticator code'}</label><input id="kh-two-factor-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={twoFactorCode} onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button type="button" className="submit-button" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void (twoFactorEnabled ? removeAuthenticator() : verifyAuthenticator())}>{twoFactorBusy ? <LoadingDots /> : twoFactorEnabled ? 'Unbind Authenticator' : 'Verify & Bind'}</button></div>}
           {twoFactorPending && !twoFactorSecret && <div className="field"><small className="kh-postal-feedback">The setup key is no longer shown. Restart setup to generate a new key.</small><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>Restart Setup</button></div>}
         </div>
