@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Country, State } from 'country-state-city';
 import Toast from './Toast';
 
 type Wallet = { id: string; label: string; network: string; address: string };
@@ -55,6 +56,44 @@ const CALLING_CODES: Record<string, string> = {
   'Taiwan': '+886', 'Tajikistan': '+992', 'Tanzania': '+255', 'Thailand': '+66', 'Timor-Leste': '+670', 'Togo': '+228', 'Tonga': '+676', 'Trinidad and Tobago': '+1 868', 'Tunisia': '+216', 'Türkiye': '+90', 'Turkmenistan': '+993', 'Tuvalu': '+688', 'Uganda': '+256', 'Ukraine': '+380', 'United Arab Emirates': '+971', 'United Kingdom': '+44', 'United States': '+1', 'Uruguay': '+598', 'Uzbekistan': '+998',
   'Vanuatu': '+678', 'Vatican City': '+39 06', 'Venezuela': '+58', 'Vietnam': '+84', 'Yemen': '+967', 'Zambia': '+260', 'Zimbabwe': '+263'
 };
+
+const COUNTRY_NAME_ALIASES: Record<string, string> = {
+  'Bolivia': 'Bolivia, Plurinational State of',
+  'Brunei': 'Brunei Darussalam',
+  'Cabo Verde': 'Cape Verde',
+  'Congo': 'Congo',
+  'Côte d’Ivoire': "Côte d'Ivoire",
+  'Czechia': 'Czech Republic',
+  'Democratic Republic of the Congo': 'Congo, The Democratic Republic of the',
+  'Iran': 'Iran, Islamic Republic of',
+  'Laos': "Lao People's Democratic Republic",
+  'Micronesia': 'Micronesia, Federated States of',
+  'Moldova': 'Moldova, Republic of',
+  'North Korea': "Korea, Democratic People's Republic of",
+  'North Macedonia': 'Macedonia, the former Yugoslav Republic of',
+  'Palestine': 'Palestine, State of',
+  'Russia': 'Russian Federation',
+  'South Korea': 'Korea, Republic of',
+  'Syria': 'Syrian Arab Republic',
+  'Taiwan': 'Taiwan, Province of China',
+  'Tanzania': 'Tanzania, United Republic of',
+  'Türkiye': 'Turkey',
+  'Vatican City': 'Holy See (Vatican City State)',
+  'Venezuela': 'Venezuela, Bolivarian Republic of',
+  'Vietnam': 'Viet Nam'
+};
+function normalizeCountryName(value: string): string {
+  return value.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function getRegionsForNationality(nationality: string): string[] {
+  if (!nationality) return [];
+  const countries = Country.getAllCountries();
+  const alias = COUNTRY_NAME_ALIASES[nationality];
+  const country = countries.find(item => item.name === alias)
+    || countries.find(item => normalizeCountryName(item.name) === normalizeCountryName(nationality));
+  if (!country) return [];
+  return State.getStatesOfCountry(country.isoCode).map(item => item.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
 
 function splitName(value: string | undefined) {
   const parts = (value || '').trim().split(/\s+/).filter(Boolean);
@@ -162,6 +201,8 @@ export default function IdentityPage({ user }: Props) {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   const parsedDobForStatus = parseDobInput(dobInput);
   const dobStatus: 'idle' | 'valid' | 'invalid' | 'underage' = !dobInput ? 'idle' : parsedDobForStatus === null ? 'invalid' : parsedDobForStatus === '' ? 'idle' : isAdultDob(parsedDobForStatus) ? 'valid' : 'underage';
+  const regionOptions = getRegionsForNationality(profile.nationality);
+  const selectedRegionIsValid = regionOptions.includes(profile.state);
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
   useEffect(() => {
     const username = profile.username;
@@ -233,6 +274,11 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(false);
       return;
     }
+    if (!profile.nationality || !regionOptions.length || !selectedRegionIsValid) {
+      setNotice(!profile.nationality ? 'Select your nationality first.' : !regionOptions.length ? 'No region options are available for this nationality. Please contact support before saving your identity.' : 'Select a valid state or region for your nationality.');
+      setNoticeOk(false);
+      return;
+    }
     setSaving(true); setNotice('');
     try {
       const data = await request('/api/identity', {
@@ -294,6 +340,8 @@ export default function IdentityPage({ user }: Props) {
   const nextCode = CALLING_CODES[country];
   const previousCode = CALLING_CODES[profile.nationality];
   update('nationality', country);
+  const nextRegions = getRegionsForNationality(country);
+  if (!nextRegions.includes(profile.state)) update('state', '');
   if (nextCode) {
     const currentPhone = profile.phone.trim();
     let nationalPart = currentPhone;
@@ -306,7 +354,7 @@ export default function IdentityPage({ user }: Props) {
   setNationalitySearch('');
 }}>{country}{profile.nationality === country && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}{SORTED_COUNTRIES.filter(country => country.toLowerCase().includes(nationalitySearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching country found.</p>}</div></div>}</div>
             <div className="field kh-phone-field"><label htmlFor="identity-phone">Mobile Number</label><div className="kh-phone-input-wrap"><span className="kh-phone-code" aria-label={phoneCallingCode ? 'Country calling code ' + phoneCallingCode : 'Select a nationality to set the calling code'}>{phoneCallingCode || 'Code'}</span><input id="identity-phone" type="tel" inputMode="tel" autoComplete="tel-national" maxLength={32} placeholder={phoneCallingCode ? 'Enter your number' : 'Select nationality first'} value={phoneInputValue} onChange={e => update('phone', phoneCallingCode ? phoneCallingCode + ' ' + e.target.value.replace(/^\s+/, '') : e.target.value)} /></div></div>
-            <div className="field"><label htmlFor="identity-state">State / region</label><input id="identity-state" maxLength={80} placeholder="State or region" value={profile.state} onChange={e => update('state', e.target.value)} /></div>
+            <div className="field kh-region-field"><label htmlFor="identity-state">State / Region</label><select id="identity-state" value={profile.state} onChange={e => update('state', e.target.value)} required disabled={!profile.nationality || regionOptions.length === 0}><option value="" disabled>{!profile.nationality ? 'Select nationality first' : regionOptions.length ? 'Select state or region' : 'No regions available'}</option>{profile.state && !selectedRegionIsValid && <option value={profile.state} disabled>{profile.state} (not in current region list)</option>}{regionOptions.map(region => <option key={region} value={region}>{region}</option>)}</select></div>
             <div className="field"><label htmlFor="identity-city">City</label><input id="identity-city" maxLength={80} placeholder="City" value={profile.city} onChange={e => update('city', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-postal">Postal code</label><input id="identity-postal" maxLength={24} placeholder="Postal code" value={profile.postalCode} onChange={e => update('postalCode', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-gender">Gender</label><select id="identity-gender" required value={profile.gender} onChange={e => update('gender', e.target.value)}><option value="" disabled>Select gender</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other</option></select></div>
