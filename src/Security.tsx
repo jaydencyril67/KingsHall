@@ -134,7 +134,7 @@ export default function SecurityPage({ user }: Props) {
           </div>)}
         </div>
         <button className="secondary-button kh-identity-add-wallet" type="button" disabled={wallets.length >= 20} onClick={() => setWallets(old => [...old, newWallet()])}>+ Add wallet address</button>
-        <div className="kh-identity-section-save"><span>Wallet addresses are saved separately from your personal and social details.</span><button className="submit-button" type="button" onClick={saveWallets} disabled={savingWallets}>{savingWallets ? <><LoadingDots /> Saving wallets…</> : 'Save Wallets'}</button></div>
+        <div className="kh-identity-section-save"><span>Wallet addresses are saved separately from your personal and social details.</span><button className="submit-button" type="button" onClick={saveWallets} disabled={savingWallets}>{savingWallets ? <LoadingDots /> : 'Save Wallets'}</button></div>
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
