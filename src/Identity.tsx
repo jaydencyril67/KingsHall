@@ -545,8 +545,8 @@ export default function IdentityPage({ user }: Props) {
               </div>}
               {deletePhotoConfirm === 'profile' && <div className="kh-photo-confirm kh-photo-confirm-avatar" role="alertdialog"><strong>Delete profile picture?</strong><div><button type="button" onClick={() => setDeletePhotoConfirm(null)}>Cancel</button><button type="button" className="is-danger" onClick={() => void deletePhoto('profile')}>Delete</button></div></div>}
             </div>
-            <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={event => selectPhoto(event, 'profile')} />
-            <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={event => selectPhoto(event, 'cover')} />
+            <input ref={photoInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'profile')} />
+            <input ref={coverInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'cover')} />
           </div>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="identity-first-name">First name</label><input id="identity-first-name" maxLength={80} autoComplete="given-name" value={profile.firstName} onChange={e => update('firstName', capitalizeNameInput(e.target.value))} required /></div>
