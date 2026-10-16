@@ -221,6 +221,29 @@ export default function IdentityPage({ user }: Props) {
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalEditing, setPersonalEditing] = useState(false);
   const [savingSocials, setSavingSocials] = useState(false);
+
+  useEffect(() => {
+    const closeCustomSelectors = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.kh-nationality-field')) return;
+      setNationalityOpen(false);
+      setRegionOpen(false);
+      setGenderOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setNationalityOpen(false);
+        setRegionOpen(false);
+        setGenderOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', closeCustomSelectors);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeCustomSelectors);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
   const [socialEditing, setSocialEditing] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
