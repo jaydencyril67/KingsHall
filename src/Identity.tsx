@@ -506,16 +506,7 @@ export default function IdentityPage({ user }: Props) {
             <div className="field"><label htmlFor="identity-linkedin">LinkedIn</label><input id="identity-linkedin" maxLength={160} placeholder="Profile URL" value={profile.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
         </section>
-        <section className="kh-identity-card">
-          <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="person" /></span><div><h2>Advanced</h2><p>Optional preferences and additional profile details.</p></div></div>
-          <div className="kh-identity-grid">
-            <div className="field"><label htmlFor="identity-pronouns">Pronouns</label><input id="identity-pronouns" maxLength={40} placeholder="Optional" value={profile.pronouns} onChange={e => update('pronouns', e.target.value)} /></div>
-            <div className="field"><label htmlFor="identity-relationship">Relationship status</label><select id="identity-relationship" value={profile.relationshipStatus} onChange={e => update('relationshipStatus', e.target.value)}><option value="">Prefer not to say</option><option>Single</option><option>In a relationship</option><option>Married</option><option>It's complicated</option><option>Other</option></select></div>
-            <div className="field"><label htmlFor="identity-language">Preferred language</label><input id="identity-language" maxLength={60} placeholder="e.g. English" value={profile.language} onChange={e => update('language', e.target.value)} /></div>
-            <div className="field"><label htmlFor="identity-timezone">Time zone</label><input id="identity-timezone" maxLength={80} placeholder="e.g. Africa/Lagos" value={profile.timeZone} onChange={e => update('timeZone', e.target.value)} /></div>
-            <div className="field"><label htmlFor="identity-currency">Preferred currency</label><select id="identity-currency" value={profile.preferredCurrency} onChange={e => update('preferredCurrency', e.target.value)}>{['USD','NGN','EUR','GBP','USDT','BTC','ETH','OTHER'].map(currency => <option key={currency}>{currency}</option>)}</select></div>
-          </div>
-        </section>
+        
         <section className="kh-identity-card">
           <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="wallet" /></span><div><h2>Wallets</h2><p>Save receiving addresses by network. KingsHall stores addresses only; it never needs your seed phrase or private key.</p></div></div>
           <div className="kh-identity-wallets">
