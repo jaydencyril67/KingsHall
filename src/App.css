@@ -69,8 +69,7 @@ input:focus,textarea:focus{background:rgba(0,0,0,.34);border-color:rgba(226,234,
 @media(prefers-reduced-motion:reduce){body:before,body:after,.topbar,.landing-copy,.ecosystem-panel,.auth-card,.ecosystem-details,.auth-layout,.auth-heading,.landing-copy h1 em,.auth-heading h1 em{animation:none!important}.primary-button:before,.submit-button:before{display:none}.ecosystem-links>div,.feature-card,.primary-button,.secondary-button,.submit-button{transition:none!important}.ecosystem-links>div:hover,.feature-card:hover,.primary-button:hover,.secondary-button:hover,.submit-button:hover{transform:none}}
 
 
-/* Performance mode: keep the premium silver/glass styling, remove motion and costly blur effects. */
-*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+/* Performance mode: keep the premium silver/glass styling while reducing costly blur effects. */
 body:before,body:after{animation:none!important;filter:none!important;opacity:.55}
 .kh-shell:before{display:none}
 .topbar,.ecosystem-panel,.auth-card,.feature-card,.final-cta,.ecosystem-links>div,.notice,input,textarea{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
