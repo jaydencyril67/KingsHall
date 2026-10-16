@@ -407,7 +407,7 @@ input,textarea{font-size:12px}
 .kh-photo-popout-cover{right:9px;bottom:calc(100% + 8px)}
 .kh-photo-popout-avatar{left:50%;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%)}
 .kh-photo-popout button{display:flex;align-items:center;justify-content:center;gap:5px;min-width:66px;min-height:35px;padding:6px 9px;border:1px solid rgba(255,255,255,.06);border-radius:9px;background:rgba(255,255,255,.045);color:#e9edf3;font:inherit;font-size:10px;white-space:nowrap;cursor:pointer}
-.kh-photo-popout button span{font-size:15px;line-height:1}
+.kh-photo-popout button svg{width:15px;height:15px;flex:0 0 15px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .kh-photo-popout button:hover:not(:disabled){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14)}
 .kh-photo-popout button:disabled{opacity:.35;cursor:not-allowed}
 .kh-photo-popout button.is-danger,.kh-photo-confirm button.is-danger{color:#f0a5a5;background:rgba(150,50,50,.14);border-color:rgba(230,110,110,.13)}
