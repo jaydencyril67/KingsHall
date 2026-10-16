@@ -305,7 +305,7 @@ export default function IdentityPage({ user }: Props) {
     return () => { live = false; };
   }, [user?.id]);
   async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (saving) return;
+    event.preventDefault(); if (saving || savingPersonal) return;
     const parsedDob = parseDobInput(dobInput);
     if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
       setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
@@ -530,7 +530,7 @@ export default function IdentityPage({ user }: Props) {
           </div>
           <button className="secondary-button kh-identity-add-wallet" type="button" disabled={profile.wallets.length >= 20} onClick={() => setProfile(old => ({ ...old, wallets: [...old.wallets, newWallet()] }))}>+ Add wallet address</button>
         </section>
-        <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
+        <div className="kh-identity-save-row"><span>Your private details are visible only to your signed-in account through this API.</span><button className="submit-button" type="submit" disabled={saving || savingPersonal}>{saving ? 'Saving identity…' : 'Save identity'}</button></div>
       </form>
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><FeatureIconPlaceholder type="lock" /></span><div><h2>Security</h2><p>Enter or edit these fields here for now. Security settings will be connected to their proper account-protection flows in a later step.</p></div></div>
