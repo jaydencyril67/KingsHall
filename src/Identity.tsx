@@ -40,6 +40,14 @@ function maskDobInput(value: string): string {
   if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
   return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
 }
+function isAdultDob(isoDate: string): boolean {
+  const dob = new Date(isoDate + 'T00:00:00.000Z');
+  const today = new Date();
+  let age = today.getUTCFullYear() - dob.getUTCFullYear();
+  const beforeBirthday = today.getUTCMonth() < dob.getUTCMonth() || (today.getUTCMonth() === dob.getUTCMonth() && today.getUTCDate() < dob.getUTCDate());
+  if (beforeBirthday) age--;
+  return age >= 18;
+}
 const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', ...splitName(user?.name), username: user?.username || '', email: user?.email || '',
   emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
@@ -107,6 +115,8 @@ export default function IdentityPage({ user }: Props) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
+  const parsedDobForStatus = parseDobInput(dobInput);
+  const dobStatus: 'idle' | 'valid' | 'invalid' | 'underage' = !dobInput ? 'idle' : parsedDobForStatus === null ? 'invalid' : parsedDobForStatus === '' ? 'idle' : isAdultDob(parsedDobForStatus) ? 'valid' : 'underage';
   function update<K extends keyof IdentityProfile>(key: K, value: IdentityProfile[K]) { setProfile(old => ({ ...old, [key]: value } as IdentityProfile)); }
   useEffect(() => {
     const username = profile.username;
@@ -162,8 +172,8 @@ export default function IdentityPage({ user }: Props) {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (saving) return;
     const parsedDob = parseDobInput(dobInput);
-    if (parsedDob === null) {
-      setNotice('Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.');
+    if (parsedDob === null || parsedDob === '' || !isAdultDob(parsedDob)) {
+      setNotice(parsedDob === null ? 'Enter your date of birth as DD/MM/YYYY using a real date that is not in the future.' : parsedDob === '' ? 'Enter your date of birth to confirm you are at least 18.' : 'You must be at least 18 years old to save your identity.');
       setNoticeOk(false);
       return;
     }
@@ -230,7 +240,7 @@ export default function IdentityPage({ user }: Props) {
             <div className={`field kh-email-field is-${emailStatus}`}><label htmlFor="identity-email">Email address</label><div className="kh-email-input-wrap"><input id="identity-email" type="email" maxLength={254} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={profile.email} onChange={e => update('email', e.target.value.toLowerCase().replace(/\s/g, ''))} required />{profile.email.length > 0 && (emailStatus === 'checking' ? <span className="kh-username-spinner kh-username-indicator" role="status" aria-label="Checking email address" /> : emailStatus === 'available' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email accepted and available"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : ['taken', 'invalid', 'unsupported', 'error'].includes(emailStatus) ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Email invalid or unavailable"><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null)}</div></div>
           </div>
           <div className="kh-identity-grid">
-            <div className="field"><label htmlFor="identity-dob">Date of birth</label><input id="identity-dob" type="text" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/YYYY" maxLength={10} value={dobInput} onChange={e => { const value = maskDobInput(e.target.value); setDobInput(value); const parsed = parseDobInput(value); update('dateOfBirth', typeof parsed === 'string' ? parsed : ''); }} /></div>
+            <div className={`field kh-dob-field is-${dobStatus}`}><label htmlFor="identity-dob">Date of birth</label><div className="kh-username-input-wrap"><input id="identity-dob" type="text" inputMode="numeric" autoComplete="bday" placeholder="DD/MM/YYYY" maxLength={10} value={dobInput} aria-invalid={dobStatus === 'invalid' || dobStatus === 'underage'} onChange={e => { const value = maskDobInput(e.target.value); setDobInput(value); const parsed = parseDobInput(value); update('dateOfBirth', typeof parsed === 'string' ? parsed : ''); }} />{dobStatus === 'valid' ? <svg className="kh-username-check kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label="Date of birth verified: 18 or older"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg> : dobStatus === 'invalid' || dobStatus === 'underage' ? <svg className="kh-username-unavailable kh-username-indicator" viewBox="0 0 20 20" fill="none" role="img" aria-label={dobStatus === 'underage' ? 'Must be at least 18 years old' : 'Enter a valid date of birth' }><circle cx="10" cy="10" r="8.25" /><path d="m7 7 6 6M13 7l-6 6" /></svg> : null}</div></div>
             <div className="field"><label htmlFor="identity-phone">Phone number</label><input id="identity-phone" type="tel" autoComplete="tel" maxLength={32} placeholder="+234…" value={profile.phone} onChange={e => update('phone', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-nationality">Nationality</label><input id="identity-nationality" maxLength={80} autoComplete="country-name" placeholder="e.g. Nigerian" value={profile.nationality} onChange={e => update('nationality', e.target.value)} /></div>
             <div className="field"><label htmlFor="identity-country">Country of residence</label><input id="identity-country" maxLength={80} placeholder="Country" value={profile.country} onChange={e => update('country', e.target.value)} /></div>
