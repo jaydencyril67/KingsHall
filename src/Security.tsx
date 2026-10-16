@@ -317,9 +317,9 @@ export default function SecurityPage({ user }: Props) {
       <p>Manage your wallet addresses and review account-protection settings from one dedicated page.</p>
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
-    {loading && <div className="kh-identity-inline-loading" aria-live="polite"><LoadingDots /></div>}
+
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security</h2><p>Manage your account security settings below.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security{loading && <span className="kh-identity-section-loading" aria-label="Loading security details"><LoadingDots /></span>}</h2><p>Manage your account security settings below.</p></div></div>
         <fieldset className="kh-identity-editable-fields kh-security-editable-fields" disabled={!securityEditing}>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field kh-security-password-field"><label htmlFor="security-password">New password</label><div className="kh-security-code-input-wrap"><input id="security-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} placeholder="Enter a new password" value={securityDraft.password} onChange={e => setSecurityDraft(old => ({ ...old, password: e.target.value }))} />{passwordValid && <span className="kh-security-code-check" aria-label="Password meets requirements"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div><small className="kh-postal-feedback">Leave blank to keep your current password. 12–128 characters, with uppercase, lowercase, a number and a symbol.</small></div>
