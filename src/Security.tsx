@@ -56,6 +56,27 @@ export default function SecurityPage({ user }: Props) {
   const [noticeOk, setNoticeOk] = useState(false);
 
   useEffect(() => {
+    const closeNetworkSelector = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.kh-wallet-network-field')) return;
+      setOpenNetworkId(null);
+      setNetworkSearch('');
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenNetworkId(null);
+        setNetworkSearch('');
+      }
+    };
+    document.addEventListener('pointerdown', closeNetworkSelector);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeNetworkSelector);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
+
+  useEffect(() => {
     let current = true;
     request('/api/identity').then(data => {
       if (!current) return;
