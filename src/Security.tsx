@@ -5,7 +5,7 @@ type Wallet = { id: string; label: string; network: string; address: string };
 type Profile = {
   id?: string; firstName?: string; middleName?: string; lastName?: string; username?: string; email?: string;
   dateOfBirth?: string; phone?: string; country?: string; state?: string; city?: string; address?: string;
-  postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string;
+  postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string; coverPhoto?: string;
   website?: string; instagram?: string; facebook?: string; xHandle?: string; telegram?: string; discord?: string;
   linkedin?: string; language?: string; timeZone?: string; preferredCurrency?: string; pronouns?: string;
   relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean;
@@ -80,7 +80,7 @@ export default function SecurityPage({ user }: Props) {
         dateOfBirth: saved.dateOfBirth || '', phone: saved.phone || '', country: saved.country || '',
         state: saved.state || '', city: saved.city || '', address: saved.address || '', postalCode: saved.postalCode || '',
         nationality: saved.nationality || '', gender: saved.gender || '', occupation: saved.occupation || '',
-        bio: saved.bio || '', avatarData: saved.avatarData || '', website: saved.website || '',
+        bio: saved.bio || '', avatarData: saved.avatarData || '', coverPhoto: saved.coverPhoto || '', website: saved.website || '',
         instagram: saved.instagram || '', facebook: saved.facebook || '', xHandle: saved.xHandle || '',
         telegram: saved.telegram || '', discord: saved.discord || '', linkedin: saved.linkedin || '',
         language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
