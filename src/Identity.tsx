@@ -110,6 +110,11 @@ export default function IdentityPage({ user }: Props) {
   }, [user?.id]);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (saving) return;
+    if (!/^[a-z0-9]{3,24}$/.test(profile.username) || usernameStatus !== 'available') {
+      setNotice(usernameStatus === 'taken' ? 'That username is already taken. Choose another one.' : usernameStatus === 'checking' ? 'Please wait while we check username availability.' : usernameStatus === 'error' ? 'Could not verify username availability. Try again.' : 'Choose a valid username and wait for its availability check.');
+      setNoticeOk(false);
+      return;
+    }
     setSaving(true); setNotice('');
     try {
       const data = await request('/api/identity', {
