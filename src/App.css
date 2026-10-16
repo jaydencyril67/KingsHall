@@ -508,6 +508,13 @@ input,textarea{font-size:12px}
 }
 .kh-security-verification-panel .field { flex: 1 1 220px; min-width: 0; }
 
+/* Inline email verification stays directly beneath the security field being edited. */
+.kh-security-verification-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:8px;margin-top:9px;padding:0;border:0;border-radius:0;background:transparent}
+.kh-security-verification-panel .kh-security-verification-action{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:42px;margin:0;padding:9px 10px;box-sizing:border-box;font-size:11px}
+.kh-security-verification-panel .kh-security-verification-code-input{width:100%;min-width:0;min-height:42px;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(210,216,225,.17);border-radius:10px;background:rgba(3,4,5,.5);color:#f3f4f6;font:inherit;font-size:12px;letter-spacing:.08em}
+.kh-security-verification-panel .kh-security-verification-help{grid-column:1/-1;display:block;margin:0;color:var(--kh-muted,rgba(255,255,255,.62));font-size:11px;line-height:1.45}
+@media(max-width:380px){.kh-security-verification-panel{gap:6px}.kh-security-verification-panel .kh-security-verification-action,.kh-security-verification-panel .kh-security-verification-code-input{padding-left:7px;padding-right:7px;font-size:10px}}
+
 /* Account-security Edit popout: anchored to the clicked input like Identity photo actions. */
 .kh-security-code-input-wrap .kh-security-edit-popout{position:absolute;right:8px;top:50%;bottom:auto;transform:translateY(-50%);z-index:30;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 16px;border:1px solid rgba(220,226,234,.22);border-radius:10px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.98));box-shadow:0 10px 28px rgba(0,0,0,.35);color:#e9edf3;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}
 .kh-security-code-input-wrap .kh-security-edit-popout:hover,.kh-security-code-input-wrap .kh-security-edit-popout:focus-visible{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
