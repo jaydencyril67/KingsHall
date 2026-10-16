@@ -478,7 +478,9 @@ export default function IdentityPage({ user }: Props) {
           firstName: savedProfile.firstName, middleName: savedProfile.middleName, lastName: savedProfile.lastName,
           username: savedProfile.username, email: savedProfile.email, dateOfBirth: savedProfile.dateOfBirth,
           phone: savedProfile.phone, state: savedProfile.state, postalCode: savedProfile.postalCode,
-          nationality: savedProfile.nationality, gender: savedProfile.gender, bio: savedProfile.bio
+          nationality: savedProfile.nationality, gender: savedProfile.gender, bio: savedProfile.bio,
+          usernameChangedAt: savedProfile.usernameChangedAt, namesChangedAt: savedProfile.namesChangedAt,
+          nationalityChangedAt: savedProfile.nationalityChangedAt, phoneChangedAt: savedProfile.phoneChangedAt, postalCodeChangedAt: savedProfile.postalCodeChangedAt
         }));
         setDobInput(formatDobInput(savedProfile.dateOfBirth));
       }
