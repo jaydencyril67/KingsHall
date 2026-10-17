@@ -163,7 +163,7 @@ export default function SetupPage() {
         <div className="kh-device-setting-summary">
           <span className="kh-setup-icon" aria-hidden="true">{panel.icon}</span>
           <div className="kh-device-setting-label"><h2>{panel.title}</h2><p>{panel.summary}</p></div>
-<button type="button" className="kh-device-menu-trigger" aria-label={(activePanel === panel.key ? 'Collapse ' : 'Expand ') + panel.title} aria-expanded={activePanel === panel.key} onClick={() => setActivePanel(current => current === panel.key ? null : panel.key)}><span aria-hidden="true">{activePanel === panel.key ? '−' : '+'}</span></button>
+<button type="button" className="secondary-button kh-device-menu-trigger" aria-label={(activePanel === panel.key ? 'Collapse ' : 'Expand ') + panel.title} aria-expanded={activePanel === panel.key} onClick={() => setActivePanel(current => current === panel.key ? null : panel.key)}><span aria-hidden="true">{activePanel === panel.key ? '−' : '+'}</span></button>
         </div>
         {activePanel === panel.key && <div className="kh-device-panel-inline">{panelContent(panel.key)}</div>}
       </article>)}
