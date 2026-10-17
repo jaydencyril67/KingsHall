@@ -112,8 +112,24 @@ export default function AlertsPage({ version, onUnreadCount }: Props) {
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
+    let savedTypes: Record<string, boolean> = {};
+    let inAppEnabled = true;
+    try {
+      savedTypes = JSON.parse(localStorage.getItem('kh_alert_types') || '{}') as Record<string, boolean>;
+      const channels = JSON.parse(localStorage.getItem('kh_alert_channels') || '{}') as { inApp?: boolean };
+      inAppEnabled = channels.inApp !== false;
+    } catch {}
+    if (!inAppEnabled) return [];
+    const typeForCategory: Record<string, string> = {
+      login: 'signIns', signin: 'signIns', sign_in: 'signIns', security: 'security',
+      identity: 'identity', wallet: 'wallet', profile: 'profile',
+      system: 'systemUpdates', system_update: 'systemUpdates', system_updates: 'systemUpdates',
+      update: 'systemUpdates', notice: 'systemUpdates'
+    };
     return alerts.filter(alert => {
       const category = (alert.category || '').toLowerCase();
+      const typeKey = typeForCategory[category];
+      if (typeKey && savedTypes[typeKey] === false) return false;
       if (filter === 'unread' && alert.read_at) return false;
       if (!['all', 'unread'].includes(filter) && category !== filter) return false;
       if (term && ![alert.title, alert.message, categoryLabel(category)].some(value => value?.toLocaleLowerCase().includes(term))) return false;
