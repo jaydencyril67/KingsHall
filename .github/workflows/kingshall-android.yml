@@ -298,6 +298,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Verify release notification credentials
+        env:
+          RELEASE_SECRET: ${{ secrets.KINGSHALL_RELEASE_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_SECRET:-}" ]; then
+            echo "::error::Set KINGSHALL_RELEASE_WEBHOOK_SECRET in GitHub Actions secrets and ApiKingsHall Render environment variables before publishing a release."
+            exit 1
+          fi
+          echo "KingsHall release notification credentials are configured."
+
       - name: Publish versioned GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -319,3 +330,28 @@ jobs:
           Download KingsHall.apk and install it on Android. Android may ask you to confirm installation.
 
           Android version code: ${{ github.run_number }}"
+
+      - name: Notify KingsHall users about this release
+        env:
+          API_URL: ${{ vars.KINGSHALL_API_URL || 'https://api.kingshall.online' }}
+          RELEASE_SECRET: ${{ secrets.KINGSHALL_RELEASE_WEBHOOK_SECRET }}
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_SECRET:-}" ]; then
+            echo "::error::Set KINGSHALL_RELEASE_WEBHOOK_SECRET in GitHub Actions secrets and ApiKingsHall Render environment variables."
+            exit 1
+          fi
+          payload="$(jq -n --arg tag "v$APP_VERSION" '{tag: $tag}')"
+          for attempt in 1 2 3 4 5; do
+            if curl --fail-with-body --silent --show-error \
+              --request POST "$API_URL/api/notifications/release-published" \
+              --header "Content-Type: application/json" \
+              --header "X-KingsHall-Release-Secret: $RELEASE_SECRET" \
+              --data "$payload"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep 5; fi
+          done
+          echo "::error::Release was published, but notifying KingsHall users failed after 5 attempts."
+          exit 1
