@@ -913,3 +913,73 @@ input,textarea{font-size:12px}
 @media(prefers-reduced-motion:reduce){
   .kh-home-app-card,.kh-identity-card,.kh-identity-wallet,.kh-alert-item,.feature-card{transition:none}
 }
+
+
+/* Exact About-page card palette replicated across every KingsHall page. */
+:root{
+  --kh-about-card-border:rgba(221,226,233,.15);
+  --kh-about-card-primary:radial-gradient(ellipse at 0 0,rgba(255,255,255,.065),transparent 55%),linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  --kh-about-card-secondary:rgba(255,255,255,.023);
+  --kh-about-card-secondary-border:rgba(221,226,233,.105);
+  --kh-about-card-inset:inset 0 1px rgba(255,255,255,.035);
+}
+/* Larger cards use the exact intro-panel surface from About. */
+.ecosystem-panel,
+.auth-card,
+.kh-home-card,
+.kh-home-app-card,
+.kh-identity-card,
+.kh-alerts-empty,
+.kh-alerts-control-panel{
+  border:1px solid var(--kh-about-card-border);
+  background:var(--kh-about-card-primary);
+  box-shadow:var(--kh-about-card-inset);
+}
+/* Nested/content cards use the exact About information-card surface. */
+.ecosystem-links>div,
+.feature-card,
+.kh-identity-readonly,
+.kh-wallet-address-item,
+.kh-alert-item{
+  border-color:var(--kh-about-card-secondary-border);
+  background:var(--kh-about-card-secondary);
+  box-shadow:none;
+}
+/* Keep card outlines and highlights consistent with About without changing layout. */
+.ecosystem-panel,
+.auth-card,
+.kh-home-card,
+.kh-home-app-card,
+.kh-identity-card,
+.kh-alerts-empty,
+.kh-alerts-control-panel{
+  position:relative;
+}
+.ecosystem-panel:after,
+.auth-card:after,
+.kh-home-card:after,
+.kh-home-app-card:after,
+.kh-identity-card:after,
+.kh-alerts-empty:after,
+.kh-alerts-control-panel:after{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:1px;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(245,248,255,.22),transparent);
+}
+.ecosystem-icon,
+.detail-icon,
+.kh-home-card-icon,
+.card-symbol,
+.kh-identity-card-head>.kh-home-card-icon{
+  border-color:rgba(221,226,233,.14);
+  background:rgba(255,255,255,.04);
+  color:#d0d6df;
+}
+.ecosystem-panel,.auth-card,.kh-home-card,.kh-home-app-card,.kh-identity-card,.kh-alerts-empty,.kh-alerts-control-panel,
+.ecosystem-links>div,.feature-card,.kh-identity-readonly,.kh-wallet-address-item,.kh-alert-item{
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
