@@ -953,7 +953,11 @@ input,textarea{font-size:12px}
 .kh-device-menu-trigger:focus-visible{outline:2px solid var(--silver-bright);outline-offset:2px}
 .kh-device-panel-inline .kh-setup-setting-row:first-child{border-top:1px solid var(--kh-card-secondary-border)}
 .kh-device-panel-inline .kh-setup-setting-copy>span{font-size:10px}
-.kh-device-panel-inline{padding:0 13px 12px}
+.kh-device-panel-inline{position:relative;overflow:visible;padding:0 13px 12px}
+.kh-device-setting-card.is-open{z-index:20}
+.kh-device-panel-inline .kh-setup-lighting-select{z-index:25}
+.kh-device-panel-inline .kh-setup-lighting-select.is-open{z-index:80}
+.kh-device-panel-inline .kh-setup-lighting-select .kh-nationality-popout{z-index:100}
 .kh-device-panel-inline .kh-setup-setting-row{min-height:53px;padding:9px 0}
 .kh-device-panel-inline .kh-setup-type-group{padding-top:10px}
 .kh-device-panel-inline .kh-setup-check-row{min-height:38px}
