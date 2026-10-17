@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;500;600;700&display=swap');
-:root{font-family:'STIX Two Text',serif;color:#f3f4f6;background:#050505;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;--muted:#9b9da5;--line:rgba(221,226,233,.13);--silver:#d9dde3;--silver-bright:#f4f6f8;--panel:#101114;--app-top-gap:75px
+:root{font-family:'STIX Two Text',serif;color:#f3f4f6;background:#050505;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;--muted:#9b9da5;--line:rgba(221,226,233,.13);--silver:#d9dde3;--silver-bright:#f4f6f8;--panel:#101114;--app-top-gap:75px;
   --kh-card-primary-border:rgba(221,226,233,.15);
   --kh-card-primary-surface:radial-gradient(ellipse at 0 0,rgba(255,255,255,.065),transparent 55%),linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
   --kh-card-secondary-border:rgba(221,226,233,.105);
