@@ -446,7 +446,7 @@ export default function SecurityPage({ user }: Props) {
               <span className="kh-wallet-address-network">{wallet.network === 'BRC20' ? 'BRC-20' : wallet.network}</span>
             </button>
             {walletActionMenuId === wallet.id && <div className="kh-wallet-actions-popout" role="group" aria-label="Wallet address actions">
-              <button type="button" onClick={() => { setWalletDraft({ ...wallet }); setWalletActionMenuId(null); setNotice(''); }}>Edit</button>
+              <button type="button" onClick={() => { setWalletDraft({ ...wallet }); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); }}>Edit</button>
               <button type="button" className="is-danger" onClick={() => void deleteWallet(wallet.id)}>Delete</button>
             </div>}
           </div>)}
