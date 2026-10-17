@@ -40,6 +40,27 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (val
 function ColorField({ value, onClick, disabled }: { value: string; onClick: () => void; disabled?: boolean }) {
   return <button type="button" className={'kh-setup-color' + (disabled ? ' is-disabled' : '')} disabled={disabled} onClick={onClick} aria-label={'Choose colour, currently ' + value.toUpperCase()}><span className="kh-setup-color-swatch" style={{ background: value }} /><span>{value.toUpperCase()}</span><span className="kh-setup-color-action">Choose</span></button>;
 }
+function LightingStyleSelect({ value, onChange, disabled, label }: { value: string; onChange: (value: string) => void; disabled: boolean; label: string }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const selected = LIGHT_STYLES.find(style => style.value === value) || LIGHT_STYLES[0];
+  const filtered = LIGHT_STYLES.filter(style => (style.label + ' ' + style.description).toLowerCase().includes(search.trim().toLowerCase()));
+  return <div className={'kh-nationality-field kh-setup-lighting-select' + (open ? ' is-open' : '')}>
+    <button type="button" className="kh-nationality-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen(current => !current); setSearch(''); }}>
+      <span>{selected.label}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+    </button>
+    {open && !disabled && <div className="kh-nationality-popout">
+      <input className="kh-nationality-search" type="search" aria-label={'Search ' + label.toLowerCase()} placeholder="Search lighting styles…" autoComplete="off" value={search} onChange={event => setSearch(event.target.value)} />
+      <div className="kh-nationality-list" role="listbox" aria-label={label}>
+        {filtered.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); setSearch(''); }}>
+          <span><strong>{style.label}</strong><span className="kh-setup-lighting-option-description">{style.description}</span></span>
+          {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
+        </button>)}
+        {filtered.length === 0 && <p className="kh-nationality-empty">No matching lighting style found.</p>}
+      </div>
+    </div>}
+  </div>;
+}
 export default function SetupPage() {
   const [nowbarEnabled, setNowbarEnabled] = useState(() => readBool('kh_nowbar_color_enabled', false));
   const [nowbarColor, setNowbarColor] = useState(() => readColor('kh_nowbar_color', '#b9c7df'));
@@ -117,7 +138,7 @@ export default function SetupPage() {
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">◈</span><div><h2>Nowbar appearance</h2><p>Customise the quick-navigation bar and its ambient lighting.</p></div></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Nowbar colour and lighting</strong><span>Enable a coloured edge and glow around the Nowbar.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><select value={nowbarLight} disabled={!nowbarEnabled} onChange={event => setNowbarLight(event.target.value)} aria-label="Nowbar lighting style">{LIGHT_STYLES.map(style => <option key={style.value} value={style.value}>{style.label}</option>)}</select></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={nowbarLight} disabled={!nowbarEnabled} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
       <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-nowbar-preview ' + nowbarLight} style={{ '--setup-accent': nowbarEnabled ? nowbarColor : 'rgba(220,226,234,.25)' } as CSSProperties}><span className="kh-setup-preview-orb" /><strong>HOME</strong><span className="kh-setup-preview-chevron">⌄</span></div></div>
     </article>
 
@@ -125,7 +146,7 @@ export default function SetupPage() {
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">✧</span><div><h2>Alert header</h2><p>Control the accent and lighting used by the app's alert header.</p></div></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Header colour and lighting</strong><span>Apply your selected accent to the KingsHall header and alert indicator.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === headerLight)?.description || 'Choose how the light behaves.'}</span></div><select value={headerLight} disabled={!headerEnabled} onChange={event => setHeaderLight(event.target.value)} aria-label="Alert header lighting style">{LIGHT_STYLES.map(style => <option key={style.value} value={style.value}>{style.label}</option>)}</select></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === headerLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={headerLight} disabled={!headerEnabled} onChange={setHeaderLight} label="Alert header lighting style" /></div>
       <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-header-preview ' + headerLight} style={{ '--setup-accent': headerEnabled ? headerColor : 'rgba(220,226,234,.25)' } as React.CSSProperties}><span className="kh-setup-preview-orb" /><strong>KINGSHALL</strong><span className="kh-setup-header-bell">♧</span></div></div>
     </article>
 
