@@ -204,12 +204,12 @@ jobs:
             // Match CryBots' native splash artwork scale: keep the mark centered
             // inside a transparent 512px canvas instead of letting it fill the canvas.
             // This preserves Android 12+ system splash sizing and the legacy 213dp layout.
-            const crownLayer = await sharp(crown).resize(208, 208, { fit: 'contain' }).png().toBuffer();
-            const circleLayer = await sharp(circle).resize(256, 256, { fit: 'fill' }).png().toBuffer();
+            const crownLayer = await sharp(crown).resize(176, 176, { fit: 'contain' }).png().toBuffer();
+            const circleLayer = await sharp(circle).resize(208, 208, { fit: 'fill' }).png().toBuffer();
             await sharp({ create: { width: 512, height: 512, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
               .composite([
-                { input: circleLayer, left: 128, top: 128 },
-                { input: crownLayer, left: 152, top: 152 }
+                { input: circleLayer, left: 152, top: 152 },
+                { input: crownLayer, left: 168, top: 168 }
               ])
               .png()
               .toFile('android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
