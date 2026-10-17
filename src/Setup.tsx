@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
@@ -47,7 +48,7 @@ function LightingStyleSelect({ value, onChange, label }: { value: string; onChan
     <button type="button" className="kh-nationality-trigger kh-setup-lighting-trigger" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
       <span>{selected.label}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
     </button>
-    {open && <div className="kh-lighting-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
+    {open && createPortal(<div className="kh-lighting-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
       <section className="kh-lighting-modal" role="dialog" aria-modal="true" aria-label={label} onClick={event => event.stopPropagation()}>
         <div className="kh-lighting-modal-heading"><strong>Lighting style</strong><button type="button" aria-label="Close lighting styles" onClick={() => setOpen(false)}>×</button></div>
         <div className="kh-lighting-modal-options" role="listbox" aria-label={label}>
@@ -57,7 +58,7 @@ function LightingStyleSelect({ value, onChange, label }: { value: string; onChan
           </button>)}
         </div>
       </section>
-    </div>}
+    </div>, document.body)}
   </>;
 }
 export default function SetupPage() {
