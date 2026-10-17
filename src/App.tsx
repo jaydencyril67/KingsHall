@@ -198,7 +198,12 @@ export default function App() {
       clear();
       setUser(null);
       navigate('login');
-    } catch {
+    } catch (err) {
+      const message = (err as Error)?.message || '';
+      if (/refresh session invalid|refresh session invalid or expired|access token expired or invalid|account not found/i.test(message)) {
+        clear();
+        setUser(null);
+      }
       // Keep stored credentials intact on network/server errors; the user can still reach Sign In.
       navigate('login');
     } finally {
