@@ -279,8 +279,9 @@ export default function SecurityPage({ user }: Props) {
   }
 
   async function verifyAuthenticator() {
+    if (twoFactorVerifyBusy || twoFactorCancelBusy || twoFactorBusy) return;
     if (!/^\d{6}$/.test(twoFactorCode)) { setNotice('Enter the six-digit authenticator code.'); setNoticeOk(false); return; }
-    setTwoFactorBusy(true);
+    setTwoFactorVerifyBusy(true);
     try {
       const result = await request('/api/identity/2fa/verify', { code: twoFactorCode });
       setTwoFactorEnabled(true); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
