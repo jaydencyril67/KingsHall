@@ -494,7 +494,7 @@ input,textarea{font-size:12px}
 .kh-wallet-address-copy small{color:#9da3ae;font-size:10px}
 .kh-wallet-address-copy strong{overflow-wrap:anywhere;font-size:11px;font-weight:500;line-height:1.5}
 .kh-wallet-address-network{flex:0 0 auto;padding:5px 7px;border:1px solid rgba(220,226,234,.13);border-radius:7px;color:#cbd0d9;font-size:9px;white-space:nowrap}
-.kh-wallet-actions-popout{position:absolute;z-index:22;top:calc(100% + 7px);right:9px;display:flex;gap:6px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
+.kh-wallet-actions-popout{position:absolute;z-index:22;bottom:calc(100% + 7px);right:9px;display:flex;gap:6px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
 .kh-wallet-actions-popout button{min-width:66px;min-height:35px;padding:6px 10px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.045);color:#e9edf3;font:inherit;font-size:10px;cursor:pointer}
 .kh-wallet-actions-popout button:hover{background:rgba(255,255,255,.1)}
 .kh-wallet-actions-popout button.is-danger{color:#f0a5a5;background:rgba(150,50,50,.14);border-color:rgba(230,110,110,.13)}
