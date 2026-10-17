@@ -299,7 +299,7 @@ export default function SecurityPage({ user }: Props) {
   }
 
   async function requestWalletVerification(actionOverride?: 'add' | 'edit' | 'delete'): Promise<void> {
-    if ((!walletDraft && !walletPendingDeleteId && actionOverride !== 'delete') || savingWallets || walletVerificationRequested) return;
+    if ((!walletDraft && !walletPendingDeleteId && actionOverride !== 'delete') || savingWallets || (walletVerificationRequested && actionOverride !== 'delete')) return;
     let action: 'add' | 'edit' | 'delete';
     if (actionOverride === 'delete' || walletPendingDeleteId) {
       action = 'delete';
