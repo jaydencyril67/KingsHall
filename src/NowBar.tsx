@@ -132,7 +132,7 @@ export default function NowBar({ section, onNavigate }: Props) {
           '--kh-light-accent': appearance.color,
           '--kh-light-glow': appearance.color + '66',
           borderColor: appearance.color,
-          animation: ['stable', 'stable-light'].includes(appearance.light) ? undefined : `kh-light-${appearance.light === 'blink-light' ? 'edge-blink' : appearance.light === 'blink' ? 'glow-blink' : appearance.light === 'pulse-light' ? 'edge-pulse' : appearance.light === 'pulse' ? 'glow-pulse' : appearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${appearance.light.startsWith('color') ? '6s linear' : appearance.light.startsWith('pulse') ? '3.1s ease-in-out' : '2.6s ease-in-out'} infinite`,
+          animation: ['stable', 'stable-light'].includes(appearance.light) ? undefined : `kh-light-${appearance.light === 'blink-light' ? 'edge-blink' : appearance.light === 'blink' ? 'glow-blink' : appearance.light === 'pulse-light' ? 'edge-pulse' : appearance.light === 'pulse' ? 'glow-pulse' : appearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${appearance.light.startsWith('color') ? '6s ease-in-out' : '3.2s ease-in-out'} infinite`,
           animationFillMode: 'both',
           willChange: 'border-color, box-shadow, filter',
           ...(appearance.light === 'stable-light' ? { boxShadow: '0 18px 50px rgba(0,0,0,.82)' } : {}),
