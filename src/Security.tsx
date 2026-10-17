@@ -195,12 +195,12 @@ export default function SecurityPage({ user }: Props) {
 
   async function saveActiveSecurityField() {
     if (!activeSecurityField || savingSecuritySettings) return;
-    if (!/^\\d{6}$/.test(emailVerificationCode)) { setNotice('Enter the six-digit code sent to your email.'); setNoticeOk(false); return; }
+    if (!/^\d{6}$/.test(emailVerificationCode)) { setNotice('Enter the six-digit code sent to your email.'); setNoticeOk(false); return; }
     const field = activeSecurityField;
     if (field === 'password' && !passwordValid) { setNotice('Password must be 12–128 characters and include uppercase, lowercase, a number and a symbol.'); setNoticeOk(false); return; }
     if (field === 'securityCode' && !/^\\d{8}$/.test(securityDraft.securityCode)) { setNotice('Security Code must contain exactly 8 digits.'); setNoticeOk(false); return; }
     if (field === 'fundingCode' && !/^\\d{4}$/.test(securityDraft.fundingCode)) { setNotice('Funding Code must contain exactly 4 digits.'); setNoticeOk(false); return; }
-    if (field === 'accessCode' && !/^\\d{6}$/.test(securityDraft.accessCode)) { setNotice('Access Code must contain exactly 6 digits.'); setNoticeOk(false); return; }
+    if (field === 'accessCode' && !/^\d{6}$/.test(securityDraft.accessCode)) { setNotice('Access Code must contain exactly 6 digits.'); setNoticeOk(false); return; }
     setSavingSecuritySettings(true); setNotice('');
     try {
       if (field === 'password') {
@@ -346,7 +346,7 @@ export default function SecurityPage({ user }: Props) {
   async function commitWalletDraft(): Promise<void> {
     if (!walletDraft || savingWallets) return;
     if (!walletVerificationRequested) { await requestWalletVerification(); return; }
-    if (!/^\\d{6}$/.test(walletEmailVerificationCode)) {
+    if (!/^\d{6}$/.test(walletEmailVerificationCode)) {
       setNotice('Enter the six-digit code sent to your email.');
       setNoticeOk(false);
       return;
@@ -459,7 +459,7 @@ export default function SecurityPage({ user }: Props) {
             <div className="field kh-identity-span"><label htmlFor="security-wallet-address">Wallet address</label><input id="security-wallet-address" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={walletDraft.address} aria-invalid={Boolean(walletDraft.address.trim() && !walletAddressValidation(walletDraft).valid)} onChange={e => patchWallet(walletDraft.id, 'address', e.target.value)} />{walletDraft.address.trim() && <small className={walletAddressValidation(walletDraft).valid ? 'kh-wallet-address-feedback is-valid' : 'kh-wallet-address-feedback is-invalid'} role="status">{walletAddressValidation(walletDraft).message}</small>}</div>
           </div>
         </div>}
-        {walletDraft && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && wallets.length >= 20)} onClick={() => { if (walletDraft) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft ? (wallets.some(wallet => wallet.id === walletDraft.id) ? 'Send code' : 'Send code') : '+ Add wallet address'}</button>}
+        {walletDraft && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && wallets.length >= 20)} onClick={() => { if (walletDraft) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft ? (wallets.some(wallet => wallet.id === walletDraft.id) ? 'Send code' : 'Send code') : '+ Add wallet address'}</button>}
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
