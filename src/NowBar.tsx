@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type TouchEvent } from 'react';
+import { useEffect, useRef, useState, type TouchEvent, type CSSProperties } from 'react';
 
 type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
 type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'ABOUT') => void; onExit: () => void };
@@ -17,6 +17,21 @@ const STORAGE_KEY = 'kingshall-nowbar-action';
 const ORDER: Section[] = ['HOME'];
 
 export default function NowBar({ section, onNavigate }: Props) {
+  const [appearance, setAppearance] = useState(() => ({
+    enabled: localStorage.getItem('kh_nowbar_color_enabled') === 'true',
+    color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_color') || '') ? localStorage.getItem('kh_nowbar_color')! : '#b9c7df',
+    light: localStorage.getItem('kh_nowbar_light_style') || 'stable'
+  }));
+  useEffect(() => {
+    const syncAppearance = () => setAppearance({
+      enabled: localStorage.getItem('kh_nowbar_color_enabled') === 'true',
+      color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_color') || '') ? localStorage.getItem('kh_nowbar_color')! : '#b9c7df',
+      light: localStorage.getItem('kh_nowbar_light_style') || 'stable'
+    });
+    window.addEventListener('kh:nowbar-color-changed', syncAppearance);
+    window.addEventListener('storage', syncAppearance);
+    return () => { window.removeEventListener('kh:nowbar-color-changed', syncAppearance); window.removeEventListener('storage', syncAppearance); };
+  }, []);
   const [view, setView] = useState<'title' | 'actions'>('title');
   const [mode, setMode] = useState<'compact' | 'expanded'>('compact');
   const [pressing, setPressing] = useState(false);
@@ -109,7 +124,7 @@ export default function NowBar({ section, onNavigate }: Props) {
   };
 
   return (
-    <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''}`}>
+    <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''} kh-nowbar-light-${appearance.light}`} style={{ '--kh-nowbar-accent': appearance.enabled ? appearance.color : 'transparent', '--kh-nowbar-glow': appearance.enabled ? appearance.color + '66' : 'transparent' } as CSSProperties}>
       <div
         ref={barRef}
         className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${mode === 'expanded' ? 'is-expanded' : ''}`}
