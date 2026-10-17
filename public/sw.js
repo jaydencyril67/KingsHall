@@ -1,10 +1,10 @@
-const CACHE_NAME = 'kingshall-pwa-v3';
+const CACHE_NAME = 'kingshall-pwa-v4-icon-aligned';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
   '/kingshall-mark.svg',
-  '/kingshall-pwa-icon.svg?v=3'
+  '/kingshall-pwa-icon.svg?v=4'
 ];
 
 self.addEventListener('install', (event) => {
