@@ -135,8 +135,8 @@ export default function NowBar({ section, onNavigate }: Props) {
           animation: ['stable', 'stable-light'].includes(appearance.light) ? undefined : `kh-light-${appearance.light === 'blink-light' ? 'edge-blink' : appearance.light === 'blink' ? 'glow-blink' : appearance.light === 'pulse-light' ? 'edge-pulse' : appearance.light === 'pulse' ? 'glow-pulse' : appearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${appearance.light.startsWith('color') ? '6s linear' : appearance.light.startsWith('pulse') ? '3.1s ease-in-out' : '2.6s ease-in-out'} infinite`,
           animationFillMode: 'both',
           willChange: 'border-color, box-shadow, filter',
-          ...(appearance.light === 'stable-light' ? { boxShadow: '0 0 0 1px rgba(255,255,255,.07), 0 16px 44px rgba(0,0,0,.68), inset 0 1px rgba(255,255,255,.09)' } : {}),
-          ...(appearance.light === 'stable' ? { boxShadow: `0 0 0 1px rgba(255,255,255,.07), 0 0 24px ${appearance.color}, 0 16px 44px rgba(0,0,0,.68), inset 0 1px rgba(255,255,255,.09)` } : {})
+          ...(appearance.light === 'stable-light' ? { boxShadow: '0 18px 50px rgba(0,0,0,.82)' } : {}),
+          ...(appearance.light === 'stable' ? { boxShadow: `0 0 0 1px rgba(255,255,255,.12), 0 0 24px ${appearance.color}, 0 18px 50px rgba(0,0,0,.82), inset 0 1px 0 rgba(255,255,255,.12)` } : {})
         } as CSSProperties) : undefined}
         role="group"
         aria-label="KingsHall quick navigation"
