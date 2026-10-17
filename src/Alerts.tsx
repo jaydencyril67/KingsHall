@@ -71,6 +71,9 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   const [markingAll, setMarkingAll] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [expandedAlerts, setExpandedAlerts] = useState<Set<string>>(() => new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set(['Yesterday', 'Earlier']));
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [actionsMenuId, setActionsMenuId] = useState<string | null>(null);
   const [detailsAlertId, setDetailsAlertId] = useState<string | null>(null);
@@ -176,7 +179,11 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
     </div>
 
     <div className="kh-alerts-control-panel">
-      <label className="kh-alerts-search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search your alerts…" aria-label="Search alerts" />{search && <button type="button" onClick={() => setSearch('')} aria-label="Clear search">×</button>}</label>
+      <div className="kh-alerts-control-topline">
+        <button type="button" className={'kh-alerts-search-toggle' + (searchOpen || search ? ' is-open' : '')} aria-expanded={searchOpen || Boolean(search)} onClick={() => setSearchOpen(value => !value)}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg><span>Search</span>{search && <small>Active</small>}</button>
+        <span className="kh-alerts-compact-hint">Choose what to view</span>
+      </div>
+      {(searchOpen || Boolean(search)) && <label className="kh-alerts-search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search your alerts…" aria-label="Search alerts" />{search && <button type="button" onClick={() => setSearch('')} aria-label="Clear search">×</button>}</label>}
       <div className="kh-alerts-control-actions">
         <div className="kh-alerts-anchored-wrap" ref={filterAnchorRef}>
           <button type="button" className={'kh-alerts-popout-trigger' + (filterMenuOpen ? ' is-open' : '')} aria-haspopup="true" aria-expanded={filterMenuOpen} onClick={() => { setFilterMenuOpen(value => !value); setConfirmMarkAll(false); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4" /></svg><span>{FILTERS.find(item => item.id === filter)?.label || 'All activity'}</span><svg className="kh-alerts-trigger-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
@@ -198,20 +205,21 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       {(search || filter !== 'all') ? <button className="kh-alerts-reset" type="button" onClick={() => { setSearch(''); setFilter('all'); }}>Clear filters</button> : <button className="kh-alerts-reset" type="button" onClick={onBack}>Back to Home</button>}
     </article> : <div className="kh-alerts-groups">
       {grouped.map(group => <section className="kh-alerts-group" key={group.title} aria-label={group.title}>
-        <h2 className="kh-alerts-group-title"><span>{group.title}</span><span>{group.items.length}</span></h2>
-        <div className="kh-alerts-list">{group.items.map(alert => <article className={'kh-alert-item' + (alert.read_at ? '' : ' is-unread')} key={String(alert.id)}>
+        <button type="button" className="kh-alerts-group-title" aria-expanded={!collapsedGroups.has(group.title)} onClick={() => setCollapsedGroups(current => { const next = new Set(current); if (next.has(group.title)) next.delete(group.title); else next.add(group.title); return next; })}><span className="kh-alerts-group-heading"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>{group.title}</span><span className="kh-alerts-group-count">{group.items.length}</span></button>
+        {!collapsedGroups.has(group.title) && <div className="kh-alerts-list">{group.items.map(alert => <article className={'kh-alert-item' + (alert.read_at ? '' : ' is-unread') + (expandedAlerts.has(String(alert.id)) ? ' is-expanded' : '')} key={String(alert.id)}>
           <span className={'kh-alert-item-icon is-' + ((alert.category || 'general').toLowerCase())}><AlertIcon category={alert.category} /></span>
           <div className="kh-alert-item-content">
             <div className="kh-alert-item-top"><span className="kh-alert-category">{categoryLabel(alert.category)}</span>{!alert.read_at && <span className="kh-alert-new-pill">NEW</span>}</div>
-            <h3>{alert.title}</h3><p>{alert.message}</p>
-            <time dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{timeLabel(alert.created_at)}</time>
+            <button type="button" className="kh-alerts-item-expand" aria-expanded={expandedAlerts.has(String(alert.id))} onClick={() => setExpandedAlerts(current => { const next = new Set(current); const id = String(alert.id); if (next.has(id)) next.delete(id); else next.add(id); return next; })}><span>{alert.title}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
+            {expandedAlerts.has(String(alert.id)) && <div className="kh-alerts-expanded-content"><p>{alert.message}</p><time dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{dateOf(alert.created_at)?.toLocaleString() || timeLabel(alert.created_at)}</time><button type="button" className="kh-alerts-inline-details" onClick={() => { setDetailsAlertId(String(alert.id)); setActionsMenuId(null); }}>More details</button></div>}
+            {!expandedAlerts.has(String(alert.id)) && <time className="kh-alerts-compact-time" dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{timeLabel(alert.created_at)}</time>}
           </div>
           <div className="kh-alerts-anchored-wrap kh-alerts-item-actions" ref={actionsMenuId === String(alert.id) ? actionAnchorRef : null}>
             <button className={'kh-alert-read-button kh-alert-more-button' + (actionsMenuId === String(alert.id) ? ' is-open' : '')} type="button" aria-label={`Actions for ${alert.title}`} title="Alert actions" aria-haspopup="true" aria-expanded={actionsMenuId === String(alert.id)} onClick={() => { setActionsMenuId(current => current === String(alert.id) ? null : String(alert.id)); setDetailsAlertId(null); setFilterMenuOpen(false); setConfirmMarkAll(false); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg></button>
             {actionsMenuId === String(alert.id) && <div className="kh-alerts-anchored-popout kh-alerts-item-popout" role="menu" aria-label="Alert actions"><button type="button" role="menuitem" onClick={() => { setDetailsAlertId(current => current === String(alert.id) ? null : String(alert.id)); setActionsMenuId(null); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></svg>View details</button>{!alert.read_at && <button type="button" role="menuitem" disabled={workingId === String(alert.id) || markingAll} onClick={() => { setActionsMenuId(null); void markRead(alert); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>{workingId === String(alert.id) ? 'Marking read…' : 'Mark as read'}</button>}</div>}
           </div>
           {detailsAlertId === String(alert.id) && <div ref={detailAnchorRef} className="kh-alerts-detail-popout" role="dialog" aria-label={`Details for ${alert.title}`}><div className="kh-alerts-detail-head"><span>{categoryLabel(alert.category)} alert</span><button type="button" aria-label="Close alert details" onClick={() => setDetailsAlertId(null)}>×</button></div><strong>{alert.title}</strong><p>{alert.message}</p><div className="kh-alerts-detail-meta"><span>{dateOf(alert.created_at)?.toLocaleString() || 'Time unavailable'}</span><span className={alert.read_at ? '' : 'is-unread'}>{alert.read_at ? 'Read' : 'Unread'}</span></div>{!alert.read_at && <button type="button" className="kh-alerts-detail-action" disabled={workingId === String(alert.id) || markingAll} onClick={() => void markRead(alert)}>{workingId === String(alert.id) ? <LoadingDots /> : 'Mark as read'}</button>}</div>}
-        </article>)}</div>
+        </article>)}</div>}
       </section>)}
       {alerts.length >= 50 && filter === 'all' && !search && <p className="kh-alerts-limit-note">Showing your 50 most recent alerts.</p>}
     </div>}
