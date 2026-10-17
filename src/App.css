@@ -943,8 +943,6 @@ input,textarea{font-size:12px}
 @media(prefers-reduced-motion:reduce){.topbar.kh-header-alert-color-active{animation:none!important}}
 
 /* Device settings layout components — shared KingsHall design tokens */
-.kh-device-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-8px 0 12px;padding:0 2px;color:var(--muted);font-size:11px}
-.kh-device-layout-toggle{min-height:36px;padding:0 12px;font-size:10px}
 .kh-device-settings-list{display:grid;gap:9px}
 .kh-device-setting-card{position:relative;min-width:0;border:1px solid var(--kh-card-primary-border);border-radius:15px;background:var(--kh-card-primary-surface);box-shadow:var(--kh-card-inset-highlight)}
 .kh-device-setting-summary{display:flex;align-items:center;gap:11px;min-height:67px;padding:11px 13px}
@@ -953,15 +951,12 @@ input,textarea{font-size:12px}
 .kh-device-setting-label p{margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .kh-device-menu-trigger{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-height:36px;padding:0;border-radius:10px;font-size:16px}
 .kh-device-menu-trigger:focus-visible,.kh-device-popout-heading button:focus-visible{outline:2px solid var(--silver-bright);outline-offset:2px}
-.kh-device-popout{position:absolute;z-index:30;top:calc(100% + 7px);right:8px;width:min(420px,calc(100vw - 42px));max-height:min(68vh,520px);overflow:auto;padding:12px 15px 14px;border:1px solid var(--kh-card-primary-border);border-radius:15px;background:var(--panel);box-shadow:0 18px 44px rgba(0,0,0,.42),var(--kh-card-inset-highlight)}
-.kh-device-popout-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:1px 0 9px;font-size:12px}
-.kh-device-popout-heading button{display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid var(--kh-card-secondary-border);border-radius:8px;color:var(--silver-bright);background:var(--kh-card-secondary-surface);font-size:19px}
-.kh-device-popout .kh-setup-setting-row:first-child,.kh-device-panel-inline .kh-setup-setting-row:first-child{border-top:1px solid var(--kh-card-secondary-border)}
-.kh-device-popout .kh-setup-setting-copy>span,.kh-device-panel-inline .kh-setup-setting-copy>span{font-size:10px}
+.kh-device-panel-inline .kh-setup-setting-row:first-child{border-top:1px solid var(--kh-card-secondary-border)}
+.kh-device-panel-inline .kh-setup-setting-copy>span{font-size:10px}
 .kh-device-panel-inline{padding:0 13px 12px}
 .kh-device-panel-inline .kh-setup-setting-row{min-height:53px;padding:9px 0}
 .kh-device-panel-inline .kh-setup-type-group{padding-top:10px}
 .kh-device-panel-inline .kh-setup-check-row{min-height:38px}
 .kh-device-footer{margin-top:15px}
 .kh-device-expanded .kh-device-setting-card.is-open{border-color:var(--kh-card-primary-border)}
-@media(max-width:560px){.kh-device-toolbar{margin-top:-5px}.kh-device-setting-summary{min-height:62px;padding:9px 10px;gap:9px}.kh-device-setting-label h2{font-size:11.5px}.kh-device-setting-label p{font-size:9.5px}.kh-device-popout{right:5px;width:calc(100vw - 36px);max-height:62vh;padding:10px 12px}.kh-device-layout-toggle{min-height:34px}.kh-device-panel-inline{padding:0 10px 10px}}
+@media(max-width:560px){.kh-device-setting-summary{min-height:62px;padding:9px 10px;gap:9px}.kh-device-setting-label h2{font-size:11.5px}.kh-device-setting-label p{font-size:9.5px}.kh-device-panel-inline{padding:0 10px 10px}}
