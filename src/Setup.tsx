@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
@@ -69,6 +69,17 @@ export default function SetupPage() {
   const [savedAt, setSavedAt] = useState('');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | null>(null);
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'expanded'>(() => localStorage.getItem('kh_device_layout_mode') === 'expanded' ? 'expanded' : 'compact');
+  const [activePanel, setActivePanel] = useState<'nowbar' | 'header' | 'channels' | 'types' | null>(null);
+  const panelRoot = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    localStorage.setItem('kh_device_layout_mode', layoutMode);
+    if (!activePanel) return;
+    const outside = (event: PointerEvent) => { if (panelRoot.current && !panelRoot.current.contains(event.target as Node)) setActivePanel(null); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setActivePanel(null); };
+    document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
+  }, [layoutMode, activePanel]);
 
   useEffect(() => {
     localStorage.setItem('kh_nowbar_color_enabled', String(nowbarEnabled));
@@ -121,39 +132,52 @@ export default function SetupPage() {
   };
   const groups = [...new Set(TYPE_OPTIONS.map(option => option.group))];
 
-  return <section className="kh-setup-page" aria-labelledby="kh-setup-title">
+  const panelContent = (panel: 'nowbar' | 'header' | 'channels' | 'types') => {
+    if (panel === 'nowbar') return <>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Enable the Nowbar accent effect.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong></div><LightingStyleSelect value={nowbarLight} disabled={!nowbarEnabled} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
+    </>;
+    if (panel === 'header') return <>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Accent the app header when alerts are unread.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
+    </>;
+    if (panel === 'channels') return <>
+      {([{ key: 'inApp', label: 'In-app alerts', description: 'Show activity in your KingsHall alerts centre.' }, { key: 'push', label: 'Push notifications', description: 'Allow device notifications when supported.' }, { key: 'email', label: 'Email notifications', description: 'Receive supported account notices by email.' }] as { key: keyof Channels; label: string; description: string }[]).map(item => <div className="kh-setup-setting-row" key={item.key}><div className="kh-setup-setting-copy"><strong>{item.label}</strong>{layoutMode === 'expanded' && <span>{item.description}</span>}</div><Toggle checked={channels[item.key]} onChange={value => updateChannel(item.key, value)} label={item.label} /></div>)}
+      {!channels.inApp && !channels.push && !channels.email && <p className="kh-setup-inline-note">All notification channels are off. Important account activity may still appear when you open KingsHall.</p>}
+    </>;
+    return <>
+      {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <label className="kh-setup-check-row" key={option.key}><span><strong>{option.label}</strong></span><input type="checkbox" checked={types[option.key]} onChange={event => updateType(option.key, event.target.checked)} /></label>)}</div>)}
+    </>;
+  };
+  const panels: { key: 'nowbar' | 'header' | 'channels' | 'types'; title: string; summary: string; icon: string }[] = [
+    { key: 'nowbar', title: 'Nowbar appearance', summary: nowbarEnabled ? 'Lighting on · ' + (LIGHT_STYLES.find(item => item.value === nowbarLight)?.label || 'Steady glow') + ' · ' + nowbarColor.toUpperCase() : 'Lighting off', icon: '◈' },
+    { key: 'header', title: 'App header lighting', summary: headerEnabled ? 'Alert accent on · ' + headerColor.toUpperCase() : 'Alert accent off', icon: '✧' },
+    { key: 'channels', title: 'Notification channels', summary: [channels.inApp && 'In-app', channels.push && 'Push', channels.email && 'Email'].filter(Boolean).join(' · ') || 'All channels off', icon: '♧' },
+    { key: 'types', title: 'Notification types', summary: Object.values(types).filter(Boolean).length + ' of ' + TYPE_OPTIONS.length + ' alert types enabled', icon: '☷' }
+  ];
+  return <section className={'kh-setup-page kh-device-' + layoutMode} aria-labelledby="kh-setup-title" ref={panelRoot}>
     <div className="kh-setup-heading">
       <span className="eyebrow"><span className="eyebrow-line" />PERSONAL PREFERENCES</span>
-      <h1 id="kh-setup-title">Setup<span className="kh-setup-period">.</span></h1>
-      <p>Shape the KingsHall interface, lighting, and the alerts you want to receive.</p>
+      <h1 id="kh-setup-title">Device<span className="kh-setup-period">.</span></h1>
+      <p>Manage your device experience and account alerts in one compact place.</p>
     </div>
-
-    <article className="kh-setup-card">
-      <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">◈</span><div><h2>Nowbar appearance</h2><p>Customise the quick-navigation bar and its ambient lighting.</p></div></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Nowbar colour and lighting</strong><span>Enable a coloured edge and glow around the Nowbar.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={nowbarLight} disabled={!nowbarEnabled} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
-
-    </article>
-
-    <article className="kh-setup-card">
-      <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">✧</span><div><h2>Alert header</h2><p>Control the accent and lighting used by the app's alert header.</p></div></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Header colour and lighting</strong><span>Apply your selected accent to the KingsHall header and alert indicator.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
-
-    </article>
-
-    <article className="kh-setup-card">
-      <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">♧</span><div><h2>Notification channels</h2><p>Choose where KingsHall should deliver supported notifications.</p></div></div>
-      {([{ key: 'inApp', label: 'In-app alerts', description: 'Show activity in your KingsHall alerts centre.' }, { key: 'push', label: 'Push notifications', description: 'Allow device notifications when the app supports delivery.' }, { key: 'email', label: 'Email notifications', description: 'Receive supported account notices by email.' }] as { key: keyof Channels; label: string; description: string }[]).map(item => <div className="kh-setup-setting-row" key={item.key}><div className="kh-setup-setting-copy"><strong>{item.label}</strong><span>{item.description}</span></div><Toggle checked={channels[item.key]} onChange={value => updateChannel(item.key, value)} label={item.label} /></div>)}
-      {!channels.inApp && !channels.push && !channels.email && <p className="kh-setup-inline-note">All notification channels are off. Important account activity may still appear when you open KingsHall.</p>}
-    </article>
-
-    <article className="kh-setup-card">
-      <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">☷</span><div><h2>Notification types</h2><p>Select the kinds of account activity you want included in your alerts.</p></div></div>
-      {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <label className="kh-setup-check-row" key={option.key}><span><strong>{option.label}</strong></span><input type="checkbox" checked={types[option.key]} onChange={event => updateType(option.key, event.target.checked)} /></label>)}</div>)}
-      <div className="kh-setup-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
-    </article>
+    <div className="kh-device-toolbar" aria-label="Device settings layout">
+      <span>{layoutMode === 'compact' ? 'Compact view' : 'Expanded view'}</span>
+      <button type="button" className="secondary-button kh-device-layout-toggle" onClick={() => { setActivePanel(null); setLayoutMode(mode => mode === 'compact' ? 'expanded' : 'compact'); }}>{layoutMode === 'compact' ? 'Expand settings' : 'Compact settings'}</button>
+    </div>
+    <div className="kh-device-settings-list">
+      {panels.map(panel => <article className={'kh-device-setting-card' + (activePanel === panel.key ? ' is-open' : '')} key={panel.key}>
+        <div className="kh-device-setting-summary">
+          <span className="kh-setup-icon" aria-hidden="true">{panel.icon}</span>
+          <div className="kh-device-setting-label"><h2>{panel.title}</h2><p>{panel.summary}</p></div>
+          {layoutMode === 'compact' ? <button type="button" className="kh-device-menu-trigger" aria-label={'Open ' + panel.title + ' settings'} aria-haspopup="dialog" aria-expanded={activePanel === panel.key} onClick={() => setActivePanel(current => current === panel.key ? null : panel.key)}><span aria-hidden="true">•••</span></button> : <button type="button" className="kh-device-menu-trigger" aria-label={(activePanel === panel.key ? 'Collapse ' : 'Expand ') + panel.title} aria-expanded={activePanel === panel.key} onClick={() => setActivePanel(current => current === panel.key ? null : panel.key)}><span aria-hidden="true">{activePanel === panel.key ? '−' : '+'}</span></button>}
+        </div>
+        {layoutMode === 'expanded' && activePanel === panel.key && <div className="kh-device-panel-inline">{panelContent(panel.key)}</div>}
+        {layoutMode === 'compact' && activePanel === panel.key && <div className="kh-device-popout" role="dialog" aria-label={panel.title + ' settings'}><div className="kh-device-popout-heading"><strong>{panel.title}</strong><button type="button" aria-label="Close settings" onClick={() => setActivePanel(null)}>×</button></div>{panelContent(panel.key)}</div>}
+      </article>)}
+    </div>
+    <div className="kh-setup-footer kh-device-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
     {colorPicker === 'header' && <ColorSelectionPage color={headerColor} title="Choose header colour" description="Choose the accent colour used by the KingsHall app header lighting." onChange={setHeaderColor} onClose={() => setColorPicker(null)} />}
   </section>;
