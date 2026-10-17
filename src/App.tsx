@@ -248,8 +248,8 @@ export default function App() {
         animation: ['stable', 'stable-light'].includes(headerAppearance.light) ? undefined : `kh-light-${headerAppearance.light === 'blink-light' ? 'edge-blink' : headerAppearance.light === 'blink' ? 'glow-blink' : headerAppearance.light === 'pulse-light' ? 'edge-pulse' : headerAppearance.light === 'pulse' ? 'glow-pulse' : headerAppearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${headerAppearance.light.startsWith('color') ? '6s linear' : headerAppearance.light.startsWith('pulse') ? '3.1s ease-in-out' : '2.6s ease-in-out'} infinite`,
         animationFillMode: 'both',
         willChange: 'border-color, box-shadow, filter',
-        ...(headerAppearance.light === 'stable-light' ? { boxShadow: '0 14px 30px rgba(0,0,0,.35)' } : {}),
-        ...(headerAppearance.light === 'stable' ? { boxShadow: `0 14px 30px rgba(0,0,0,.35), 0 0 14px ${headerAppearance.color}55, inset 0 0 8px ${headerAppearance.color}22` } : {})
+        ...(headerAppearance.light === 'stable-light' ? { boxShadow: '0 18px 50px rgba(0,0,0,.82)' } : {}),
+        ...(headerAppearance.light === 'stable' ? { boxShadow: `0 0 0 1px rgba(255,255,255,.12), 0 0 24px ${headerAppearance.color}, 0 18px 50px rgba(0,0,0,.82), inset 0 1px 0 rgba(255,255,255,.12)` } : {})
       } : {})
     } as CSSProperties}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
