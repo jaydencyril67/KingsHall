@@ -163,11 +163,11 @@ jobs:
 
             const adaptiveDir = path.join(root, 'mipmap-anydpi-v26');
             fs.mkdirSync(adaptiveDir, { recursive: true });
-            const adaptive = '<?xml version="1.0" encoding="utf-8"?>\\n' +
-              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\\n' +
-              '    <background android:drawable="@color/kingshall_icon_background" />\\n' +
-              '    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\\n' +
-              '</adaptive-icon>\\n';
+            const adaptive = '<?xml version="1.0" encoding="utf-8"?>\n' +
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n' +
+              '    <background android:drawable="@color/kingshall_icon_background" />\n' +
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\n' +
+              '</adaptive-icon>\n';
             for (const name of ['ic_launcher.xml', 'ic_launcher_round.xml']) {
               fs.writeFileSync(path.join(adaptiveDir, name), adaptive);
             }
@@ -175,9 +175,9 @@ jobs:
             const valuesDir = path.join(root, 'values');
             fs.mkdirSync(valuesDir, { recursive: true });
             fs.writeFileSync(path.join(valuesDir, 'kingshall_icon_colors.xml'),
-              '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n' +
-              '    <color name="kingshall_icon_background">#0A0A0A</color>\\n' +
-              '</resources>\\n');
+              '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n' +
+              '    <color name="kingshall_icon_background">#0A0A0A</color>\n' +
+              '</resources>\n');
             console.log('KingsHall APK launcher icons now use the PWA master icon at all Android densities.');
           })().catch(error => { console.error(error); process.exit(1); });
           NODE
