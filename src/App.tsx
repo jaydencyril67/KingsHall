@@ -204,7 +204,18 @@ export default function App() {
     if (window.location.pathname === '/home' && window.location.hash !== hash) {
       window.history.pushState({}, '', `/home${hash}`);
     }
-    if (section === 'ALERTS') { if (window.location.pathname !== '/home') { window.history.pushState({}, '', '/home#alerts'); setPath('/home'); setMode('home'); } window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'ALERTS') {
+      const target = '/home#alerts';
+      if (window.location.pathname !== '/home' || window.location.hash !== '#alerts') {
+        window.history.pushState({}, '', target);
+      }
+      setPath('/home');
+      setMode('home');
+      setHomeSection('ALERTS');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
     if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
