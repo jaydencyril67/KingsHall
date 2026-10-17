@@ -29,6 +29,7 @@ function timeLabel(value: string) {
 
 export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [totalUnread, setTotalUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       const data = await response.json().catch(() => ({})) as { alerts?: AlertItem[]; unreadCount?: number; error?: string };
       if (!response.ok) throw new Error(data.error || 'Could not load alerts.');
       setAlerts(data.alerts || []);
+      setTotalUnread(data.unreadCount || 0);
       onUnreadCount(data.unreadCount || 0);
       setLoadError('');
     } catch (error) {
@@ -57,7 +59,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       const data = await response.json().catch(() => ({})) as { error?: string; unreadCount?: number };
       if (!response.ok) throw new Error(data.error || 'Could not mark this alert as read.');
       setAlerts(current => current.map(item => String(item.id) === String(alert.id) ? { ...item, read_at: new Date().toISOString() } : item));
-      if (typeof data.unreadCount === 'number') onUnreadCount(data.unreadCount);
+      if (typeof data.unreadCount === 'number') { setTotalUnread(data.unreadCount); onUnreadCount(data.unreadCount); }
     } catch (error) { setLoadError(error instanceof Error ? error.message : 'Could not mark this alert as read.'); }
     finally { setWorkingId(null); }
   }
@@ -71,13 +73,14 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       if (!response.ok) throw new Error(data.error || 'Could not mark alerts as read.');
       const now = new Date().toISOString();
       setAlerts(current => current.map(item => ({ ...item, read_at: item.read_at || now })));
+      setTotalUnread(0);
       onUnreadCount(0);
       setLoadError('');
     } catch (error) { setLoadError(error instanceof Error ? error.message : 'Could not mark alerts as read.'); }
     finally { setMarkingAll(false); }
   }
 
-  const unread = alerts.filter(item => !item.read_at).length;
+  const unread = totalUnread;
   return <section className="kh-alerts-page" aria-labelledby="kh-alerts-title">
     <div className="kh-home-heading">
       <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL NOTIFICATIONS</span>
