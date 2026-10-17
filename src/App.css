@@ -27,7 +27,7 @@ body:before{width:min(72vw,900px);height:min(72vw,900px);top:-32vw;right:-16vw;b
 body:after{width:min(65vw,760px);height:min(65vw,760px);left:-28vw;top:42vh;background:radial-gradient(circle,rgba(133,145,166,.105),rgba(69,76,92,.035) 38%,transparent 70%);animation:kh-aurora-drift 24s ease-in-out infinite alternate-reverse}
 .kh-shell{position:relative}
 .kh-shell:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.13;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E")}
-.topbar{background:rgba(10,11,13,.72);border-color:rgba(235,239,246,.2);box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.075);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%);animation:kh-header-enter .65s cubic-bezier(.2,.75,.25,1) both}
+.topbar{background:rgba(10,11,13,.72);border-color:rgba(145,139,141,.38);box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.075);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%);animation:kh-header-enter .65s cubic-bezier(.2,.75,.25,1) both}
 .header-logo,.core-mark{box-shadow:0 0 0 1px rgba(255,255,255,.035),0 0 30px rgba(206,216,232,.1)}
 .landing-hero{position:relative}
 .landing-copy{animation:kh-rise-in .8s .08s cubic-bezier(.2,.75,.25,1) both}
