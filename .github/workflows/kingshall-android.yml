@@ -223,6 +223,9 @@ jobs:
       - name: Install native KingsHall device-account provider
         run: python3 scripts/install-android-account-provider.py
 
+      - name: Install native Android photo gallery
+        run: python3 scripts/install-android-native-gallery.py
+
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
