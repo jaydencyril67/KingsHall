@@ -107,7 +107,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       setConfirmMarkAll(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setFilterMenuOpen(false); setActionsMenuId(null); setConfirmMarkAll(false); setDetailsAlertId(null); }
+      if (event.key === 'Escape') { setFilterMenuOpen(false); setActionsMenuId(null); setConfirmMarkAll(false); }
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
