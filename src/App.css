@@ -484,7 +484,8 @@ input,textarea{font-size:12px}
 .kh-wallet-address-feedback.is-valid{color:#35d07f}
 .kh-wallet-address-feedback.is-invalid{color:#f08080}
 .kh-identity-wallet .field input[aria-invalid="true"]{border-color:rgba(240,128,128,.7)}
-.kh-identity-wallet .field input[aria-invalid="false"]{border-color:rgba(53,208,127,.45)}
+/* Wallet validation uses feedback text only; keep the input border neutral. */
+.kh-identity-wallet .field input[aria-invalid="false"]{border-color:var(--kh-border,rgba(255,255,255,.12))}
 
 
 .kh-code-cooldown-note{display:block;margin-top:7px;color:var(--kh-muted,rgba(255,255,255,.62));font-size:12px;line-height:1.45}
