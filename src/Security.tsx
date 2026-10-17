@@ -302,22 +302,7 @@ export default function SecurityPage({ user }: Props) {
     }
     setSavingWallets(true); setNotice('');
     try {
-      // Preserve the latest saved profile fields; this action changes wallet data only.
-      const latest = await request('/api/identity');
-      const saved = latest.profile || {};
-      const payload = {
-        firstName: saved.firstName || '', middleName: saved.middleName || '', lastName: saved.lastName || '',
-        username: saved.username || user?.username || '', email: saved.email || user?.email || '',
-        dateOfBirth: saved.dateOfBirth || '', phone: saved.phone || '', country: saved.country || '',
-        state: saved.state || '', city: saved.city || '', address: saved.address || '', postalCode: saved.postalCode || '',
-        nationality: saved.nationality || '', gender: saved.gender || '', occupation: saved.occupation || '',
-        bio: saved.bio || '', avatarData: saved.avatarData || '', coverPhoto: saved.coverPhoto || '', website: saved.website || '',
-        instagram: saved.instagram || '', facebook: saved.facebook || '', xHandle: saved.xHandle || '',
-        telegram: saved.telegram || '', discord: saved.discord || '', linkedin: saved.linkedin || '',
-        language: saved.language || '', timeZone: saved.timeZone || '', preferredCurrency: saved.preferredCurrency || 'USD',
-        pronouns: saved.pronouns || '', relationshipStatus: saved.relationshipStatus || '', wallets
-      };
-      const result = await request('/api/identity', payload);
+      const result = await request('/api/identity/wallets', { wallets });
       setWallets(result.profile?.wallets || wallets);
       setNotice(result.message || 'Wallet addresses saved.');
       setNoticeOk(true);
