@@ -829,3 +829,87 @@ input,textarea{font-size:12px}
 @keyframes khAboutReveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:560px){.kh-about-page{padding-top:8px}.kh-about-switcher{gap:5px;padding:5px}.kh-about-switcher>button{gap:8px;padding:10px 8px}.kh-about-switcher>button>svg{width:17px;height:17px}.kh-about-switcher strong{font-size:11px}.kh-about-switcher small{font-size:8px}.kh-about-intro-panel{grid-template-columns:45px minmax(0,1fr);gap:12px;padding:15px}.kh-about-intro-mark{width:44px;height:44px;border-radius:13px}.kh-about-intro-mark img{width:29px;height:29px}.kh-about-intro-panel h2{font-size:18px}.kh-about-info-grid{grid-template-columns:1fr}.kh-about-info-card{padding:15px}.kh-about-principles{grid-template-columns:1fr;gap:14px;padding:16px}.kh-about-doc-switcher{grid-template-columns:1fr}.kh-about-doc-switcher>button{padding:11px}.kh-about-policy>h2{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.kh-about-content{animation:none}}
+
+
+/* Shared KingsHall glass-card language — carry the About page's layered, softly tinted surfaces across the app. */
+:root{
+  --kh-glass-card-border:rgba(221,226,233,.14);
+  --kh-glass-card-surface:linear-gradient(145deg,rgba(36,39,47,.76),rgba(12,13,17,.78));
+  --kh-glass-card-highlight:inset 0 1px rgba(255,255,255,.055);
+  --kh-glass-card-shadow:0 16px 42px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045);
+}
+.ecosystem-panel,
+.ecosystem-links>div,
+.feature-card,
+.final-cta,
+.auth-card,
+.kh-home-card,
+.kh-home-app-card,
+.kh-identity-card,
+.kh-identity-wallet,
+.kh-identity-readonly,
+.kh-identity-security-item,
+.kh-alerts-control-panel,
+.kh-alert-item,
+.kh-alerts-empty{
+  border-color:var(--kh-glass-card-border);
+  background:radial-gradient(ellipse at 0 0,rgba(173,187,211,.075),transparent 58%),var(--kh-glass-card-surface);
+  box-shadow:var(--kh-glass-card-shadow);
+}
+.ecosystem-panel,
+.auth-card,
+.kh-home-card,
+.kh-home-app-card,
+.kh-identity-card,
+.kh-identity-wallet,
+.kh-alerts-control-panel,
+.kh-alert-item,
+.kh-alerts-empty{
+  position:relative;
+}
+.ecosystem-panel:after,
+.auth-card:after,
+.kh-home-card:after,
+.kh-home-app-card:after,
+.kh-identity-card:after,
+.kh-identity-wallet:after,
+.kh-alerts-control-panel:after,
+.kh-alert-item:after,
+.kh-alerts-empty:after{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:1px;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(242,246,255,.22),transparent);
+}
+.kh-home-app-card,
+.kh-identity-card,
+.kh-identity-wallet,
+.kh-alert-item,
+.feature-card{
+  transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease;
+}
+.kh-home-app-card:hover,
+.kh-identity-card:hover,
+.kh-identity-wallet:hover,
+.kh-alert-item:hover,
+.feature-card:hover{
+  border-color:rgba(221,230,244,.22);
+  box-shadow:0 18px 44px rgba(0,0,0,.23),inset 0 1px rgba(255,255,255,.07);
+}
+.kh-home-card-icon,
+.card-symbol,
+.ecosystem-icon,
+.detail-icon{
+  border-color:rgba(226,233,244,.18);
+  background:linear-gradient(145deg,rgba(219,229,246,.09),rgba(255,255,255,.025));
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+}
+.kh-identity-readonly,
+.kh-identity-security-item{
+  box-shadow:none;
+}
+@media(prefers-reduced-motion:reduce){
+  .kh-home-app-card,.kh-identity-card,.kh-identity-wallet,.kh-alert-item,.feature-card{transition:none}
+}
