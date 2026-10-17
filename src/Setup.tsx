@@ -143,7 +143,7 @@ export default function SetupPage() {
       {!channels.inApp && !channels.push && !channels.email && <p className="kh-setup-inline-note">All notification channels are off. Important account activity may still appear when you open KingsHall.</p>}
     </>;
     return <>
-      {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <label className="kh-setup-check-row" key={option.key}><span><strong>{option.label}</strong></span><input type="checkbox" checked={types[option.key]} onChange={event => updateType(option.key, event.target.checked)} /></label>)}</div>)}
+      {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <div className="kh-setup-setting-row" key={option.key}><div className="kh-setup-setting-copy"><strong>{option.label}</strong></div><Toggle checked={types[option.key]} onChange={value => updateType(option.key, value)} label={option.label} /></div>)}</div>)}
     </>;
   };
   const panels: { key: 'nowbar' | 'header' | 'channels' | 'types'; title: string; summary: string; icon: string }[] = [
