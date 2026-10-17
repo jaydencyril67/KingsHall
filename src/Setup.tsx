@@ -74,10 +74,9 @@ export default function SetupPage() {
   useEffect(() => {
     localStorage.setItem('kh_device_layout_mode', layoutMode);
     if (!activePanel) return;
-    const outside = (event: PointerEvent) => { const target = event.target as Element | null; if (!target?.closest('.kh-device-popout, .kh-device-menu-trigger')) setActivePanel(null); };
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setActivePanel(null); };
-    document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('keydown', escape); };
   }, [layoutMode, activePanel]);
 
   useEffect(() => {
@@ -159,7 +158,7 @@ export default function SetupPage() {
     <div className="kh-setup-heading">
       <span className="eyebrow"><span className="eyebrow-line" />PERSONAL PREFERENCES</span>
       <h1 id="kh-setup-title">Device<span className="kh-setup-period">.</span></h1>
-      <p>Manage your device experience and account alerts in one compact place.</p>
+      <p>Manage your device experience and account alerts in one place.</p>
     </div>
     <div className="kh-device-toolbar" aria-label="Device settings layout">
       <span>{layoutMode === 'compact' ? 'Compact view' : 'Expanded view'}</span>
