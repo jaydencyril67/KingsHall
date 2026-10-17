@@ -11,7 +11,7 @@ type AlertItem = {
   created_at: string;
   read_at: string | null;
 };
-type Props = { version: number; onUnreadCount: (count: number) => void; onBack: () => void };
+type Props = { version: number; onUnreadCount: (count: number) => void };
 type Filter = 'all' | 'unread' | 'login' | 'security' | 'identity' | 'wallet' | 'profile';
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -62,7 +62,7 @@ function categoryLabel(value: string) {
   return known[value?.toLowerCase()] || (value ? value.replace(/[_-]+/g, ' ') : 'Account');
 }
 
-export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
+export default function AlertsPage({ version, onUnreadCount }: Props) {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [totalUnread, setTotalUnread] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -151,7 +151,6 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
 
   return <section className="kh-alerts-page" aria-labelledby="kh-alerts-title">
     <div className="kh-alerts-heading">
-      <button className="kh-alerts-back" type="button" onClick={onBack} aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18 9 12l6-6M9 12h11" /></svg><span>Home</span></button>
       <div className="kh-alerts-title-row">
         <div><span className="eyebrow"><span className="eyebrow-line" />ACCOUNT ACTIVITY</span><h1 id="kh-alerts-title">Alerts<span className="kh-alerts-title-period">.</span></h1><p className="kh-alerts-subtitle">Important changes and sign-ins, all in one place.</p></div>
         <div className="kh-alerts-total" aria-label={`${totalUnread} unread alerts`}><strong>{totalUnread > 99 ? '99+' : totalUnread}</strong><span>UNREAD</span></div>
@@ -182,7 +181,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
       <span className="kh-alerts-empty-icon"><AlertIcon category="general" /></span>
       <h2>{search || filter !== 'all' ? 'Nothing matches just yet.' : 'You’re all caught up.'}</h2>
       <p>{search || filter !== 'all' ? 'Try another search or switch the activity filter.' : 'New sign-ins, security actions, and identity changes will show up here automatically.'}</p>
-      {(search || filter !== 'all') ? <button className="kh-alerts-reset" type="button" onClick={() => { setSearch(''); setFilter('all'); }}>Clear filters</button> : <button className="kh-alerts-reset" type="button" onClick={onBack}>Back to Home</button>}
+      {(search || filter !== 'all') && <button className="kh-alerts-reset" type="button" onClick={() => { setSearch(''); setFilter('all'); }}>Clear filters</button>}
     </article> : <div className="kh-alerts-groups">
       {grouped.map(group => <section className="kh-alerts-group" key={group.title} aria-label={group.title}>
         <button type="button" className="kh-alerts-group-title" aria-expanded={!collapsedGroups.has(group.title)} onClick={() => setCollapsedGroups(current => { const next = new Set(current); if (next.has(group.title)) next.delete(group.title); else next.add(group.title); return next; })}><span className="kh-alerts-group-heading"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>{group.title}</span><span className="kh-alerts-group-count">{group.items.length}</span></button>
