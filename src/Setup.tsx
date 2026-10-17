@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
@@ -71,11 +71,10 @@ export default function SetupPage() {
   const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | null>(null);
   const [layoutMode, setLayoutMode] = useState<'compact' | 'expanded'>(() => localStorage.getItem('kh_device_layout_mode') === 'expanded' ? 'expanded' : 'compact');
   const [activePanel, setActivePanel] = useState<'nowbar' | 'header' | 'channels' | 'types' | null>(null);
-  const panelRoot = useRef<HTMLElement | null>(null);
   useEffect(() => {
     localStorage.setItem('kh_device_layout_mode', layoutMode);
     if (!activePanel) return;
-    const outside = (event: PointerEvent) => { if (panelRoot.current && !panelRoot.current.contains(event.target as Node)) setActivePanel(null); };
+    const outside = (event: PointerEvent) => { const target = event.target as Element | null; if (!target?.closest('.kh-device-popout, .kh-device-menu-trigger')) setActivePanel(null); };
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setActivePanel(null); };
     document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
@@ -156,7 +155,7 @@ export default function SetupPage() {
     { key: 'channels', title: 'Notification channels', summary: [channels.inApp && 'In-app', channels.push && 'Push', channels.email && 'Email'].filter(Boolean).join(' · ') || 'All channels off', icon: '♧' },
     { key: 'types', title: 'Notification types', summary: Object.values(types).filter(Boolean).length + ' of ' + TYPE_OPTIONS.length + ' alert types enabled', icon: '☷' }
   ];
-  return <section className={'kh-setup-page kh-device-' + layoutMode} aria-labelledby="kh-setup-title" ref={panelRoot}>
+  return <section className={'kh-setup-page kh-device-' + layoutMode} aria-labelledby="kh-setup-title">
     <div className="kh-setup-heading">
       <span className="eyebrow"><span className="eyebrow-line" />PERSONAL PREFERENCES</span>
       <h1 id="kh-setup-title">Device<span className="kh-setup-period">.</span></h1>
