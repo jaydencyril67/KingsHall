@@ -3,6 +3,8 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import NowBar from './NowBar';
 import IdentityPage from './Identity';
 import SecurityPage from './Security';
+import AlertsPage from './Alerts';
+import { alertsFetch } from './alertsClient';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 import type { FormEvent } from 'react';
@@ -59,6 +61,8 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [alertsVersion, setAlertsVersion] = useState(0);
   useEffect(() => {
     const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/onboard' ? 'onboard' : p === '/access-review' ? 'review' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setReviewProcessed(false); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
@@ -66,6 +70,62 @@ export default function App() {
     if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
     return () => window.removeEventListener('popstate', sync);
   }, []);
+  useEffect(() => {
+    if (!user || mode !== 'home' || !sessionStorage.getItem('kh_access')) return;
+    let stopped = false;
+    let controller: AbortController | null = null;
+    let retryTimer: number | null = null;
+    alertsFetch('/api/alerts?limit=1').then(response => response.ok ? response.json() : null).then(data => {
+      if (!stopped && data && typeof data.unreadCount === 'number') setUnreadAlerts(data.unreadCount);
+    }).catch(() => {});
+    const connect = async () => {
+      while (!stopped) {
+        controller = new AbortController();
+        try {
+          const response = await alertsFetch('/api/alerts/stream', { headers: { Accept: 'text/event-stream' }, signal: controller.signal });
+          if (!response.ok || !response.body) throw new Error('Alerts stream unavailable');
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let eventName = 'message';
+          let dataLines: string[] = [];
+          const dispatch = () => {
+            if (!dataLines.length) { eventName = 'message'; return; }
+            try {
+              const payload = JSON.parse(dataLines.join('\n')) as { unreadCount?: number };
+              if (eventName === 'alert') setAlertsVersion(value => value + 1);
+              if (eventName === 'unread' && typeof payload.unreadCount === 'number') setUnreadAlerts(payload.unreadCount);
+            } catch {}
+            eventName = 'message'; dataLines = [];
+          };
+          while (!stopped) {
+            const chunk = await reader.read();
+            if (chunk.done) break;
+            buffer += decoder.decode(chunk.value, { stream: true });
+            const frames = buffer.split(/\r?\n\r?\n/);
+            buffer = frames.pop() || '';
+            for (const frame of frames) {
+              for (const line of frame.split(/\r?\n/)) {
+                if (line.startsWith('event:')) eventName = line.slice(6).trim();
+                else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+              }
+              dispatch();
+            }
+          }
+          reader.releaseLock();
+        } catch {
+          if (stopped) break;
+        }
+        if (!stopped) await new Promise<void>(resolve => { retryTimer = window.setTimeout(resolve, 3000); });
+      }
+    };
+    void connect();
+    return () => {
+      stopped = true;
+      controller?.abort();
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
+    };
+  }, [user?.id, mode]);
   function say(s: string, ok = false) { setNotice(s); setSuccess(ok); }
   function navigate(next: Mode) {
     const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : next === 'onboard' ? '/onboard' : next === 'review' ? '/access-review' : (next === 'account' || next === 'home') ? '/home' : '/';
@@ -143,7 +203,7 @@ export default function App() {
     <header className="topbar">
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
       <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong><small>One identity · Connected possibilities</small></a>
-      <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label="Open alerts" title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></button> : <span className="header-status-dot" />}</span>
+      <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
     </header>
     {landing ? <>
       <section className="landing-hero" id="top">
@@ -172,19 +232,7 @@ export default function App() {
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
-        {homeSection === 'ALERTS' ? <section className="kh-alerts-page" aria-labelledby="kh-alerts-title">
-          <div className="kh-home-heading">
-            <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL NOTIFICATIONS</span>
-            <h1 id="kh-alerts-title">Your <em>alerts.</em></h1>
-            <p className="kh-home-intro">Important account updates and security notices will have a home here.</p>
-          </div>
-          <article className="kh-home-card kh-alerts-empty">
-            <span className="kh-alerts-empty-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span>
-            <h2>You're all caught up.</h2>
-            <p className="kh-home-muted">There are no alerts to show right now. Check back here for KingsHall account and security updates.</p>
-            <button className="secondary-button" type="button" onClick={() => navigateHomeSection('HOME')}><ArrowIcon /> Back to Home</button>
-          </article>
-        </section> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
+        {homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} onBack={() => navigateHomeSection('HOME')} /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
         <div className="kh-home-heading">
           <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
           <p className="kh-home-greeting">WELCOME BACK</p>
