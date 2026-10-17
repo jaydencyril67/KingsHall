@@ -1,0 +1,66 @@
+name: Notify KingsHall APK Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_version:
+        description: Published KingsHall release version to notify (without the v prefix)
+        required: true
+        default: "1.0.1"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  notify-release:
+    name: Notify users about an existing APK release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version and shared secret
+        env:
+          APP_VERSION: \${{ inputs.app_version }}
+          RELEASE_SECRET: \${{ secrets.KINGSHALL_RELEASE_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Enter a semantic version such as 1.0.1, without the v prefix."
+            exit 1
+          fi
+          if [ -z "\${RELEASE_SECRET:-}" ]; then
+            echo "::error::Set KINGSHALL_RELEASE_WEBHOOK_SECRET in GitHub Actions and ApiKingsHall Render."
+            exit 1
+          fi
+
+      - name: Verify published APK release
+        env:
+          GH_TOKEN: \${{ github.token }}
+          APP_VERSION: \${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          gh release view "v$APP_VERSION" --json isDraft,isPrerelease,assets \
+            --jq 'select(.isDraft == false and .isPrerelease == false and any(.assets[]; .name == "KingsHall.apk"))' \
+            >/dev/null
+          echo "Verified published stable release v$APP_VERSION with KingsHall.apk."
+
+      - name: Notify KingsHall users
+        env:
+          API_URL: \${{ vars.KINGSHALL_API_URL || 'https://api.kingshall.online' }}
+          RELEASE_SECRET: \${{ secrets.KINGSHALL_RELEASE_WEBHOOK_SECRET }}
+          APP_VERSION: \${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --arg tag "v$APP_VERSION" '{tag: $tag}')"
+          for attempt in 1 2 3 4 5; do
+            if curl --fail-with-body --silent --show-error \
+              --request POST "$API_URL/api/notifications/release-published" \
+              --header "Content-Type: application/json" \
+              --header "X-KingsHall-Release-Secret: $RELEASE_SECRET" \
+              --data "$payload"; then
+              echo "KingsHall users notified about v$APP_VERSION."
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep 5; fi
+          done
+          echo "::error::Release exists, but user notifications failed after 5 attempts."
+          exit 1
