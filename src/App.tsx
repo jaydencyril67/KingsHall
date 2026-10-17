@@ -134,7 +134,8 @@ export default function App() {
     if (window.location.pathname === '/home' && window.location.hash !== hash) {
       window.history.pushState({}, '', `/home${hash}`);
     }
-    if (section === 'ALERTS') { if (window.location.pathname !== '/home') { window.history.pushState({}, '', '/home#alerts'); setPath('/home'); setMode('home'); } window.scrollTo({ top: 0, behavior: 'auto' }); return; }\n    if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'ALERTS') { if (window.location.pathname !== '/home') { window.history.pushState({}, '', '/home#alerts'); setPath('/home'); setMode('home'); } window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
