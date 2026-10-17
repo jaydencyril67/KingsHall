@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
 type Channels = { email: boolean; inApp: boolean; push: boolean };
@@ -90,7 +90,7 @@ export default function SetupPage() {
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Nowbar colour and lighting</strong><span>Enable a coloured edge and glow around the Nowbar.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onChange={setNowbarColor} disabled={!nowbarEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><select value={nowbarLight} disabled={!nowbarEnabled} onChange={event => setNowbarLight(event.target.value)} aria-label="Nowbar lighting style">{LIGHT_STYLES.map(style => <option key={style.value} value={style.value}>{style.label}</option>)}</select></div>
-      <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-nowbar-preview ' + nowbarLight} style={{ '--setup-accent': nowbarEnabled ? nowbarColor : 'rgba(220,226,234,.25)' } as React.CSSProperties}><span className="kh-setup-preview-orb" /><strong>HOME</strong><span className="kh-setup-preview-chevron">⌄</span></div></div>
+      <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-nowbar-preview ' + nowbarLight} style={{ '--setup-accent': nowbarEnabled ? nowbarColor : 'rgba(220,226,234,.25)' } as CSSProperties}><span className="kh-setup-preview-orb" /><strong>HOME</strong><span className="kh-setup-preview-chevron">⌄</span></div></div>
     </article>
 
     <article className="kh-setup-card">
