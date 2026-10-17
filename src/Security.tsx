@@ -166,7 +166,6 @@ export default function SecurityPage({ user }: Props) {
   }, [user?.id]);
 
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
-    setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
     setWalletDraft(old => old?.id === id ? { ...old, [key]: value } : old);
   }
 
