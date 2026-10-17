@@ -245,7 +245,7 @@ export default function App() {
       '--kh-light-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent',
       ...(headerAppearance.enabled ? {
         borderColor: headerAppearance.color,
-        animation: ['stable', 'stable-light'].includes(headerAppearance.light) ? undefined : `kh-light-${headerAppearance.light === 'blink-light' ? 'edge-blink' : headerAppearance.light === 'blink' ? 'glow-blink' : headerAppearance.light === 'pulse-light' ? 'edge-pulse' : headerAppearance.light === 'pulse' ? 'glow-pulse' : headerAppearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${headerAppearance.light.startsWith('color') ? '6s linear' : headerAppearance.light.startsWith('pulse') ? '3.1s ease-in-out' : '2.6s ease-in-out'} infinite`,
+        animation: ['stable', 'stable-light'].includes(headerAppearance.light) ? undefined : `kh-light-${headerAppearance.light === 'blink-light' ? 'edge-blink' : headerAppearance.light === 'blink' ? 'glow-blink' : headerAppearance.light === 'pulse-light' ? 'edge-pulse' : headerAppearance.light === 'pulse' ? 'glow-pulse' : headerAppearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${headerAppearance.light.startsWith('color') ? '6s ease-in-out' : '3.2s ease-in-out'} infinite`,
         animationFillMode: 'both',
         willChange: 'border-color, box-shadow, filter',
         ...(headerAppearance.light === 'stable-light' ? { boxShadow: '0 18px 50px rgba(0,0,0,.82)' } : {}),
