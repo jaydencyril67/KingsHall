@@ -550,3 +550,9 @@ input,textarea{font-size:12px}
   box-shadow: none !important;
   background: rgba(3,4,5,.5) !important;
 }
+
+/* Wallet email verification split action */
+.kh-wallet-verify-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px;align-items:stretch}
+.kh-wallet-verification-code{width:100%;min-width:0;min-height:42px;padding:10px 12px;border:1px solid rgba(220,226,234,.18);border-radius:11px;background:rgba(0,0,0,.22);color:#eef1f6;font:inherit;font-size:11px;outline:none}
+.kh-wallet-verification-code:focus{border-color:rgba(220,226,234,.42);box-shadow:0 0 0 3px rgba(220,226,234,.05)}
+.kh-wallet-verify-action{margin-top:0;min-width:0;padding-left:8px;padding-right:8px}
