@@ -11,6 +11,7 @@ import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 import type { FormEvent } from 'react';
 import './App.css';
+import AppUpdateMonitor from './AppUpdateMonitor';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
 type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT';
@@ -290,6 +291,7 @@ export default function App() {
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   return <main className="kh-shell">
+    <AppUpdateMonitor />
     <header className={`topbar${headerAppearance.enabled && unreadAlerts > 0 ? ' kh-header-alert-color-active' : ''}`} style={headerAppearance.enabled && unreadAlerts > 0 ? ({
       borderColor: headerAppearance.color + 'b8',
       boxShadow: headerPulseActive
