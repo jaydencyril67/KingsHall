@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
 
 const validHex = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
 const hexToRgb = (hex: string) => ({ r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) });
@@ -61,7 +60,7 @@ export default function ColorSelectionPage({ color, title, description, onChange
 
   return <div className="kh-color-page-backdrop">
     <header className="kh-color-page-header">
-      <button type="button" className="kh-color-back" onClick={onClose} aria-label="Back to Setup"><ArrowLeft size={19}/></button>
+      <button type="button" className="kh-color-back" onClick={onClose} aria-label="Back to Setup"><span aria-hidden="true" className="kh-color-arrow">←</span></button>
       <div><strong>{title}</strong><span>COLOUR CUSTOMISATION</span></div>
       <button type="button" className="kh-color-header-done" onClick={onClose}>Done</button>
     </header>
@@ -84,7 +83,7 @@ export default function ColorSelectionPage({ color, title, description, onChange
         </div>
         <div className="kh-color-hex-row">
           <input aria-label="HEX colour" value={draft} onChange={event=>setDraft(event.target.value)} placeholder="#b9c7df" spellCheck={false}/>
-          <button type="button" style={buttonStyle} onClick={()=>{const next=draft.startsWith('#')?draft:'#'+draft;if(!validHex(next)){setError('Enter a valid six-digit HEX colour, for example #b9c7df.');return;}choose(next);}}><Check size={16}/> Apply</button>
+          <button type="button" style={buttonStyle} onClick={()=>{const next=draft.startsWith('#')?draft:'#'+draft;if(!validHex(next)){setError('Enter a valid six-digit HEX colour, for example #b9c7df.');return;}choose(next);}}><span aria-hidden="true">✓</span> Apply</button>
         </div>
         <div className="kh-color-rgb-row">
           {(['r','g','b'] as const).map(channel=><label key={channel}>{channel.toUpperCase()}<input aria-label={channel.toUpperCase()+' colour value'} type="number" min="0" max="255" value={rgb[channel]} onChange={event=>updateRgb(channel,event.target.value)}/></label>)}
