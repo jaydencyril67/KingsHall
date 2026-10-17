@@ -118,6 +118,8 @@ export default function SecurityPage({ user }: Props) {
   const [twoFactorSecret, setTwoFactorSecret] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [twoFactorBusy, setTwoFactorBusy] = useState(false);
+  const [twoFactorCancelBusy, setTwoFactorCancelBusy] = useState(false);
+  const [twoFactorVerifyBusy, setTwoFactorVerifyBusy] = useState(false);
   const [openNetworkId, setOpenNetworkId] = useState<string | null>(null);
   const [networkSearch, setNetworkSearch] = useState('');
   const [notice, setNotice] = useState('');
@@ -284,12 +286,12 @@ export default function SecurityPage({ user }: Props) {
       setTwoFactorEnabled(true); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
       setNotice(result.message || 'Authenticator bound successfully.'); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Code verification failed.'); setNoticeOk(false); }
-    finally { setTwoFactorBusy(false); }
+    finally { setTwoFactorVerifyBusy(false); }
   }
 
   async function cancelAuthenticatorSetup() {
-    if (twoFactorBusy) return;
-    setTwoFactorBusy(true);
+    if (twoFactorCancelBusy || twoFactorVerifyBusy || twoFactorBusy) return;
+    setTwoFactorCancelBusy(true);
     setNotice('');
     try {
       const result = await request('/api/identity/2fa/cancel', {});
@@ -301,7 +303,7 @@ export default function SecurityPage({ user }: Props) {
     } catch (error) {
       setNotice((error as Error).message || 'Could not cancel authenticator setup.');
       setNoticeOk(false);
-    } finally { setTwoFactorBusy(false); }
+    } finally { setTwoFactorCancelBusy(false); }
   }
 
   async function removeAuthenticator() {
@@ -476,7 +478,7 @@ export default function SecurityPage({ user }: Props) {
           <div className="field kh-two-factor-status-field"><label>Binding status</label><div className="kh-two-factor-status" role="status"><span>{twoFactorEnabled ? 'Bound and verified' : twoFactorPending ? 'Setup pending verification' : 'Not bound'}</span>{twoFactorEnabled && <span className="kh-security-code-check kh-two-factor-status-check" aria-label="Bound and verified"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           {!twoFactorEnabled && !twoFactorSecret && <div className="field"><label>Authenticator setup</label><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : twoFactorPending ? 'Restart Setup' : 'Bind Authenticator'}</button></div>}
           {twoFactorSecret && <div className="field"><label htmlFor="kh-two-factor-secret">Setup key</label><div className="kh-two-factor-secret-row"><input id="kh-two-factor-secret" value={twoFactorSecret} readOnly /><button type="button" className="kh-copy-secret-button" aria-label="Copy authenticator setup key" title="Copy setup key" onClick={() => void copyAuthenticatorSecret()}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8" /></svg></button></div><small className="kh-postal-feedback">In your authenticator app, choose Enter a setup key. Account: {user?.email || 'KingsHall'}. Keep this key private.</small></div>}
-          {(twoFactorSecret || twoFactorEnabled) && <div className="field"><label htmlFor="kh-two-factor-code">{twoFactorEnabled ? 'Current code to unbind' : 'Verify authenticator code'}</label><input id="kh-two-factor-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={twoFactorCode} onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))} />{twoFactorEnabled ? <button type="button" className="submit-button" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void removeAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : 'Unbind Authenticator'}</button> : <div className="kh-two-factor-verify-actions"><button type="button" className="secondary-button kh-two-factor-cancel-button" disabled={twoFactorBusy} onClick={() => void cancelAuthenticatorSetup()}>Cancel</button><button type="button" className="submit-button kh-two-factor-verify-button" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void verifyAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : 'Verify & Bind'}</button></div>}</div>}
+          {(twoFactorSecret || twoFactorEnabled) && <div className="field"><label htmlFor="kh-two-factor-code">{twoFactorEnabled ? 'Current code to unbind' : 'Verify authenticator code'}</label><input id="kh-two-factor-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={twoFactorCode} onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))} />{twoFactorEnabled ? <button type="button" className="submit-button" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void removeAuthenticator()}>{twoFactorBusy ? <LoadingDots /> : 'Unbind Authenticator'}</button> : <div className="kh-two-factor-verify-actions"><button type="button" className="secondary-button kh-two-factor-cancel-button" disabled={twoFactorCancelBusy || twoFactorVerifyBusy || twoFactorBusy} onClick={() => void cancelAuthenticatorSetup()}>{twoFactorCancelBusy ? <LoadingDots /> : 'Cancel'}</button><button type="button" className="submit-button kh-two-factor-verify-button" disabled={twoFactorCancelBusy || twoFactorVerifyBusy || twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void verifyAuthenticator()}>{twoFactorVerifyBusy ? <LoadingDots /> : 'Verify & Bind'}</button></div>}</div>}
           
         </div>
       </section>
