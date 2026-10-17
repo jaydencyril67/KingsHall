@@ -40,22 +40,25 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (val
 function ColorField({ value, onClick, disabled }: { value: string; onClick: () => void; disabled?: boolean }) {
   return <button type="button" className={'kh-setup-color' + (disabled ? ' is-disabled' : '')} disabled={disabled} onClick={onClick} aria-label={'Choose colour, currently ' + value.toUpperCase()}><span className="kh-setup-color-swatch" style={{ background: value }} /><span>{value.toUpperCase()}</span><span className="kh-setup-color-action">Choose</span></button>;
 }
-function LightingStyleSelect({ value, onChange, disabled, label }: { value: string; onChange: (value: string) => void; disabled: boolean; label: string }) {
+function LightingStyleSelect({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
   const [open, setOpen] = useState(false);
   const selected = LIGHT_STYLES.find(style => style.value === value) || LIGHT_STYLES[0];
-  return <div className={'kh-nationality-field kh-setup-lighting-select' + (open ? ' is-open' : '')}>
-    <button type="button" className="kh-nationality-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => setOpen(current => !current)}>
+  return <>
+    <button type="button" className="kh-nationality-trigger kh-setup-lighting-trigger" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
       <span>{selected.label}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
     </button>
-    {open && !disabled && <div className="kh-nationality-popout">
-      <div className="kh-nationality-list" role="listbox" aria-label={label}>
-        {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
-          <span><strong>{style.label}</strong></span>
-          {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
-        </button>)}
-      </div>
+    {open && <div className="kh-lighting-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
+      <section className="kh-lighting-modal" role="dialog" aria-modal="true" aria-label={label} onClick={event => event.stopPropagation()}>
+        <div className="kh-lighting-modal-heading"><strong>Lighting style</strong><button type="button" aria-label="Close lighting styles" onClick={() => setOpen(false)}>×</button></div>
+        <div className="kh-lighting-modal-options" role="listbox" aria-label={label}>
+          {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-lighting-modal-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
+            <span><strong>{style.label}</strong></span>
+            {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
+          </button>)}
+        </div>
+      </section>
     </div>}
-  </div>;
+  </>;
 }
 export default function SetupPage() {
   const [nowbarEnabled, setNowbarEnabled] = useState(() => readBool('kh_nowbar_color_enabled', false));
@@ -132,7 +135,7 @@ export default function SetupPage() {
     if (panel === 'nowbar') return <>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Enable the Nowbar accent effect.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong></div><LightingStyleSelect value={nowbarLight} disabled={!nowbarEnabled} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong></div><LightingStyleSelect value={nowbarLight} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
     </>;
     if (panel === 'header') return <>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Accent the app header when alerts are unread.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
