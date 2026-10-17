@@ -65,6 +65,21 @@ export default function App() {
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [alertsVersion, setAlertsVersion] = useState(0);
+  const [headerAppearance, setHeaderAppearance] = useState(() => ({
+    enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
+    color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df',
+    light: localStorage.getItem('kh_header_light_style') || 'stable'
+  }));
+  useEffect(() => {
+    const syncHeaderAppearance = () => setHeaderAppearance({
+      enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
+      color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df',
+      light: localStorage.getItem('kh_header_light_style') || 'stable'
+    });
+    window.addEventListener('kh:alert-color-changed', syncHeaderAppearance);
+    window.addEventListener('storage', syncHeaderAppearance);
+    return () => { window.removeEventListener('kh:alert-color-changed', syncHeaderAppearance); window.removeEventListener('storage', syncHeaderAppearance); };
+  }, []);
   useEffect(() => {
     const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/onboard' ? 'onboard' : p === '/access-review' ? 'review' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setReviewProcessed(false); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
@@ -223,7 +238,7 @@ export default function App() {
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   return <main className="kh-shell">
-    <header className="topbar">
+    <header className={`topbar kh-header-light-${headerAppearance.light}`} style={{ '--kh-header-accent': headerAppearance.enabled ? headerAppearance.color : 'transparent', '--kh-header-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent' } as React.CSSProperties}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
       <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong><small>One identity · Connected possibilities</small></a>
       <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
