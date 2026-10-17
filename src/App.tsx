@@ -65,21 +65,26 @@ export default function App() {
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [alertsVersion, setAlertsVersion] = useState(0);
+  const [headerPulseActive, setHeaderPulseActive] = useState(false);
   const [headerAppearance, setHeaderAppearance] = useState(() => ({
     enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
-    color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df',
-    light: localStorage.getItem('kh_header_light_style') || 'stable'
+    color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df'
   }));
   useEffect(() => {
     const syncHeaderAppearance = () => setHeaderAppearance({
       enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
-      color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df',
-      light: localStorage.getItem('kh_header_light_style') || 'stable'
+      color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df'
     });
     window.addEventListener('kh:alert-color-changed', syncHeaderAppearance);
     window.addEventListener('storage', syncHeaderAppearance);
     return () => { window.removeEventListener('kh:alert-color-changed', syncHeaderAppearance); window.removeEventListener('storage', syncHeaderAppearance); };
   }, []);
+  useEffect(() => {
+    if (alertsVersion <= 0) return;
+    setHeaderPulseActive(true);
+    const timer = window.setTimeout(() => setHeaderPulseActive(false), 10000);
+    return () => window.clearTimeout(timer);
+  }, [alertsVersion]);
   useEffect(() => {
     const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/onboard' ? 'onboard' : p === '/access-review' ? 'review' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setReviewProcessed(false); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
@@ -238,20 +243,14 @@ export default function App() {
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   return <main className="kh-shell">
-    <header className={`topbar kh-header-light-${headerAppearance.enabled ? headerAppearance.light : 'stable-light'}`} style={{
-      '--kh-header-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)',
-      '--kh-header-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent',
-      '--kh-light-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)',
-      '--kh-light-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent',
-      ...(headerAppearance.enabled ? {
-        borderColor: headerAppearance.color,
-        animation: ['stable', 'stable-light'].includes(headerAppearance.light) ? undefined : `kh-light-${headerAppearance.light === 'blink-light' ? 'edge-blink' : headerAppearance.light === 'blink' ? 'glow-blink' : headerAppearance.light === 'pulse-light' ? 'edge-pulse' : headerAppearance.light === 'pulse' ? 'glow-pulse' : headerAppearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${headerAppearance.light.startsWith('color') ? '6s ease-in-out' : '3.2s ease-in-out'} infinite`,
-        animationFillMode: 'both',
-        willChange: 'border-color, box-shadow, filter',
-        ...(headerAppearance.light === 'stable-light' ? { boxShadow: '0 18px 50px rgba(0,0,0,.82)' } : {}),
-        ...(headerAppearance.light === 'stable' ? { boxShadow: `0 0 0 1px rgba(255,255,255,.12), 0 0 24px ${headerAppearance.color}, 0 18px 50px rgba(0,0,0,.82), inset 0 1px 0 rgba(255,255,255,.12)` } : {})
-      } : {})
-    } as CSSProperties}>
+    <header className={`topbar${headerAppearance.enabled && unreadAlerts > 0 ? ' kh-header-alert-color-active' : ''}`} style={headerAppearance.enabled && unreadAlerts > 0 ? ({
+      borderColor: headerAppearance.color + 'b8',
+      boxShadow: headerPulseActive
+        ? `0 0 0 1px color-mix(in srgb, ${headerAppearance.color} 72%, transparent), 0 0 18px color-mix(in srgb, ${headerAppearance.color} 48%, transparent), 0 14px 30px rgba(0,0,0,0.24)`
+        : `0 0 0 1px color-mix(in srgb, ${headerAppearance.color} 42%, transparent), 0 0 10px color-mix(in srgb, ${headerAppearance.color} 24%, transparent), 0 14px 30px rgba(0,0,0,0.24)`,
+      animation: headerPulseActive ? 'kh-header-alert-color-pulse 1.2s ease-in-out infinite' : 'none',
+      '--kh-header-alert-color': headerAppearance.color
+    } as CSSProperties) : undefined}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
       <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong></a>
       <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
