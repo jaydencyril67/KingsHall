@@ -104,6 +104,8 @@ export default function SecurityPage({ user }: Props) {
   const [verificationRequested, setVerificationRequested] = useState(false);
   const [walletDraft, setWalletDraft] = useState<Wallet | null>(null);
   const [walletActionMenuId, setWalletActionMenuId] = useState<string | null>(null);
+  const [walletVerificationRequested, setWalletVerificationRequested] = useState(false);
+  const [walletEmailVerificationCode, setWalletEmailVerificationCode] = useState('');
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
@@ -295,7 +297,29 @@ export default function SecurityPage({ user }: Props) {
     finally { setTwoFactorBusy(false); }
   }
 
-  async function saveWallets(nextWallets: Wallet[] = wallets): Promise<boolean> {
+  async function requestWalletVerification(): Promise<void> {
+    if (!walletDraft || savingWallets || walletVerificationRequested) return;
+    const validation = walletAddressValidation(walletDraft);
+    if (!walletDraft.address.trim() || !validation.valid) {
+      setNotice(!walletDraft.address.trim() ? 'Enter a wallet address before continuing.' : validation.message);
+      setNoticeOk(false);
+      return;
+    }
+    setSavingWallets(true); setNotice('');
+    try {
+      const action = wallets.some(wallet => wallet.id === walletDraft.id) ? 'edit' : 'add';
+      const result = await request('/api/identity/wallets/verification/request', { action });
+      setWalletVerificationRequested(true);
+      setWalletEmailVerificationCode('');
+      setNotice(result.message || 'Verification code sent to your verified email.');
+      setNoticeOk(true);
+    } catch (error) {
+      setNotice((error as Error).message || 'Could not send the wallet verification code.');
+      setNoticeOk(false);
+    } finally { setSavingWallets(false); }
+  }
+
+  async function saveWallets(nextWallets: Wallet[] = wallets, emailVerificationCode = '', walletAction = 'delete'): Promise<boolean> {
     if (savingWallets) return false;
     const invalidWallet = nextWallets.find(wallet => !wallet.address.trim() || !validateWalletAddress(wallet.network, wallet.address).valid);
     if (invalidWallet) {
@@ -307,8 +331,8 @@ export default function SecurityPage({ user }: Props) {
     }
     setSavingWallets(true); setNotice('');
     try {
-      const result = await request('/api/identity/wallets', { wallets: nextWallets });
-      setWallets(result.profile?.wallets || nextWallets);
+      const result = await request('/api/identity/wallets', { wallets: nextWallets, emailVerificationCode, walletAction });
+      setWallets((result.profile?.wallets || nextWallets).filter(wallet => Boolean(wallet.address?.trim())));
       setNotice(result.message || 'Wallet addresses saved.');
       setNoticeOk(true);
       return true;
@@ -321,13 +345,22 @@ export default function SecurityPage({ user }: Props) {
 
   async function commitWalletDraft(): Promise<void> {
     if (!walletDraft || savingWallets) return;
+    if (!walletVerificationRequested) { await requestWalletVerification(); return; }
+    if (!/^\\d{6}$/.test(walletEmailVerificationCode)) {
+      setNotice('Enter the six-digit code sent to your email.');
+      setNoticeOk(false);
+      return;
+    }
     const existing = wallets.some(wallet => wallet.id === walletDraft.id);
     const nextWallets = existing
       ? wallets.map(wallet => wallet.id === walletDraft.id ? walletDraft : wallet)
       : [...wallets, walletDraft];
-    if (await saveWallets(nextWallets)) {
+    const action = existing ? 'edit' : 'add';
+    if (await saveWallets(nextWallets, walletEmailVerificationCode, action)) {
       setWalletDraft(null);
       setWalletActionMenuId(null);
+      setWalletVerificationRequested(false);
+      setWalletEmailVerificationCode('');
     }
   }
 
@@ -419,14 +452,14 @@ export default function SecurityPage({ user }: Props) {
           </div>)}
         </div>
         {walletDraft && <div className="kh-wallet-editor">
-          <div className="kh-wallet-editor-heading"><strong>{wallets.some(wallet => wallet.id === walletDraft.id) ? 'Edit wallet address' : 'Add wallet address'}</strong><button type="button" className="kh-wallet-cancel-edit" disabled={savingWallets} onClick={() => { setWalletDraft(null); setOpenNetworkId(null); setNotice(''); }}>Cancel</button></div>
+          <div className="kh-wallet-editor-heading"><strong>{wallets.some(wallet => wallet.id === walletDraft.id) ? 'Edit wallet address' : 'Add wallet address'}</strong><button type="button" className="kh-wallet-cancel-edit" disabled={savingWallets} onClick={() => { setWalletDraft(null); setOpenNetworkId(null); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setNotice(''); }}>Cancel</button></div>
           <div className="kh-identity-grid">
             <div className="field"><label htmlFor="security-wallet-label">Label <span className="optional">(optional)</span></label><input id="security-wallet-label" maxLength={40} placeholder="e.g. Main USDT wallet" value={walletDraft.label} onChange={e => patchWallet(walletDraft.id, 'label', e.target.value)} /></div>
             <div className={`field kh-nationality-field kh-wallet-network-field${openNetworkId === walletDraft.id ? ' is-open' : ''}`}><label id="security-wallet-network-label">Network</label><button className="kh-nationality-trigger" type="button" aria-labelledby="security-wallet-network-label" aria-haspopup="listbox" aria-expanded={openNetworkId === walletDraft.id} onClick={() => { setOpenNetworkId(current => current === walletDraft.id ? null : walletDraft.id); setNetworkSearch(''); }}><span>{walletDraft.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : walletDraft.network}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{openNetworkId === walletDraft.id && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search wallet networks" placeholder="Search networks…" autoComplete="off" value={networkSearch} onChange={e => setNetworkSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Wallet networks">{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).map(network => <button type="button" role="option" aria-selected={walletDraft.network === network} className="kh-nationality-option" key={network} onClick={() => { patchWallet(walletDraft.id, 'network', network); setOpenNetworkId(null); setNetworkSearch(''); }}>{network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network}{walletDraft.network === network && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg>}</button>)}{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching network found.</p>}</div></div>}</div>
             <div className="field kh-identity-span"><label htmlFor="security-wallet-address">Wallet address</label><input id="security-wallet-address" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={walletDraft.address} aria-invalid={Boolean(walletDraft.address.trim() && !walletAddressValidation(walletDraft).valid)} onChange={e => patchWallet(walletDraft.id, 'address', e.target.value)} />{walletDraft.address.trim() && <small className={walletAddressValidation(walletDraft).valid ? 'kh-wallet-address-feedback is-valid' : 'kh-wallet-address-feedback is-invalid'} role="status">{walletAddressValidation(walletDraft).message}</small>}</div>
           </div>
         </div>}
-        <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && wallets.length >= 20)} onClick={() => { if (walletDraft) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft ? (wallets.some(wallet => wallet.id === walletDraft.id) ? 'Save changes' : 'Save wallet address') : '+ Add wallet address'}</button>
+        {walletDraft && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && wallets.length >= 20)} onClick={() => { if (walletDraft) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft ? (wallets.some(wallet => wallet.id === walletDraft.id) ? 'Send code' : 'Send code') : '+ Add wallet address'}</button>}
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
