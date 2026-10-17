@@ -163,6 +163,48 @@ export default function App() {
     const route = next === 'login' ? '/signin' : next === 'request' ? '/request-access' : next === 'verify' ? '/verify-email' : next === 'onboard' ? '/onboard' : next === 'review' ? '/access-review' : (next === 'account' || next === 'home') ? '/home' : '/';
     setMode(next); setPath(route); setNotice(''); go(route);
   }
+  async function handleSignInClick() {
+    const accessToken = sessionStorage.getItem('kh_access');
+    const refreshToken = sessionStorage.getItem('kh_refresh');
+    if (!accessToken && !refreshToken) { navigate('login'); return; }
+    setBusy(true);
+    try {
+      let validUser: User | null = null;
+      if (accessToken) {
+        try {
+          const response = await fetch(API + '/api/auth/me', { headers: { Authorization: 'Bearer ' + accessToken } });
+          if (response.ok) {
+            const data = await response.json() as Result;
+            validUser = data.user || (data as unknown as User);
+          }
+        } catch {
+          // A refresh token may still recover the session if access-token validation cannot complete.
+        }
+      }
+      if (!validUser && refreshToken) {
+        const data = await api('/api/auth/refresh', { refreshToken });
+        store(data);
+        validUser = data.user || null;
+      }
+      if (validUser) {
+        setUser(validUser);
+        navigate('home');
+        setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active');
+        registerDeviceAccount(validUser)
+          .then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'))
+          .catch(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'You are signed in, but Android could not confirm the device account.' : 'You are signed in on this browser.'));
+        return;
+      }
+      clear();
+      setUser(null);
+      navigate('login');
+    } catch {
+      // Keep stored credentials intact on network/server errors; the user can still reach Sign In.
+      navigate('login');
+    } finally {
+      setBusy(false);
+    }
+  }
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (busy || resendingVerification) return; setBusy(true); say('');
     const form = e.currentTarget;
@@ -261,7 +303,7 @@ export default function App() {
           <span className="eyebrow"><span className="eyebrow-line" />THE DIGITAL ECOSYSTEM</span>
           <h1>One identity.<br /><em>Many possibilities.</em></h1>
           <p className="intro-copy">KingsHall is the home base for a connected digital ecosystem — bringing your identity, access, and compatible applications together through one central platform.</p>
-          <div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div>
+          <div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" disabled={busy} onClick={() => void handleSignInClick()}>{busy ? <LoadingDots /> : <>Sign In <ArrowIcon /></>}</button></div>
           <div className="trust-row"><span><FeatureIcon type="shield" /> Security-minded foundation</span><span><FeatureIcon type="apps" /> Connected experiences</span></div>
         </div>
         <div className="ecosystem-panel">
