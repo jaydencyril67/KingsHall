@@ -13,6 +13,13 @@ if not source.is_file():
 target.parent.mkdir(parents=True, exist_ok=True)
 shutil.copyfile(source, target)
 
+manifest_path = target_root / "AndroidManifest.xml"
+manifest = manifest_path.read_text(encoding="utf-8")
+permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+if "android.permission.REQUEST_INSTALL_PACKAGES" not in manifest:
+    manifest = manifest.replace("<application", permission + "\n\n    <application", 1)
+    manifest_path.write_text(manifest, encoding="utf-8")
+
 activity_path = target_root / "java/online/kingshall/foundation/MainActivity.java"
 if not activity_path.exists():
     raise SystemExit("Expected generated MainActivity.java was not found.")
@@ -29,7 +36,7 @@ if registration not in activity:
     marker = "super.onCreate(savedInstanceState);"
     if marker not in activity:
         raise SystemExit("Could not safely locate MainActivity onCreate.")
-    activity = activity.replace(marker, marker + "\n        " + registration, 1)
+    activity = activity.replace(marker, registration + "\n        " + marker, 1)
 
 activity_path.write_text(activity, encoding="utf-8")
 print("Installed KingsHall native APK version reader, DownloadManager, and Android installer bridge.")
