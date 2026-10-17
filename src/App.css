@@ -760,3 +760,72 @@ input,textarea{font-size:12px}
 .kh-alerts-filter-popout,
 .kh-alerts-confirm-popout,
 .kh-alerts-item-popout{transform-origin:bottom center}
+
+/* About and Standards — deliberately separated, document-style glass interface. */
+.kh-about-page{width:100%;max-width:940px;min-width:0;margin:0 auto;padding:14px 0 38px;color:#e9edf3}
+.kh-about-heading{margin:0 0 20px}
+.kh-about-heading h1{margin:10px 0 8px;font-size:clamp(31px,5vw,43px);font-weight:500;letter-spacing:-.045em;line-height:1.08}
+.kh-about-heading h1 em{font-style:normal;color:#b9c1ce}
+.kh-about-heading>p{max-width:610px;margin:0;color:#9da5b1;font-size:12px;line-height:1.8}
+.kh-about-switcher{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px;padding:6px;border:1px solid rgba(221,226,233,.12);border-radius:16px;background:rgba(255,255,255,.025)}
+.kh-about-switcher>button{display:flex;align-items:center;gap:11px;min-width:0;padding:12px;border:1px solid transparent;border-radius:11px;background:transparent;color:#9ea6b2;text-align:left;cursor:pointer}
+.kh-about-switcher>button>svg,.kh-about-doc-switcher button>svg{width:19px;height:19px;flex:0 0 auto;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.kh-about-switcher>button>span,.kh-about-doc-switcher button>span:nth-child(2){display:grid;gap:4px;min-width:0}
+.kh-about-switcher strong,.kh-about-doc-switcher strong{color:inherit;font-size:12px;font-weight:600}
+.kh-about-switcher small,.kh-about-doc-switcher small{color:#7f8895;font-size:9px}
+.kh-about-switcher>button.is-active{border-color:rgba(220,228,238,.2);background:linear-gradient(130deg,rgba(255,255,255,.09),rgba(255,255,255,.035));box-shadow:inset 0 1px rgba(255,255,255,.04);color:#f0f3f7}
+.kh-about-content{animation:khAboutReveal .18s ease-out}
+.kh-about-intro-panel{display:grid;grid-template-columns:68px minmax(0,1fr);gap:18px;align-items:start;padding:clamp(17px,4vw,27px);border:1px solid rgba(221,226,233,.15);border-radius:19px;background:radial-gradient(ellipse at 0 0,rgba(255,255,255,.065),transparent 55%),linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.kh-about-intro-mark{width:62px;height:62px;display:grid;place-items:center;border:1px solid rgba(230,235,242,.17);border-radius:19px;background:rgba(0,0,0,.22)}
+.kh-about-intro-mark img{width:38px;height:38px;object-fit:contain}
+.kh-about-card-kicker{display:block;color:#8f98a6;font-size:8px;font-weight:700;letter-spacing:.15em;line-height:1.6}
+.kh-about-intro-panel h2,.kh-about-section-heading h2,.kh-about-principles h2{margin:8px 0;color:#edf0f5;font-size:clamp(18px,3vw,24px);font-weight:500;letter-spacing:-.025em;line-height:1.3}
+.kh-about-intro-panel p,.kh-about-section-heading>p{margin:0;color:#a1a8b3;font-size:11px;line-height:1.85}
+.kh-about-section-heading{margin:29px 0 15px}
+.kh-about-section-heading h2{margin:8px 0 5px;font-size:20px}
+.kh-about-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.kh-about-info-card{min-width:0;padding:17px;border:1px solid rgba(221,226,233,.105);border-radius:15px;background:rgba(255,255,255,.023)}
+.kh-about-icon{width:35px;height:35px;display:grid;place-items:center;border:1px solid rgba(221,226,233,.14);border-radius:11px;background:rgba(255,255,255,.04);color:#d0d6df}
+.kh-about-icon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.kh-about-info-card>.kh-about-card-kicker{margin-top:14px}
+.kh-about-info-card h3{margin:6px 0 7px;color:#e8ecf2;font-size:13px;font-weight:600}
+.kh-about-info-card p{margin:0;color:#9ca4b0;font-size:10.5px;line-height:1.8}
+.kh-about-principles{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:22px;margin-top:12px;padding:20px;border:1px solid rgba(221,226,233,.1);border-radius:16px;background:rgba(255,255,255,.02)}
+.kh-about-principles h2{margin-bottom:0;font-size:18px}
+.kh-about-principles ul{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.kh-about-principles li{display:flex;align-items:flex-start;gap:10px}
+.kh-about-principles li>svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px;stroke:#d0d7e1;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kh-about-principles li span{display:grid;gap:4px}
+.kh-about-principles li strong{color:#e4e8ee;font-size:11px;font-weight:600}
+.kh-about-principles li small{color:#929ba8;font-size:10px;line-height:1.65}
+.kh-about-standards-cta{width:100%;display:flex;align-items:center;gap:12px;margin-top:12px;padding:13px;border:1px solid rgba(221,226,233,.16);border-radius:14px;background:linear-gradient(110deg,rgba(255,255,255,.055),rgba(255,255,255,.02));color:#e8edf4;text-align:left;cursor:pointer}
+.kh-about-standards-cta>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}
+.kh-about-standards-cta strong{font-size:11px;font-weight:600}
+.kh-about-standards-cta small{color:#929ba7;font-size:9px;line-height:1.5}
+.kh-about-standards-cta>svg{width:17px;height:17px;flex:0 0 auto;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.kh-about-disclaimer{margin:13px 2px 0;color:#727c89;font-size:9px;line-height:1.7}
+.kh-about-standards-intro{display:flex;align-items:flex-start;gap:13px;margin-bottom:14px;padding:17px;border:1px solid rgba(221,226,233,.11);border-radius:15px;background:rgba(255,255,255,.025)}
+.kh-about-standards-intro h2{margin:1px 0 6px;color:#edf0f5;font-size:16px;font-weight:600}
+.kh-about-standards-intro p{margin:0;color:#9ea6b2;font-size:10.5px;line-height:1.8}
+.kh-about-doc-switcher{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kh-about-doc-switcher>button{display:flex;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid rgba(221,226,233,.12);border-radius:12px;background:rgba(255,255,255,.025);color:#9fa7b3;text-align:left;cursor:pointer}
+.kh-about-doc-switcher>button.is-active{border-color:rgba(222,230,240,.24);background:linear-gradient(140deg,rgba(255,255,255,.085),rgba(255,255,255,.03));color:#f1f4f8}
+.kh-about-doc-switcher button>span:nth-child(2){flex:1}
+.kh-about-doc-chevron{color:#929ba8;font-size:20px;line-height:1}
+.kh-about-policy{padding:clamp(16px,4vw,26px);border:1px solid rgba(221,226,233,.13);border-radius:17px;background:linear-gradient(150deg,rgba(255,255,255,.035),rgba(255,255,255,.012))}
+.kh-about-policy-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kh-about-policy-label{padding:4px 7px;border:1px solid rgba(221,226,233,.15);border-radius:6px;color:#aab2be;font-size:8px;font-weight:700;letter-spacing:.12em}
+.kh-about-policy>h2{margin:13px 0 7px;color:#f0f3f7;font-size:23px;font-weight:500;letter-spacing:-.03em}
+.kh-about-policy-lead{margin:0 0 20px;color:#adb5c1;font-size:11px;line-height:1.8}
+.kh-about-policy>section{padding:15px 0;border-top:1px solid rgba(221,226,233,.09)}
+.kh-about-policy>section h3{margin:0 0 7px;color:#e3e8ef;font-size:12px;font-weight:600}
+.kh-about-policy>section p,.kh-about-policy>section li{color:#9ea6b2;font-size:10.5px;line-height:1.85}
+.kh-about-policy>section p{margin:0}
+.kh-about-policy>section ul{display:grid;gap:8px;margin:8px 0 0;padding-left:18px}
+.kh-about-policy>section li strong{color:#cbd2dc;font-weight:600}
+.kh-about-policy-note{margin:14px 0 0;padding:11px 12px;border-left:2px solid rgba(210,219,230,.3);background:rgba(255,255,255,.025);color:#828c99;font-size:9px;line-height:1.8}
+.kh-about-back-to-about{margin-top:12px;padding:8px 0;border:0;background:transparent;color:#c3cbd6;font:inherit;font-size:10px;cursor:pointer}
+.kh-about-back-to-about:hover,.kh-about-standards-cta:hover{color:#fff}
+@keyframes khAboutReveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:560px){.kh-about-page{padding-top:8px}.kh-about-switcher{gap:5px;padding:5px}.kh-about-switcher>button{gap:8px;padding:10px 8px}.kh-about-switcher>button>svg{width:17px;height:17px}.kh-about-switcher strong{font-size:11px}.kh-about-switcher small{font-size:8px}.kh-about-intro-panel{grid-template-columns:45px minmax(0,1fr);gap:12px;padding:15px}.kh-about-intro-mark{width:44px;height:44px;border-radius:13px}.kh-about-intro-mark img{width:29px;height:29px}.kh-about-intro-panel h2{font-size:18px}.kh-about-info-grid{grid-template-columns:1fr}.kh-about-info-card{padding:15px}.kh-about-principles{grid-template-columns:1fr;gap:14px;padding:16px}.kh-about-doc-switcher{grid-template-columns:1fr}.kh-about-doc-switcher>button{padding:11px}.kh-about-policy>h2{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.kh-about-content{animation:none}}
