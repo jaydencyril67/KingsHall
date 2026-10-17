@@ -143,7 +143,11 @@ function formatDobInput(isoDate: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(isoDate || '');
   return match ? match[3] + '/' + match[2] + '/' + match[1] : '';
 }
-function normalizePhone(value: string): string {\n  const digits = value.replace(/\\D/g, '');\n  return digits ? '+' + digits : '';\n}\nfunction parseDobInput(value: string): string | null {
+function normalizePhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  return digits ? '+' + digits : '';
+}
+function parseDobInput(value: string): string | null {
   if (!value.trim()) return '';
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
   if (!match) return null;
@@ -293,7 +297,12 @@ export default function IdentityPage({ user }: Props) {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unsupported' | 'error'>('idle');
   const [emailChangePending, setEmailChangePending] = useState('');
   const [emailChangeCode, setEmailChangeCode] = useState('');
-  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);\n  const [phoneVerificationCode, setPhoneVerificationCode] = useState('');\n  const [phoneCodeSentFor, setPhoneCodeSentFor] = useState('');\n  const [phoneVerifiedFor, setPhoneVerifiedFor] = useState('');\n  const [sendingPhoneCode, setSendingPhoneCode] = useState(false);\n  const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
+  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);
+  const [phoneVerificationCode, setPhoneVerificationCode] = useState('');
+  const [phoneCodeSentFor, setPhoneCodeSentFor] = useState('');
+  const [phoneVerifiedFor, setPhoneVerifiedFor] = useState('');
+  const [sendingPhoneCode, setSendingPhoneCode] = useState(false);
+  const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
   const savedEmailRef = useRef('');
   const savedProfileRef = useRef<IdentityProfile | null>(null);
   const parsedDobForStatus = parseDobInput(dobInput);
