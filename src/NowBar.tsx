@@ -124,7 +124,7 @@ export default function NowBar({ section, onNavigate }: Props) {
   };
 
   return (
-    <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''} kh-nowbar-light-${appearance.enabled ? appearance.light : 'stable-light'}`} style={{ '--kh-nowbar-accent': appearance.enabled ? appearance.color : 'rgba(220,226,234,.18)', '--kh-nowbar-glow': appearance.enabled ? appearance.color + '66' : 'transparent' } as CSSProperties}>
+    <div className={`kh-nowbar-dock ${mode === 'expanded' ? 'is-expanded' : ''} kh-nowbar-light-${appearance.enabled ? appearance.light : 'stable-light'}`} style={{ '--kh-nowbar-accent': appearance.enabled ? appearance.color : 'rgba(220,226,234,.18)', '--kh-nowbar-glow': appearance.enabled ? appearance.color + '66' : 'transparent', '--kh-light-accent': appearance.enabled ? appearance.color : 'rgba(220,226,234,.18)', '--kh-light-glow': appearance.enabled ? appearance.color + '66' : 'transparent' } as CSSProperties}>
       <div
         ref={barRef}
         className={`kh-nowbar ${view === 'title' ? 'is-title' : 'is-actions'} ${mode === 'expanded' ? 'is-expanded' : ''}`}
