@@ -102,7 +102,8 @@ export default function SecurityPage({ user }: Props) {
   const [securityFieldMenu, setSecurityFieldMenu] = useState<'password' | 'securityCode' | 'accessCode' | 'fundingCode' | null>(null);
   const [emailVerificationCode, setEmailVerificationCode] = useState('');
   const [verificationRequested, setVerificationRequested] = useState(false);
-  const [walletsEditing, setWalletsEditing] = useState(false);
+  const [walletDraft, setWalletDraft] = useState<Wallet | null>(null);
+  const [walletActionMenuId, setWalletActionMenuId] = useState<string | null>(null);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
   const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
@@ -164,6 +165,7 @@ export default function SecurityPage({ user }: Props) {
 
   function patchWallet(id: string, key: 'label' | 'network' | 'address', value: string) {
     setWallets(old => old.map(wallet => wallet.id === id ? { ...wallet, [key]: value } : wallet));
+    setWalletDraft(old => old?.id === id ? { ...old, [key]: value } : old);
   }
 
   function walletAddressValidation(wallet: Wallet) {
@@ -292,18 +294,20 @@ export default function SecurityPage({ user }: Props) {
     finally { setTwoFactorBusy(false); }
   }
 
-  async function saveWallets(): Promise<boolean> {
+  async function saveWallets(nextWallets: Wallet[] = wallets): Promise<boolean> {
     if (savingWallets) return false;
-    const invalidWallet = wallets.find(wallet => wallet.address.trim() && !validateWalletAddress(wallet.network, wallet.address).valid);
+    const invalidWallet = nextWallets.find(wallet => !wallet.address.trim() || !validateWalletAddress(wallet.network, wallet.address).valid);
     if (invalidWallet) {
-      setNotice('Please correct the wallet address for ' + (invalidWallet.network === 'BRC20' ? 'Bitcoin (BRC-20)' : invalidWallet.network) + ' before saving.');
+      setNotice(!invalidWallet.address.trim()
+        ? 'Enter a wallet address before saving.'
+        : 'Please correct the wallet address for ' + (invalidWallet.network === 'BRC20' ? 'Bitcoin (BRC-20)' : invalidWallet.network) + ' before saving.');
       setNoticeOk(false);
       return false;
     }
     setSavingWallets(true); setNotice('');
     try {
-      const result = await request('/api/identity/wallets', { wallets });
-      setWallets(result.profile?.wallets || wallets);
+      const result = await request('/api/identity/wallets', { wallets: nextWallets });
+      setWallets(result.profile?.wallets || nextWallets);
       setNotice(result.message || 'Wallet addresses saved.');
       setNoticeOk(true);
       return true;
@@ -312,6 +316,25 @@ export default function SecurityPage({ user }: Props) {
       setNoticeOk(false);
       return false;
     } finally { setSavingWallets(false); }
+  }
+
+  async function commitWalletDraft(): Promise<void> {
+    if (!walletDraft || savingWallets) return;
+    const existing = wallets.some(wallet => wallet.id === walletDraft.id);
+    const nextWallets = existing
+      ? wallets.map(wallet => wallet.id === walletDraft.id ? walletDraft : wallet)
+      : [...wallets, walletDraft];
+    if (await saveWallets(nextWallets)) {
+      setWalletDraft(null);
+      setWalletActionMenuId(null);
+    }
+  }
+
+  async function deleteWallet(walletId: string): Promise<void> {
+    if (savingWallets) return;
+    const nextWallets = wallets.filter(wallet => wallet.id !== walletId);
+    setWalletActionMenuId(null);
+    await saveWallets(nextWallets);
   }
 
   return <div className="kh-identity-page kh-security-page">
@@ -380,22 +403,29 @@ export default function SecurityPage({ user }: Props) {
           {twoFactorPending && !twoFactorSecret && <div className="field"><small className="kh-postal-feedback">The setup key is no longer shown. Restart setup to generate a new key.</small><button type="button" className="submit-button" disabled={twoFactorBusy} onClick={() => void startAuthenticator()}>Restart Setup</button></div>}
         </div>
       </section>
-      <section className="kh-identity-card">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Save public receiving addresses by network. Never enter a seed phrase or private key.</p></div></div>
-        <fieldset className="kh-identity-editable-fields kh-security-wallet-editable-fields" disabled={!walletsEditing}>
+            <section className="kh-identity-card kh-security-wallet-card">
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="wallet" /></span><div><h2>Wallets</h2><p>Manage your public receiving addresses. Never enter a seed phrase or private key.</p></div></div>
         <div className="kh-identity-wallets">
-          {wallets.map((wallet, index) => <div className="kh-identity-wallet" key={wallet.id}>
-            <div className="kh-identity-wallet-title"><strong>Wallet {index + 1}</strong><button type="button" onClick={() => setWallets(old => old.filter(item => item.id !== wallet.id))}>Remove</button></div>
-            <div className="kh-identity-grid">
-              <div className="field"><label htmlFor={'security-wallet-label-' + wallet.id}>Label <span className="optional">(optional)</span></label><input id={'security-wallet-label-' + wallet.id} maxLength={40} placeholder="e.g. Main USDT wallet" value={wallet.label} onChange={e => patchWallet(wallet.id, 'label', e.target.value)} /></div>
-              <div className={`field kh-nationality-field kh-wallet-network-field${openNetworkId === wallet.id ? ' is-open' : ''}`}><label id={'security-wallet-network-label-' + wallet.id}>Network</label><button className="kh-nationality-trigger" type="button" aria-labelledby={'security-wallet-network-label-' + wallet.id} aria-haspopup="listbox" aria-expanded={openNetworkId === wallet.id} onClick={() => { setOpenNetworkId(current => current === wallet.id ? null : wallet.id); setNetworkSearch(''); }}><span>{wallet.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : wallet.network}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{openNetworkId === wallet.id && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search wallet networks" placeholder="Search networks…" autoComplete="off" value={networkSearch} onChange={e => setNetworkSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Wallet networks">{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).map(network => <button type="button" role="option" aria-selected={wallet.network === network} className="kh-nationality-option" key={network} onClick={() => { patchWallet(wallet.id, 'network', network); setOpenNetworkId(null); setNetworkSearch(''); }}>{network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network}{wallet.network === network && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg>}</button>)}{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching network found.</p>}</div></div>}</div>
-              <div className="field kh-identity-span"><label htmlFor={'security-wallet-address-' + wallet.id}>Wallet address</label><input id={'security-wallet-address-' + wallet.id} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={wallet.address} aria-invalid={Boolean(wallet.address.trim() && !walletAddressValidation(wallet).valid)} onChange={e => patchWallet(wallet.id, 'address', e.target.value)} />{wallet.address.trim() && <small className={walletAddressValidation(wallet).valid ? 'kh-wallet-address-feedback is-valid' : 'kh-wallet-address-feedback is-invalid'} role="status">{walletAddressValidation(wallet).message}</small>}</div>
-            </div>
+          {wallets.filter(wallet => wallet.address.trim()).map(wallet => <div className="kh-wallet-address-item" key={wallet.id}>
+            <button type="button" className="kh-wallet-address-trigger" aria-label={'Wallet address on ' + (wallet.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : wallet.network) + ': ' + wallet.address} aria-expanded={walletActionMenuId === wallet.id} onClick={() => setWalletActionMenuId(current => current === wallet.id ? null : wallet.id)}>
+              <span className="kh-wallet-address-copy"><small>{wallet.label.trim() || (wallet.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : wallet.network)}</small><strong>{wallet.address}</strong></span>
+              <span className="kh-wallet-address-network">{wallet.network === 'BRC20' ? 'BRC-20' : wallet.network}</span>
+            </button>
+            {walletActionMenuId === wallet.id && <div className="kh-wallet-actions-popout" role="group" aria-label="Wallet address actions">
+              <button type="button" onClick={() => { setWalletDraft({ ...wallet }); setWalletActionMenuId(null); setNotice(''); }}>Edit</button>
+              <button type="button" className="is-danger" onClick={() => void deleteWallet(wallet.id)}>Delete</button>
+            </div>}
           </div>)}
         </div>
-        <button className="secondary-button kh-identity-add-wallet" type="button" disabled={wallets.length >= 20} onClick={() => setWallets(old => [...old, newWallet()])}>+ Add wallet address</button>
-        </fieldset>
-        <div className="kh-identity-section-save"><span>{walletsEditing ? "Edit your wallet addresses, then save to lock them again." : "Wallet addresses are locked until you choose to edit."}</span><button className="submit-button" type="button" onClick={() => { if (!walletsEditing) { setWalletsEditing(true); setNotice(""); } else void saveWallets().then(saved => { if (saved) setWalletsEditing(false); }); }} disabled={savingWallets}>{savingWallets ? <LoadingDots /> : walletsEditing ? 'Save Wallets' : 'Edit Wallets'}</button></div>
+        {walletDraft && <div className="kh-wallet-editor">
+          <div className="kh-wallet-editor-heading"><strong>{wallets.some(wallet => wallet.id === walletDraft.id) ? 'Edit wallet address' : 'Add wallet address'}</strong><button type="button" className="kh-wallet-cancel-edit" disabled={savingWallets} onClick={() => { setWalletDraft(null); setOpenNetworkId(null); setNotice(''); }}>Cancel</button></div>
+          <div className="kh-identity-grid">
+            <div className="field"><label htmlFor="security-wallet-label">Label <span className="optional">(optional)</span></label><input id="security-wallet-label" maxLength={40} placeholder="e.g. Main USDT wallet" value={walletDraft.label} onChange={e => patchWallet(walletDraft.id, 'label', e.target.value)} /></div>
+            <div className={`field kh-nationality-field kh-wallet-network-field${openNetworkId === walletDraft.id ? ' is-open' : ''}`}><label id="security-wallet-network-label">Network</label><button className="kh-nationality-trigger" type="button" aria-labelledby="security-wallet-network-label" aria-haspopup="listbox" aria-expanded={openNetworkId === walletDraft.id} onClick={() => { setOpenNetworkId(current => current === walletDraft.id ? null : walletDraft.id); setNetworkSearch(''); }}><span>{walletDraft.network === 'BRC20' ? 'BRC-20 (Bitcoin)' : walletDraft.network}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>{openNetworkId === walletDraft.id && <div className="kh-nationality-popout"><input className="kh-nationality-search" type="search" aria-label="Search wallet networks" placeholder="Search networks…" autoComplete="off" value={networkSearch} onChange={e => setNetworkSearch(e.target.value)} /><div className="kh-nationality-list" role="listbox" aria-label="Wallet networks">{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).map(network => <button type="button" role="option" aria-selected={walletDraft.network === network} className="kh-nationality-option" key={network} onClick={() => { patchWallet(walletDraft.id, 'network', network); setOpenNetworkId(null); setNetworkSearch(''); }}>{network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network}{walletDraft.network === network && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg>}</button>)}{NETWORKS.filter(network => (network === 'BRC20' ? 'BRC-20 (Bitcoin)' : network).toLowerCase().includes(networkSearch.trim().toLowerCase())).length === 0 && <p className="kh-nationality-empty">No matching network found.</p>}</div></div>}</div>
+            <div className="field kh-identity-span"><label htmlFor="security-wallet-address">Wallet address</label><input id="security-wallet-address" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder="Paste public wallet address" value={walletDraft.address} aria-invalid={Boolean(walletDraft.address.trim() && !walletAddressValidation(walletDraft).valid)} onChange={e => patchWallet(walletDraft.id, 'address', e.target.value)} />{walletDraft.address.trim() && <small className={walletAddressValidation(walletDraft).valid ? 'kh-wallet-address-feedback is-valid' : 'kh-wallet-address-feedback is-invalid'} role="status">{walletAddressValidation(walletDraft).message}</small>}</div>
+          </div>
+        </div>}
+        <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && wallets.length >= 20)} onClick={() => { if (walletDraft) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft ? (wallets.some(wallet => wallet.id === walletDraft.id) ? 'Save changes' : 'Save wallet address') : '+ Add wallet address'}</button>
       </section>
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
