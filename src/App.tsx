@@ -252,7 +252,7 @@ export default function App() {
       '--kh-header-alert-color': headerAppearance.color
     } as CSSProperties) : undefined}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
-      <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong></a>
+      <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>{unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong></a>
       <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
     </header>
     {landing ? <>
