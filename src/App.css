@@ -950,7 +950,7 @@ input,textarea{font-size:12px}
 .kh-device-setting-label h2{margin:0;font-size:12px;font-weight:600}
 .kh-device-setting-label p{margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .kh-device-menu-trigger{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-height:36px;padding:0;border-radius:10px;font-size:16px}
-.kh-device-menu-trigger:focus-visible,.kh-device-popout-heading button:focus-visible{outline:2px solid var(--silver-bright);outline-offset:2px}
+.kh-device-menu-trigger:focus-visible{outline:2px solid var(--silver-bright);outline-offset:2px}
 .kh-device-panel-inline .kh-setup-setting-row:first-child{border-top:1px solid var(--kh-card-secondary-border)}
 .kh-device-panel-inline .kh-setup-setting-copy>span{font-size:10px}
 .kh-device-panel-inline{padding:0 13px 12px}
