@@ -54,10 +54,10 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
     setWorkingId(String(alert.id));
     try {
       const response = await alertsFetch('/api/alerts/' + encodeURIComponent(String(alert.id)) + '/read', { method: 'POST' });
-      const data = await response.json().catch(() => ({})) as { error?: string };
+      const data = await response.json().catch(() => ({})) as { error?: string; unreadCount?: number };
       if (!response.ok) throw new Error(data.error || 'Could not mark this alert as read.');
       setAlerts(current => current.map(item => String(item.id) === String(alert.id) ? { ...item, read_at: new Date().toISOString() } : item));
-      onUnreadCount(Math.max(0, alerts.filter(item => !item.read_at && String(item.id) !== String(alert.id)).length));
+      if (typeof data.unreadCount === 'number') onUnreadCount(data.unreadCount);
     } catch (error) { setLoadError(error instanceof Error ? error.message : 'Could not mark this alert as read.'); }
     finally { setWorkingId(null); }
   }
