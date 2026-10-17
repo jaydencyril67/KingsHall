@@ -326,7 +326,7 @@ export default function App() {
           <article className="feature-card"><span className="detail-icon"><FeatureIcon type="spark" /></span><h3>An evolving ecosystem</h3><p>As compatible services are added, KingsHall can become a clearer entry point to more digital activities and tools.</p></article>
         </div>
       </section>
-      <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div></section>
+      <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" disabled={busy} onClick={() => void handleSignInClick()}>{busy ? <LoadingDots /> : <>Sign In <ArrowIcon /></>}</button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
         {homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
