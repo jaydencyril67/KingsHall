@@ -238,7 +238,20 @@ export default function App() {
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   return <main className="kh-shell">
-    <header className={`topbar kh-header-light-${headerAppearance.enabled ? headerAppearance.light : 'stable-light'}`} style={{ '--kh-header-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)', '--kh-header-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent', '--kh-light-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)', '--kh-light-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent' } as CSSProperties}>
+    <header className={`topbar kh-header-light-${headerAppearance.enabled ? headerAppearance.light : 'stable-light'}`} style={{
+      '--kh-header-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)',
+      '--kh-header-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent',
+      '--kh-light-accent': headerAppearance.enabled ? headerAppearance.color : 'rgba(220,226,234,.18)',
+      '--kh-light-glow': headerAppearance.enabled ? headerAppearance.color + '55' : 'transparent',
+      ...(headerAppearance.enabled ? {
+        borderColor: headerAppearance.color,
+        animation: ['stable', 'stable-light'].includes(headerAppearance.light) ? undefined : `kh-light-${headerAppearance.light === 'blink-light' ? 'edge-blink' : headerAppearance.light === 'blink' ? 'glow-blink' : headerAppearance.light === 'pulse-light' ? 'edge-pulse' : headerAppearance.light === 'pulse' ? 'glow-pulse' : headerAppearance.light === 'color-light' ? 'rainbow-edge' : 'rainbow-glow'} ${headerAppearance.light.startsWith('color') ? '6s linear' : headerAppearance.light.startsWith('pulse') ? '3.1s ease-in-out' : '2.6s ease-in-out'} infinite`,
+        animationFillMode: 'both',
+        willChange: 'border-color, box-shadow, filter',
+        ...(headerAppearance.light === 'stable-light' ? { boxShadow: '0 14px 30px rgba(0,0,0,.35)' } : {}),
+        ...(headerAppearance.light === 'stable' ? { boxShadow: `0 14px 30px rgba(0,0,0,.35), 0 0 14px ${headerAppearance.color}55, inset 0 0 8px ${headerAppearance.color}22` } : {})
+      } : {})
+    } as CSSProperties}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
       <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong></a>
       <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
