@@ -42,21 +42,17 @@ function ColorField({ value, onClick, disabled }: { value: string; onClick: () =
 }
 function LightingStyleSelect({ value, onChange, disabled, label }: { value: string; onChange: (value: string) => void; disabled: boolean; label: string }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
   const selected = LIGHT_STYLES.find(style => style.value === value) || LIGHT_STYLES[0];
-  const filtered = LIGHT_STYLES.filter(style => (style.label + ' ' + style.description).toLowerCase().includes(search.trim().toLowerCase()));
   return <div className={'kh-nationality-field kh-setup-lighting-select' + (open ? ' is-open' : '')}>
-    <button type="button" className="kh-nationality-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => { setOpen(current => !current); setSearch(''); }}>
+    <button type="button" className="kh-nationality-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} disabled={disabled} onClick={() => setOpen(current => !current)}>
       <span>{selected.label}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
     </button>
     {open && !disabled && <div className="kh-nationality-popout">
-      <input className="kh-nationality-search" type="search" aria-label={'Search ' + label.toLowerCase()} placeholder="Search lighting styles…" autoComplete="off" value={search} onChange={event => setSearch(event.target.value)} />
       <div className="kh-nationality-list" role="listbox" aria-label={label}>
-        {filtered.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); setSearch(''); }}>
+        {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
           <span><strong>{style.label}</strong><span className="kh-setup-lighting-option-description">{style.description}</span></span>
           {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
         </button>)}
-        {filtered.length === 0 && <p className="kh-nationality-empty">No matching lighting style found.</p>}
       </div>
     </div>}
   </div>;
