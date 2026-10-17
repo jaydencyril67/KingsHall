@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { NativeAppUpdate } from './utils/nativeAppUpdate';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
+type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseUrl?: string; releaseNotes?: string; message?: string };
 type Channels = { email: boolean; inApp: boolean; push: boolean };
 type AlertTypes = Record<AlertType, boolean>;
 const TYPE_OPTIONS: { key: AlertType; label: string; group: string }[] = [
@@ -66,10 +69,84 @@ export default function SetupPage() {
   const [channels, setChannels] = useState<Channels>(() => readJson<Channels>('kh_alert_channels', { email: false, inApp: true, push: false }));
   const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }));
   const [notice, setNotice] = useState('Preferences save automatically on this device.');
+  const [apkRelease, setApkRelease] = useState<ApkRelease>({ status: 'checking' });
+  const [apkActionMessage, setApkActionMessage] = useState('');
+  const [apkDownloading, setApkDownloading] = useState(false);
   const [savedAt, setSavedAt] = useState('');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | null>(null);
-  const [activePanel, setActivePanel] = useState<'nowbar' | 'header' | 'channels' | 'types' | null>(null);
+  const [activePanel, setActivePanel] = useState<'nowbar' | 'header' | 'channels' | 'types' | 'release' | null>(null);
+  const checkApkRelease = async () => {
+    setApkRelease(current => ({ ...current, status: 'checking', message: '' }));
+    try {
+      const isAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+      const appInfo = isAndroid ? await NativeAppUpdate.getAppInfo() : null;
+      const query = appInfo?.versionName ? '?installedVersion=' + encodeURIComponent(appInfo.versionName) : '';
+      const response = await alertsFetch('/api/notifications/app-update-check' + query, { cache: 'no-store' });
+      const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseUrl?: string; releaseNotes?: string; message?: string };
+      if (!response.ok) throw new Error(data.message || 'Unable to check the latest KingsHall APK.');
+      if (!data.latestVersion || !data.downloadUrl) throw new Error('No published KingsHall APK release is available yet.');
+      setApkRelease({
+        status: isAndroid ? (data.updateAvailable ? 'update' : 'current') : 'latest',
+        installedVersion: appInfo?.versionName || undefined,
+        latestVersion: data.latestVersion,
+        downloadUrl: data.downloadUrl,
+        releaseUrl: data.releaseUrl,
+        releaseNotes: data.releaseNotes || ''
+      });
+    } catch (error) {
+      setApkRelease(current => ({ ...current, status: 'error', message: error instanceof Error ? error.message : 'Unable to check KingsHall updates.' }));
+    }
+  };
+
+  const downloadLatestApk = async () => {
+    if (!apkRelease.downloadUrl || apkDownloading) return;
+    const isAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+    if (!isAndroid) {
+      setApkActionMessage('Opening the latest signed KingsHall APK download.');
+      window.open(apkRelease.downloadUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    setApkDownloading(true);
+    setApkActionMessage('Preparing the KingsHall APK download…');
+    try {
+      const result = await NativeAppUpdate.downloadAndInstall({ url: apkRelease.downloadUrl });
+      if (result.requiresPermission) {
+        setApkActionMessage('Allow KingsHall to install unknown apps in Android settings, return here, then tap Download / Install again.');
+        setApkDownloading(false);
+      } else {
+        setApkActionMessage('APK download started. Android will ask you to approve the update when it finishes.');
+      }
+    } catch {
+      setApkDownloading(false);
+      setApkActionMessage('The in-app installer could not start. Opening the signed APK download in your browser.');
+      window.open(apkRelease.downloadUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  useEffect(() => {
+    void checkApkRelease();
+    const interval = window.setInterval(() => { void checkApkRelease(); }, 15 * 60 * 1000);
+    const refreshWhenVisible = () => { if (document.visibilityState === 'visible') void checkApkRelease(); };
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android' || !NativeAppUpdate.addListener) return;
+    let listener: { remove: () => Promise<void> } | undefined;
+    void NativeAppUpdate.addListener('downloadError', event => {
+      setApkDownloading(false);
+      setApkActionMessage(event.message || 'The KingsHall APK download or installer could not complete.');
+    }).then(handle => { listener = handle; }).catch(() => {});
+    return () => { if (listener) void listener.remove(); };
+  }, []);
+
   useEffect(() => {
     if (!activePanel) return;
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setActivePanel(null); };
@@ -128,7 +205,7 @@ export default function SetupPage() {
   };
   const groups = [...new Set(TYPE_OPTIONS.map(option => option.group))];
 
-  const panelContent = (panel: 'nowbar' | 'header' | 'channels' | 'types') => {
+  const panelContent = (panel: 'nowbar' | 'header' | 'channels' | 'types' | 'release') => {
     if (panel === 'nowbar') return <>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Enable the Nowbar accent effect.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
@@ -142,15 +219,33 @@ export default function SetupPage() {
       {([{ key: 'inApp', label: 'In-app alerts', description: 'Show activity in your KingsHall alerts centre.' }, { key: 'push', label: 'Push notifications', description: 'Allow device notifications when supported.' }, { key: 'email', label: 'Email notifications', description: 'Receive supported account notices by email.' }] as { key: keyof Channels; label: string; description: string }[]).map(item => <div className="kh-setup-setting-row" key={item.key}><div className="kh-setup-setting-copy"><strong>{item.label}</strong><span>{item.description}</span></div><Toggle checked={channels[item.key]} onChange={value => updateChannel(item.key, value)} label={item.label} /></div>)}
       {!channels.inApp && !channels.push && !channels.email && <p className="kh-setup-inline-note">All notification channels are off. Important account activity may still appear when you open KingsHall.</p>}
     </>;
+    if (panel === 'release') return <>
+      <div className="kh-setup-release-version">
+        <span className="kh-setup-release-mark" aria-hidden="true">↓</span>
+        <div className="kh-setup-setting-copy">
+          <strong>{apkRelease.status === 'checking' ? 'Checking latest release…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
+          <span>{apkRelease.status === 'update' ? 'A newer signed Android APK is ready to install.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest signed Android APK available for download.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking GitHub for the latest signed APK.'}</span>
+          {apkRelease.installedVersion && <span>Installed version: {apkRelease.installedVersion}</span>}
+        </div>
+      </div>
+      {apkRelease.releaseNotes && <details className="kh-setup-release-notes"><summary>Release notes</summary><p>{apkRelease.releaseNotes}</p></details>}
+      {apkActionMessage && <p className="kh-setup-inline-note" role="status" aria-live="polite">{apkActionMessage}</p>}
+      <div className="kh-setup-release-actions">
+        <button type="button" className="secondary-button" onClick={() => void checkApkRelease()} disabled={apkRelease.status === 'checking'}>{apkRelease.status === 'checking' ? 'Checking…' : 'Check for updates'}</button>
+        <button type="button" className="primary-button" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
+      </div>
+      {apkRelease.releaseUrl && <a className="kh-setup-release-link" href={apkRelease.releaseUrl} target="_blank" rel="noopener noreferrer">View GitHub release</a>}
+    </>;
     return <>
       {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <div className="kh-setup-setting-row" key={option.key}><div className="kh-setup-setting-copy"><strong>{option.label}</strong></div><Toggle checked={types[option.key]} onChange={value => updateType(option.key, value)} label={option.label} /></div>)}</div>)}
     </>;
   };
-  const panels: { key: 'nowbar' | 'header' | 'channels' | 'types'; title: string; summary: string; icon: string }[] = [
+  const panels: { key: 'nowbar' | 'header' | 'channels' | 'types' | 'release'; title: string; summary: string; icon: string }[] = [
     { key: 'nowbar', title: 'Nowbar appearance', summary: nowbarEnabled ? 'Lighting on · ' + (LIGHT_STYLES.find(item => item.value === nowbarLight)?.label || 'Steady glow') + ' · ' + nowbarColor.toUpperCase() : 'Lighting off', icon: '◈' },
     { key: 'header', title: 'App header lighting', summary: headerEnabled ? 'Alert accent on · ' + headerColor.toUpperCase() : 'Alert accent off', icon: '✧' },
     { key: 'channels', title: 'Notification channels', summary: [channels.inApp && 'In-app', channels.push && 'Push', channels.email && 'Email'].filter(Boolean).join(' · ') || 'All channels off', icon: '♧' },
-    { key: 'types', title: 'Notification types', summary: Object.values(types).filter(Boolean).length + ' of ' + TYPE_OPTIONS.length + ' alert types enabled', icon: '☷' }
+    { key: 'types', title: 'Notification types', summary: Object.values(types).filter(Boolean).length + ' of ' + TYPE_OPTIONS.length + ' alert types enabled', icon: '☷' },
+    { key: 'release', title: 'Latest APK release', summary: apkRelease.status === 'update' ? 'Update available · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'current' ? 'Latest installed · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'latest' ? 'Download v' + (apkRelease.latestVersion || '') : apkRelease.status === 'checking' ? 'Checking latest release…' : 'APK version unavailable', icon: '↓' }
   ];
   return <section className="kh-setup-page kh-device-expanded" aria-labelledby="kh-setup-title">
     <div className="kh-setup-heading">
