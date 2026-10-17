@@ -974,3 +974,19 @@ input,textarea{font-size:12px}
 .kh-setup-lighting-select .kh-nationality-list{max-height:248px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .kh-device-settings-list,.kh-device-setting-card,.kh-device-panel-inline{overflow:visible}
 @media(max-width:560px){.kh-setup-lighting-select>.kh-setup-lighting-trigger{font-size:10px;padding:8px}.kh-setup-lighting-select .kh-nationality-popout{max-height:245px}.kh-setup-lighting-select .kh-nationality-list{max-height:225px}}
+
+
+/* Latest APK release panel: compact glass controls matching the Device cards. */
+.kh-setup-release-version{display:flex;align-items:center;gap:12px;padding:13px 0}
+.kh-setup-release-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid rgba(220,226,234,.16);border-radius:12px;background:rgba(255,255,255,.035);color:#dce5f4;font-size:22px}
+.kh-setup-release-notes{margin:0 0 10px;padding:10px 11px;border:1px solid rgba(220,226,234,.1);border-radius:10px;background:rgba(255,255,255,.025);color:#cbd0da;font-size:10.5px}
+.kh-setup-release-notes summary{cursor:pointer;color:#e4e8ef;font-weight:600}
+.kh-setup-release-notes p{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;color:#aeb4c0}
+.kh-setup-release-actions{display:flex;gap:9px;margin-top:12px}
+.kh-setup-release-actions>button{flex:1;min-width:0;min-height:38px;padding:8px 10px;border-radius:10px;font-size:10.5px;font-weight:600;cursor:pointer}
+.kh-setup-release-actions>.secondary-button{border:1px solid rgba(220,226,234,.16);background:rgba(255,255,255,.035);color:#dce2ea}
+.kh-setup-release-primary{border:1px solid rgba(205,218,239,.38);background:rgba(185,199,223,.14);color:#f0f3f9}
+.kh-setup-release-actions>button:disabled{opacity:.48;cursor:not-allowed}
+.kh-setup-release-link{display:inline-block;margin-top:11px;color:#b9c7df;font-size:10px;text-decoration:none}
+.kh-setup-release-link:hover{text-decoration:underline}
+@media(max-width:380px){.kh-setup-release-actions{flex-direction:column}.kh-setup-release-actions>button{width:100%}}
