@@ -125,6 +125,7 @@ export default function SecurityPage({ user }: Props) {
       const target = event.target;
       if (target instanceof Element && target.closest('.kh-wallet-network-field')) return;
       if (target instanceof Element && target.closest('.kh-security-code-input-wrap')) return;
+      if (!(target instanceof Element && target.closest('.kh-wallet-address-item'))) setWalletActionMenuId(null);
       setSecurityFieldMenu(null);
       setOpenNetworkId(null);
       setNetworkSearch('');
@@ -133,6 +134,7 @@ export default function SecurityPage({ user }: Props) {
       if (event.key === 'Escape') {
         setOpenNetworkId(null);
         setNetworkSearch('');
+        setWalletActionMenuId(null);
       }
     };
     document.addEventListener('pointerdown', closeNetworkSelector);
@@ -147,7 +149,7 @@ export default function SecurityPage({ user }: Props) {
     let current = true;
     Promise.all([request('/api/identity'), request('/api/identity/2fa/status')]).then(([data, twoFactor]) => {
       if (!current) return;
-      setWallets(data.profile?.wallets || []);
+      setWallets((data.profile?.wallets || []).filter(wallet => Boolean(wallet.address?.trim())));
       setKui(data.profile?.kui || '');
       setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
       setSecurityCodeSet(Boolean(data.profile?.securityCodeSet));
