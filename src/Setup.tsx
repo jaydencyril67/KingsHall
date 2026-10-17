@@ -50,7 +50,7 @@ function LightingStyleSelect({ value, onChange, disabled, label }: { value: stri
     {open && !disabled && <div className="kh-nationality-popout">
       <div className="kh-nationality-list" role="listbox" aria-label={label}>
         {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
-          <span><strong>{style.label}</strong><span className="kh-setup-lighting-option-description">{style.description}</span></span>
+          <span><strong>{style.label}</strong></span>
           {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
         </button>)}
       </div>
