@@ -132,6 +132,56 @@ jobs:
       - name: Sync built web app into Android
         run: npx cap sync android
 
+      - name: Match KingsHall APK launcher icons to the PWA master icon
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const sharp = require('sharp');
+
+          const root = 'android/app/src/main/res';
+          const source = 'public/kingshall-pwa-icon.svg';
+          const densities = {
+            mdpi: { icon: 48, foreground: 108 },
+            hdpi: { icon: 72, foreground: 162 },
+            xhdpi: { icon: 96, foreground: 216 },
+            xxhdpi: { icon: 144, foreground: 324 },
+            xxxhdpi: { icon: 192, foreground: 432 }
+          };
+
+          (async () => {
+            for (const [density, sizes] of Object.entries(densities)) {
+              const dir = path.join(root, 'mipmap-' + density);
+              fs.mkdirSync(dir, { recursive: true });
+              for (const name of ['ic_launcher.png', 'ic_launcher_round.png']) {
+                await sharp(source).resize(sizes.icon, sizes.icon, { fit: 'fill' }).png().toFile(path.join(dir, name));
+              }
+              await sharp(source).resize(sizes.foreground, sizes.foreground, { fit: 'fill' }).png()
+                .toFile(path.join(dir, 'ic_launcher_foreground.png'));
+            }
+
+            const adaptiveDir = path.join(root, 'mipmap-anydpi-v26');
+            fs.mkdirSync(adaptiveDir, { recursive: true });
+            const adaptive = '<?xml version="1.0" encoding="utf-8"?>\\n' +
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\\n' +
+              '    <background android:drawable="@color/kingshall_icon_background" />\\n' +
+              '    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\\n' +
+              '</adaptive-icon>\\n';
+            for (const name of ['ic_launcher.xml', 'ic_launcher_round.xml']) {
+              fs.writeFileSync(path.join(adaptiveDir, name), adaptive);
+            }
+
+            const valuesDir = path.join(root, 'values');
+            fs.mkdirSync(valuesDir, { recursive: true });
+            fs.writeFileSync(path.join(valuesDir, 'kingshall_icon_colors.xml'),
+              '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n' +
+              '    <color name="kingshall_icon_background">#0A0A0A</color>\\n' +
+              '</resources>\\n');
+            console.log('KingsHall APK launcher icons now use the PWA master icon at all Android densities.');
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
+
       - name: Configure unified KingsHall native launch splash
         run: |
           set -euo pipefail
