@@ -139,7 +139,7 @@ export default function SetupPage() {
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Nowbar colour and lighting</strong><span>Enable a coloured edge and glow around the Nowbar.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={nowbarLight} disabled={!nowbarEnabled} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
-      <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-nowbar-preview ' + nowbarLight} style={{ '--setup-accent': nowbarEnabled ? nowbarColor : 'rgba(220,226,234,.25)' } as CSSProperties}><span className="kh-setup-preview-orb" /><strong>HOME</strong><span className="kh-setup-preview-chevron">⌄</span></div></div>
+
     </article>
 
     <article className="kh-setup-card">
@@ -147,7 +147,7 @@ export default function SetupPage() {
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Header colour and lighting</strong><span>Apply your selected accent to the KingsHall header and alert indicator.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === headerLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={headerLight} disabled={!headerEnabled} onChange={setHeaderLight} label="Alert header lighting style" /></div>
-      <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-header-preview ' + headerLight} style={{ '--setup-accent': headerEnabled ? headerColor : 'rgba(220,226,234,.25)' } as React.CSSProperties}><span className="kh-setup-preview-orb" /><strong>KINGSHALL</strong><span className="kh-setup-header-bell">♧</span></div></div>
+
     </article>
 
     <article className="kh-setup-card">
