@@ -75,28 +75,37 @@ export default function App() {
     let stopped = false;
     let controller: AbortController | null = null;
     let retryTimer: number | null = null;
-    alertsFetch('/api/alerts?limit=1').then(response => response.ok ? response.json() : null).then(data => {
-      if (!stopped && data && typeof data.unreadCount === 'number') setUnreadAlerts(data.unreadCount);
-    }).catch(() => {});
+    let lastEventId = '0';
     const connect = async () => {
+      try {
+        const initialResponse = await alertsFetch('/api/alerts?limit=1');
+        if (initialResponse.ok) {
+          const initial = await initialResponse.json() as { alerts?: Array<{ id: string | number }>; unreadCount?: number };
+          lastEventId = String(initial.alerts?.[0]?.id || '0');
+          if (!stopped && typeof initial.unreadCount === 'number') setUnreadAlerts(initial.unreadCount);
+        }
+      } catch {}
       while (!stopped) {
         controller = new AbortController();
         try {
-          const response = await alertsFetch('/api/alerts/stream', { headers: { Accept: 'text/event-stream' }, signal: controller.signal });
+          const response = await alertsFetch('/api/alerts/stream', { headers: { Accept: 'text/event-stream', 'Last-Event-ID': lastEventId }, signal: controller.signal });
           if (!response.ok || !response.body) throw new Error('Alerts stream unavailable');
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
           let eventName = 'message';
           let dataLines: string[] = [];
+          let frameId: string | null = null;
           const dispatch = () => {
-            if (!dataLines.length) { eventName = 'message'; return; }
-            try {
-              const payload = JSON.parse(dataLines.join('\n')) as { unreadCount?: number };
-              if (eventName === 'alert') setAlertsVersion(value => value + 1);
-              if (eventName === 'unread' && typeof payload.unreadCount === 'number') setUnreadAlerts(payload.unreadCount);
-            } catch {}
-            eventName = 'message'; dataLines = [];
+            if (frameId && /^\d+$/.test(frameId)) lastEventId = frameId;
+            if (dataLines.length) {
+              try {
+                const payload = JSON.parse(dataLines.join('\n')) as { unreadCount?: number };
+                if (eventName === 'alert') setAlertsVersion(value => value + 1);
+                if (eventName === 'unread' && typeof payload.unreadCount === 'number') setUnreadAlerts(payload.unreadCount);
+              } catch {}
+            }
+            eventName = 'message'; dataLines = []; frameId = null;
           };
           while (!stopped) {
             const chunk = await reader.read();
@@ -108,6 +117,7 @@ export default function App() {
               for (const line of frame.split(/\r?\n/)) {
                 if (line.startsWith('event:')) eventName = line.slice(6).trim();
                 else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+                else if (line.startsWith('id:')) frameId = line.slice(3).trim();
               }
               dispatch();
             }
