@@ -684,3 +684,52 @@ input,textarea{font-size:12px}
  .kh-alerts-groups{gap:19px}
 }
 @media(prefers-reduced-motion:reduce){.kh-alert-item,.kh-alert-filter,.kh-alerts-back{transition:none}}
+
+
+/* Alerts: use the same anchored glass popout interaction pattern as Identity and Security. */
+.kh-alerts-control-actions{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:11px}
+.kh-alerts-anchored-wrap{position:relative;display:inline-flex;align-items:center;min-width:0}
+.kh-alerts-popout-trigger{display:inline-flex;align-items:center;gap:8px;min-height:34px;max-width:100%;padding:0 10px;border:1px solid rgba(220,226,234,.17);border-radius:10px;background:rgba(255,255,255,.04);color:#e1e5eb;font:inherit;font-size:10px;cursor:pointer}
+.kh-alerts-popout-trigger>svg{width:15px;height:15px;flex:0 0 auto;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.kh-alerts-popout-trigger .kh-alerts-trigger-chevron{width:12px;height:12px;margin-left:2px;color:#9ba3af;transition:transform .15s ease}
+.kh-alerts-popout-trigger.is-open .kh-alerts-trigger-chevron{transform:rotate(180deg)}
+.kh-alerts-anchored-popout{position:absolute;z-index:35;top:calc(100% + 7px);right:0;min-width:190px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.985),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
+.kh-alerts-filter-popout{left:0;right:auto;min-width:205px}
+.kh-alerts-popout-option{width:100%;min-height:37px;display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:#cbd1da;text-align:left;font:inherit;font-size:11px;cursor:pointer}
+.kh-alerts-popout-option:hover,.kh-alerts-popout-option.is-selected{border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.075);color:#f2f4f7}
+.kh-alerts-popout-option>span{flex:1;min-width:0}
+.kh-alerts-popout-option small{display:grid;place-items:center;min-width:19px;height:19px;padding:0 4px;border-radius:6px;background:rgba(255,255,255,.09);font-size:9px}
+.kh-alerts-popout-option>svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kh-alerts-confirm-popout{width:min(270px,calc(100vw - 44px));padding:13px}
+.kh-alerts-confirm-popout>strong{display:block;color:#eef1f5;font-size:12px;font-weight:600}
+.kh-alerts-confirm-popout>p{margin:6px 0 12px;color:#a8afba;font-size:11px;line-height:1.55}
+.kh-alerts-confirm-popout>div{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.kh-alerts-confirm-popout>div>button{min-height:34px;padding:6px 8px;border:1px solid rgba(220,226,234,.15);border-radius:8px;background:rgba(255,255,255,.04);color:#d8dde5;font:inherit;font-size:10px;cursor:pointer}
+.kh-alerts-confirm-popout>div>button.is-primary{background:rgba(235,239,245,.13);border-color:rgba(235,239,245,.2);color:#f4f6f9}
+.kh-alerts-item-actions{align-self:start;justify-self:end}
+.kh-alerts-more-button{width:32px;height:32px;color:#c4cbd5}
+.kh-alerts-more-button>svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;fill:currentColor}
+.kh-alerts-more-button.is-open{border-color:rgba(220,226,234,.3);background:rgba(255,255,255,.09)}
+.kh-alerts-item-popout{top:calc(100% + 6px);right:0;min-width:158px}
+.kh-alerts-item-popout>button{display:flex;align-items:center;gap:9px;width:100%;min-height:36px;padding:7px 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:#dce1e9;text-align:left;font:inherit;font-size:10px;cursor:pointer}
+.kh-alerts-item-popout>button:hover:not(:disabled){background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.07)}
+.kh-alerts-item-popout>button:disabled{opacity:.55}
+.kh-alerts-item-popout>button svg{width:15px;height:15px;flex:0 0 auto;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.kh-alerts-detail-popout{position:absolute;z-index:32;top:calc(100% + 6px);right:12px;width:min(350px,calc(100% - 24px));padding:13px;border:1px solid rgba(220,226,234,.22);border-radius:14px;background:linear-gradient(155deg,rgba(31,35,43,.99),rgba(9,11,15,.995));box-shadow:0 18px 46px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
+.kh-alerts-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#9ea6b2;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.kh-alerts-detail-head>button{width:25px;height:25px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.045);color:#e5e8ed;font-size:18px;line-height:1;cursor:pointer}
+.kh-alerts-detail-popout>strong{display:block;color:#edf0f4;font-size:13px;font-weight:600;line-height:1.45}
+.kh-alerts-detail-popout>p{margin:7px 0 12px;color:#b2b8c2;font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+.kh-alerts-detail-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid rgba(220,226,234,.09);color:#8b93a0;font-size:9px}
+.kh-alerts-detail-meta>span:last-child{padding:4px 6px;border:1px solid rgba(220,226,234,.12);border-radius:6px}
+.kh-alerts-detail-meta>span:last-child.is-unread{color:#e2e6ed;background:rgba(255,255,255,.055)}
+.kh-alerts-detail-action{display:flex;align-items:center;justify-content:center;width:100%;min-height:35px;margin-top:11px;border:1px solid rgba(220,226,234,.17);border-radius:9px;background:rgba(255,255,255,.06);color:#edf0f5;font:inherit;font-size:10px;cursor:pointer}
+.kh-alerts-list-summary{margin-top:8px}
+.kh-alerts-summary-context{color:#747d8a;font-size:9px}
+@media(max-width:560px){
+ .kh-alerts-control-actions{gap:7px}
+ .kh-alerts-popout-trigger{min-height:33px;gap:6px;padding:0 8px}
+ .kh-alerts-filter-popout{min-width:190px}
+ .kh-alerts-item-popout{min-width:150px}
+ .kh-alerts-detail-popout{right:7px;width:calc(100% - 14px)}
+}
