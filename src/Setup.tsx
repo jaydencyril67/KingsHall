@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { alertsFetch } from './alertsClient';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
 type Channels = { email: boolean; inApp: boolean; push: boolean };
@@ -49,6 +50,7 @@ export default function SetupPage() {
   const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }));
   const [notice, setNotice] = useState('Preferences save automatically on this device.');
   const [savedAt, setSavedAt] = useState('');
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('kh_nowbar_color_enabled', String(nowbarEnabled));
@@ -63,10 +65,34 @@ export default function SetupPage() {
     window.dispatchEvent(new Event('kh:alert-color-changed'));
   }, [headerEnabled, headerColor, headerLight]);
   useEffect(() => {
+    let cancelled = false;
+    void alertsFetch('/api/alerts/preferences')
+      .then(async response => {
+        const payload = await response.json().catch(() => ({})) as { alertChannels?: Channels; alertTypes?: AlertTypes };
+        if (!response.ok) return;
+        if (cancelled) return;
+        if (payload.alertChannels) setChannels(current => ({ ...current, ...payload.alertChannels }));
+        if (payload.alertTypes) setTypes(current => ({ ...current, ...payload.alertTypes }));
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setPreferencesLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('kh_alert_channels', JSON.stringify(channels));
     localStorage.setItem('kh_alert_types', JSON.stringify(types));
     setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  }, [channels, types]);
+    if (!preferencesLoaded) return;
+    void alertsFetch('/api/alerts/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alertChannels: channels, alertTypes: types })
+    }).then(response => {
+      if (!response.ok) throw new Error('Unable to sync preferences.');
+      setNotice('Preferences saved to your KingsHall account.');
+    }).catch(() => setNotice('Preferences saved on this device. Account sync is temporarily unavailable.'));
+  }, [channels, types, preferencesLoaded]);
 
   const updateChannel = (key: keyof Channels, value: boolean) => {
     setChannels(current => ({ ...current, [key]: value }));
