@@ -232,7 +232,7 @@ export default function SetupPage() {
       {apkActionMessage && <p className="kh-setup-inline-note" role="status" aria-live="polite">{apkActionMessage}</p>}
       <div className="kh-setup-release-actions">
         <button type="button" className="secondary-button" onClick={() => void checkApkRelease()} disabled={apkRelease.status === 'checking'}>{apkRelease.status === 'checking' ? 'Checking…' : 'Check for updates'}</button>
-        <button type="button" className="primary-button" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
+        <button type="button" className="kh-setup-release-primary" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
       </div>
       {apkRelease.releaseUrl && <a className="kh-setup-release-link" href={apkRelease.releaseUrl} target="_blank" rel="noopener noreferrer">View GitHub release</a>}
     </>;
