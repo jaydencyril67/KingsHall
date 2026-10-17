@@ -149,6 +149,40 @@ export default function AlertsPage({ version, onUnreadCount }: Props) {
     finally { setMarkingAll(false); }
   }
 
+  async function toggleAlert(alert: AlertItem) {
+    const id = String(alert.id);
+    const isExpanded = expandedAlerts.has(id);
+    if (isExpanded) {
+      setExpandedAlerts(current => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+      return;
+    }
+
+    setExpandedAlerts(current => new Set(current).add(id));
+    if (alert.read_at) return;
+
+    try {
+      const response = await alertsFetch(`/api/alerts/${encodeURIComponent(id)}/read`, {
+        method: 'POST',
+        body: '{}'
+      });
+      const data = await response.json().catch(() => ({})) as { error?: string; unreadCount?: number; alert?: { read_at?: string | null } };
+      if (!response.ok) throw new Error(data.error || 'Could not mark this alert as read.');
+      const readAt = data.alert?.read_at || new Date().toISOString();
+      setAlerts(current => current.map(item => String(item.id) === id ? { ...item, read_at: item.read_at || readAt } : item));
+      if (typeof data.unreadCount === 'number') {
+        setTotalUnread(data.unreadCount);
+        onUnreadCount(data.unreadCount);
+      }
+      setLoadError('');
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Could not mark this alert as read.');
+    }
+  }
+
   return <section className="kh-alerts-page" aria-labelledby="kh-alerts-title">
     <div className="kh-alerts-heading">
       <div className="kh-alerts-title-row">
@@ -189,7 +223,7 @@ export default function AlertsPage({ version, onUnreadCount }: Props) {
           <span className={'kh-alert-item-icon is-' + ((alert.category || 'general').toLowerCase())}><AlertIcon category={alert.category} /></span>
           <div className="kh-alert-item-content">
             <div className="kh-alert-item-top"><span className="kh-alert-category">{categoryLabel(alert.category)}</span>{!alert.read_at && <span className="kh-alert-new-pill">NEW</span>}</div>
-            <button type="button" className="kh-alerts-item-expand" aria-expanded={expandedAlerts.has(String(alert.id))} onClick={() => setExpandedAlerts(current => { const next = new Set(current); const id = String(alert.id); if (next.has(id)) next.delete(id); else next.add(id); return next; })}><span>{alert.title}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
+            <button type="button" className="kh-alerts-item-expand" aria-expanded={expandedAlerts.has(String(alert.id))} onClick={() => void toggleAlert(alert)}><span>{alert.title}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
             {expandedAlerts.has(String(alert.id)) && <div className="kh-alerts-expanded-content"><p>{alert.message}</p><time dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{dateOf(alert.created_at)?.toLocaleString() || timeLabel(alert.created_at)}</time></div>}
             {!expandedAlerts.has(String(alert.id)) && <time className="kh-alerts-compact-time" dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{timeLabel(alert.created_at)}</time>}
           </div>
