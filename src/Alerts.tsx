@@ -75,11 +75,9 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   const [expandedAlerts, setExpandedAlerts] = useState<Set<string>>(() => new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set(['Yesterday', 'Earlier']));
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [actionsMenuId, setActionsMenuId] = useState<string | null>(null);
   const [confirmMarkAll, setConfirmMarkAll] = useState(false);
   const filterAnchorRef = useRef<HTMLDivElement>(null);
   const bulkAnchorRef = useRef<HTMLDivElement>(null);
-  const actionAnchorRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -98,21 +96,20 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   useEffect(() => { void load(); }, [load, version]);
 
   useEffect(() => {
-    if (!filterMenuOpen && !actionsMenuId && !confirmMarkAll) return;
+    if (!filterMenuOpen && !confirmMarkAll) return;
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (filterAnchorRef.current?.contains(target) || bulkAnchorRef.current?.contains(target) || actionAnchorRef.current?.contains(target)) return;
+      if (filterAnchorRef.current?.contains(target) || bulkAnchorRef.current?.contains(target)) return;
       setFilterMenuOpen(false);
-      setActionsMenuId(null);
       setConfirmMarkAll(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setFilterMenuOpen(false); setActionsMenuId(null); setConfirmMarkAll(false); }
+      if (event.key === 'Escape') { setFilterMenuOpen(false); setConfirmMarkAll(false); }
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown); };
-  }, [filterMenuOpen, actionsMenuId, confirmMarkAll]);
+  }, [filterMenuOpen, confirmMarkAll]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -210,10 +207,6 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
             <button type="button" className="kh-alerts-item-expand" aria-expanded={expandedAlerts.has(String(alert.id))} onClick={() => setExpandedAlerts(current => { const next = new Set(current); const id = String(alert.id); if (next.has(id)) next.delete(id); else next.add(id); return next; })}><span>{alert.title}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
             {expandedAlerts.has(String(alert.id)) && <div className="kh-alerts-expanded-content"><p>{alert.message}</p><time dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{dateOf(alert.created_at)?.toLocaleString() || timeLabel(alert.created_at)}</time></div>}
             {!expandedAlerts.has(String(alert.id)) && <time className="kh-alerts-compact-time" dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{timeLabel(alert.created_at)}</time>}
-          </div>
-          <div className="kh-alerts-anchored-wrap kh-alerts-item-actions" ref={actionsMenuId === String(alert.id) ? actionAnchorRef : null}>
-            <button className={'kh-alert-read-button kh-alert-more-button' + (actionsMenuId === String(alert.id) ? ' is-open' : '')} type="button" aria-label={`Actions for ${alert.title}`} title="Alert actions" aria-haspopup="true" aria-expanded={actionsMenuId === String(alert.id)} onClick={() => { setActionsMenuId(current => current === String(alert.id) ? null : String(alert.id)); setFilterMenuOpen(false); setConfirmMarkAll(false); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg></button>
-            {actionsMenuId === String(alert.id) && <div className="kh-alerts-anchored-popout kh-alerts-item-popout" role="menu" aria-label="Alert actions">{!alert.read_at && <button type="button" role="menuitem" disabled={workingId === String(alert.id) || markingAll} onClick={() => { setActionsMenuId(null); void markRead(alert); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>{workingId === String(alert.id) ? 'Marking read…' : 'Mark as read'}</button>}</div>}
           </div>
         </article>)}</div>}
       </section>)}
