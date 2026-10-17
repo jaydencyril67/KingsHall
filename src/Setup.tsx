@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { alertsFetch } from './alertsClient';
+import ColorSelectionPage from './ColorSelectionPage';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
 type Channels = { email: boolean; inApp: boolean; push: boolean };
@@ -36,8 +37,8 @@ function readJson<T>(key: string, fallback: T): T {
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string }) {
   return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={'kh-setup-toggle' + (checked ? ' is-on' : '')} onClick={() => onChange(!checked)}><span /></button>;
 }
-function ColorField({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  return <label className={'kh-setup-color' + (disabled ? ' is-disabled' : '')}><span className="kh-setup-color-swatch" style={{ background: value }} /><span>{value.toUpperCase()}</span><input aria-label="Choose colour" type="color" value={value} disabled={disabled} onChange={event => onChange(event.target.value)} /></label>;
+function ColorField({ value, onClick, disabled }: { value: string; onClick: () => void; disabled?: boolean }) {
+  return <button type="button" className={'kh-setup-color' + (disabled ? ' is-disabled' : '')} disabled={disabled} onClick={onClick} aria-label={'Choose colour, currently ' + value.toUpperCase()}><span className="kh-setup-color-swatch" style={{ background: value }} /><span>{value.toUpperCase()}</span><span className="kh-setup-color-action">Choose</span></button>;
 }
 export default function SetupPage() {
   const [nowbarEnabled, setNowbarEnabled] = useState(() => readBool('kh_nowbar_color_enabled', false));
@@ -51,6 +52,7 @@ export default function SetupPage() {
   const [notice, setNotice] = useState('Preferences save automatically on this device.');
   const [savedAt, setSavedAt] = useState('');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | null>(null);
 
   useEffect(() => {
     localStorage.setItem('kh_nowbar_color_enabled', String(nowbarEnabled));
@@ -114,7 +116,7 @@ export default function SetupPage() {
     <article className="kh-setup-card">
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">◈</span><div><h2>Nowbar appearance</h2><p>Customise the quick-navigation bar and its ambient lighting.</p></div></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Nowbar colour and lighting</strong><span>Enable a coloured edge and glow around the Nowbar.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onChange={setNowbarColor} disabled={!nowbarEnabled} /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the colour used by the Nowbar lighting.</span></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === nowbarLight)?.description || 'Choose how the light behaves.'}</span></div><select value={nowbarLight} disabled={!nowbarEnabled} onChange={event => setNowbarLight(event.target.value)} aria-label="Nowbar lighting style">{LIGHT_STYLES.map(style => <option key={style.value} value={style.value}>{style.label}</option>)}</select></div>
       <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-nowbar-preview ' + nowbarLight} style={{ '--setup-accent': nowbarEnabled ? nowbarColor : 'rgba(220,226,234,.25)' } as CSSProperties}><span className="kh-setup-preview-orb" /><strong>HOME</strong><span className="kh-setup-preview-chevron">⌄</span></div></div>
     </article>
@@ -122,7 +124,7 @@ export default function SetupPage() {
     <article className="kh-setup-card">
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">✧</span><div><h2>Alert header</h2><p>Control the accent and lighting used by the app's alert header.</p></div></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Header colour and lighting</strong><span>Apply your selected accent to the KingsHall header and alert indicator.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onChange={setHeaderColor} disabled={!headerEnabled} /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === headerLight)?.description || 'Choose how the light behaves.'}</span></div><select value={headerLight} disabled={!headerEnabled} onChange={event => setHeaderLight(event.target.value)} aria-label="Alert header lighting style">{LIGHT_STYLES.map(style => <option key={style.value} value={style.value}>{style.label}</option>)}</select></div>
       <div className="kh-setup-preview"><span className="kh-setup-preview-label">LIVE PREVIEW</span><div className={'kh-setup-header-preview ' + headerLight} style={{ '--setup-accent': headerEnabled ? headerColor : 'rgba(220,226,234,.25)' } as React.CSSProperties}><span className="kh-setup-preview-orb" /><strong>KINGSHALL</strong><span className="kh-setup-header-bell">♧</span></div></div>
     </article>
@@ -138,5 +140,7 @@ export default function SetupPage() {
       {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <label className="kh-setup-check-row" key={option.key}><span><strong>{option.label}</strong></span><input type="checkbox" checked={types[option.key]} onChange={event => updateType(option.key, event.target.checked)} /></label>)}</div>)}
       <div className="kh-setup-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setHeaderLight('stable'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     </article>
+    {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
+    {colorPicker === 'header' && <ColorSelectionPage color={headerColor} title="Choose header colour" description="Choose the accent colour used by the KingsHall app header lighting." onChange={setHeaderColor} onClose={() => setColorPicker(null)} />}
   </section>;
 }
