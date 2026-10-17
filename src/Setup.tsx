@@ -63,7 +63,6 @@ export default function SetupPage() {
   const [nowbarLight, setNowbarLight] = useState(() => localStorage.getItem('kh_nowbar_light_style') || 'stable');
   const [headerEnabled, setHeaderEnabled] = useState(() => readBool('kh_alert_color_enabled', true));
   const [headerColor, setHeaderColor] = useState(() => readColor('kh_alert_color', '#b9c7df'));
-  const [headerLight, setHeaderLight] = useState(() => localStorage.getItem('kh_header_light_style') || 'stable');
   const [channels, setChannels] = useState<Channels>(() => readJson<Channels>('kh_alert_channels', { email: false, inApp: true, push: false }));
   const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }));
   const [notice, setNotice] = useState('Preferences save automatically on this device.');
@@ -80,9 +79,8 @@ export default function SetupPage() {
   useEffect(() => {
     localStorage.setItem('kh_alert_color_enabled', String(headerEnabled));
     localStorage.setItem('kh_alert_color', headerColor);
-    localStorage.setItem('kh_header_light_style', headerLight);
     window.dispatchEvent(new Event('kh:alert-color-changed'));
-  }, [headerEnabled, headerColor, headerLight]);
+  }, [headerEnabled, headerColor]);
   useEffect(() => {
     let cancelled = false;
     void alertsFetch('/api/alerts/preferences')
@@ -142,7 +140,6 @@ export default function SetupPage() {
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">✧</span><div><h2>Alert header</h2><p>Control the accent and lighting used by the app's alert header.</p></div></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Header colour and lighting</strong><span>Apply your selected accent to the KingsHall header and alert indicator.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong><span>Choose the header's coloured edge and glow.</span></div><ColorField value={headerColor} onClick={() => setColorPicker('header')} disabled={!headerEnabled} /></div>
-      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong><span>{LIGHT_STYLES.find(item => item.value === headerLight)?.description || 'Choose how the light behaves.'}</span></div><LightingStyleSelect value={headerLight} disabled={!headerEnabled} onChange={setHeaderLight} label="Alert header lighting style" /></div>
 
     </article>
 
@@ -155,7 +152,7 @@ export default function SetupPage() {
     <article className="kh-setup-card">
       <div className="kh-setup-card-heading"><span className="kh-setup-icon" aria-hidden="true">☷</span><div><h2>Notification types</h2><p>Select the kinds of account activity you want included in your alerts.</p></div></div>
       {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <label className="kh-setup-check-row" key={option.key}><span><strong>{option.label}</strong></span><input type="checkbox" checked={types[option.key]} onChange={event => updateType(option.key, event.target.checked)} /></label>)}</div>)}
-      <div className="kh-setup-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setHeaderLight('stable'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
+      <div className="kh-setup-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     </article>
     {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
     {colorPicker === 'header' && <ColorSelectionPage color={headerColor} title="Choose header colour" description="Choose the accent colour used by the KingsHall app header lighting." onChange={setHeaderColor} onClose={() => setColorPicker(null)} />}
