@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import StoryImageCropModal from './components/StoryImageCropModal';
 import ImagePreviewModal from './components/ImagePreviewModal';
+import NativeGalleryModal from './components/NativeGalleryModal';
+import { isNativeGalleryAvailable } from './utils/nativeImagePicker';
 import { Country, State } from 'country-state-city';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
@@ -244,6 +246,7 @@ export default function IdentityPage({ user }: Props) {
   const [notice, setNotice] = useState('');
   const [noticeOk, setNoticeOk] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [nativePickerKind, setNativePickerKind] = useState<'profile' | 'cover' | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [photoCropSource, setPhotoCropSource] = useState<string | null>(null);
   const [coverCropSource, setCoverCropSource] = useState<string | null>(null);
@@ -665,7 +668,7 @@ export default function IdentityPage({ user }: Props) {
                 <span className="kh-identity-cover-hint">{coverBusy ? 'Uploading…' : 'Cover photo options'}</span>
               </button>
               {coverActionsOpen && <div className="kh-photo-popout kh-photo-popout-cover" role="group" aria-label="Cover photo actions">
-                <button type="button" onClick={() => { setCoverActionsOpen(false); coverInputRef.current?.click(); }}><PhotoActionGlyph type="upload" /> Upload</button>
+                <button type="button" onClick={() => { setCoverActionsOpen(false); if (isNativeGalleryAvailable()) setNativePickerKind('cover'); else coverInputRef.current?.click(); }}><PhotoActionGlyph type="upload" /> Upload</button>
                 <button type="button" disabled={!profile.coverPhoto} onClick={() => { setCoverActionsOpen(false); setCoverPreview(profile.coverPhoto); }}><PhotoActionGlyph type="view" /> View</button>
                 <button type="button" className="is-danger" disabled={!profile.coverPhoto} onClick={() => setDeletePhotoConfirm('cover')}><PhotoActionGlyph type="delete" /> Delete</button>
               </div>}
@@ -676,7 +679,7 @@ export default function IdentityPage({ user }: Props) {
                 {profile.avatarData ? <img src={imageKitDeliveryUrl(profile.avatarData, "w-320,h-320,fo-auto", imageKitEndpoint)} alt="Your profile" /> : <span>{(profile.firstName || 'K').trim().charAt(0).toUpperCase()}</span>}
               </button>
               {photoActionsOpen && <div className="kh-photo-popout kh-photo-popout-avatar" role="group" aria-label="Profile picture actions">
-                <button type="button" onClick={() => { setPhotoActionsOpen(false); photoInputRef.current?.click(); }}><span>↑</span> Upload</button>
+                <button type="button" onClick={() => { setPhotoActionsOpen(false); if (isNativeGalleryAvailable()) setNativePickerKind('profile'); else photoInputRef.current?.click(); }}><span>↑</span> Upload</button>
                 <button type="button" disabled={!profile.avatarData} onClick={() => { setPhotoActionsOpen(false); setPhotoPreview(profile.avatarData); }}><span>◉</span> View</button>
                 <button type="button" className="is-danger" disabled={!profile.avatarData} onClick={() => setDeletePhotoConfirm('profile')}><span>×</span> Delete</button>
               </div>}
@@ -739,6 +742,7 @@ export default function IdentityPage({ user }: Props) {
       </form>
       <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
 
+      {nativePickerKind && <NativeGalleryModal onClose={() => setNativePickerKind(null)} onSelect={file => { const source = URL.createObjectURL(file); if (nativePickerKind === 'profile') setPhotoCropSource(source); else setCoverCropSource(source); setNativePickerKind(null); setNotice(''); }} />}
       {photoCropSource && <StoryImageCropModal imageUrl={photoCropSource} title="Edit profile photo" aspectRatio={1} onCancel={() => { URL.revokeObjectURL(photoCropSource); setPhotoCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'profile')} />}
       {coverCropSource && <StoryImageCropModal imageUrl={coverCropSource} title="Edit cover photo" aspectRatio={3} onCancel={() => { URL.revokeObjectURL(coverCropSource); setCoverCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'cover')} />}
       {photoPreview && <ImagePreviewModal imageUrl={photoPreview} onClose={() => setPhotoPreview(null)} />}
