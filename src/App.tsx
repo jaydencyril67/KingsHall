@@ -9,7 +9,7 @@ import type { FormEvent } from 'react';
 import './App.css';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
-type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP';
+type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -37,7 +37,7 @@ function go(path: string) {
 }
 function sectionFromHash(): HomeSection {
   const value = window.location.hash.slice(1).toUpperCase();
-  return (['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
+  return (['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
 }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
 function KingsHallMark() { return <img className="kh-brand-mark-svg" src="/kingshall-mark.svg?v=4" alt="" />; }
@@ -134,7 +134,7 @@ export default function App() {
     if (window.location.pathname === '/home' && window.location.hash !== hash) {
       window.history.pushState({}, '', `/home${hash}`);
     }
-    if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'IDENTITY' || section === 'SECURITY' || section === 'ALERTS') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
@@ -142,7 +142,7 @@ export default function App() {
     <header className="topbar">
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
       <a className="header-brand" href="/" onClick={e => { e.preventDefault(); navigate('landing'); }}><strong>KINGSHALL</strong><small>One identity · Connected possibilities</small></a>
-      <span className="header-artwork header-artwork-right"><span className="header-status-dot" /></span>
+      <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label="Open alerts" title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></button> : <span className="header-status-dot" />}</span>
     </header>
     {landing ? <>
       <section className="landing-hero" id="top">
@@ -171,7 +171,19 @@ export default function App() {
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
-        {homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
+        {homeSection === 'ALERTS' ? <section className="kh-alerts-page" aria-labelledby="kh-alerts-title">
+          <div className="kh-home-heading">
+            <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL NOTIFICATIONS</span>
+            <h1 id="kh-alerts-title">Your <em>alerts.</em></h1>
+            <p className="kh-home-intro">Important account updates and security notices will have a home here.</p>
+          </div>
+          <article className="kh-home-card kh-alerts-empty">
+            <span className="kh-alerts-empty-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span>
+            <h2>You're all caught up.</h2>
+            <p className="kh-home-muted">There are no alerts to show right now. Check back here for KingsHall account and security updates.</p>
+            <button className="secondary-button" type="button" onClick={() => navigateHomeSection('HOME')}><ArrowIcon /> Back to Home</button>
+          </article>
+        </section> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
         <div className="kh-home-heading">
           <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
           <p className="kh-home-greeting">WELCOME BACK</p>
