@@ -55,7 +55,7 @@ function FeatureIcon({ type }: { type: 'lock' | 'apps' | 'shield' | 'chat' | 'sp
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : window.location.pathname === '/verify-email' ? 'verify' : window.location.pathname === '/onboard' ? 'onboard' : window.location.pathname === '/access-review' ? 'review' : (window.location.pathname === '/home' || window.location.pathname === '/account') ? 'home' : 'landing');
-  const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false); const [resendingVerification, setResendingVerification] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
@@ -72,7 +72,7 @@ export default function App() {
     setMode(next); setPath(route); setNotice(''); go(route);
   }
   async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if (busy) return; setBusy(true); say('');
+    e.preventDefault(); if (busy || resendingVerification) return; setBusy(true); say('');
     const form = e.currentTarget;
     const f = new FormData(form);
     try {
@@ -118,9 +118,9 @@ export default function App() {
     finally { setBusy(false); }
   }
   async function resend() {
-    if (busy || !verifyEmail) return; setBusy(true); say('');
+    if (busy || resendingVerification || !verifyEmail) return; setResendingVerification(true); say('');
     try { const d = await api('/api/auth/resend-verification', { email: verifyEmail }); say(d.message || 'If eligible, a new code has been sent.', true); }
-    catch (e) { say((e as Error).message); } finally { setBusy(false); }
+    catch (e) { say((e as Error).message); } finally { setResendingVerification(false); }
   }
   async function logout() {
     const refreshToken = sessionStorage.getItem('kh_refresh'); setBusy(true);
@@ -225,7 +225,7 @@ export default function App() {
         {mode === 'request' && <form onSubmit={submit}><div className="field"><label htmlFor="request-name">Full name</label><input id="request-name" name="name" autoComplete="name" minLength={2} maxLength={80} placeholder="Your full name" required /></div><div className="field"><label htmlFor="request-email">Email address</label><input id="request-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" required /></div><div className="field"><label htmlFor="request-purpose">What interests you about KingsHall? <span className="optional">(optional)</span></label><textarea id="request-purpose" name="purpose" rows={3} maxLength={500} placeholder="Tell us what you hope to explore…" /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Submit Request'}{!busy && <ArrowIcon />}</button></form>}
         {mode === 'review' && (() => { const decision = new URLSearchParams(window.location.search).get('decision'); const valid = Boolean(new URLSearchParams(window.location.search).get('token') && ['accept', 'reject'].includes(decision || '')); return <form onSubmit={submit}><p className="card-subtitle">{decision === 'reject' ? 'Confirm that you want to decline this application. A kind, friendly email will be sent to the applicant.' : 'Confirm that you want to approve this application. The applicant will receive a secure link to create a password; their account will not exist until they complete onboarding.'}</p><button className="submit-button" type="submit" disabled={busy || reviewProcessed || !valid}>{busy ? <LoadingDots /> : reviewProcessed ? 'Decision recorded' : decision === 'reject' ? 'Confirm rejection' : 'Confirm acceptance'}{!busy && !reviewProcessed && <ArrowIcon />}</button>{!valid && <p className="form-footnote">This review link is invalid or incomplete.</p>}</form>; })()}
         {mode === 'onboard' && <form onSubmit={submit}><div className="field"><label htmlFor="onboard-password">Create password</label><input id="onboard-password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} placeholder="Create a strong password" required /><p className="form-footnote">Use 12–128 characters with uppercase and lowercase letters, a number, and a symbol.</p></div><div className="field"><label htmlFor="onboard-confirm">Confirm password</label><input id="onboard-confirm" name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={128} placeholder="Enter the same password again" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Create Account'}{!busy && <ArrowIcon />}</button></form>}
-        {mode === 'verify' && <><form onSubmit={submit}><div className="field"><label htmlFor="verify-code">Six-digit code</label><input id="verify-code" name="code" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="one-time-code" placeholder="000000" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Verify Email'}{!busy && <ArrowIcon />}</button></form><button className="text-button" type="button" disabled={busy} onClick={resend}>{busy ? <LoadingDots /> : 'Resend verification code'}</button></>}
+        {mode === 'verify' && <><form onSubmit={submit}><div className="field"><label htmlFor="verify-code">Six-digit code</label><input id="verify-code" name="code" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="one-time-code" placeholder="000000" required /></div><button className="submit-button" type="submit" disabled={busy || resendingVerification}>{busy ? <LoadingDots /> : 'Verify Email'}{!busy && <ArrowIcon />}</button></form><button className="text-button" type="button" disabled={busy || resendingVerification} onClick={resend}>{resendingVerification ? <LoadingDots /> : 'Resend verification code'}</button></>}
         {mode === 'account' && <div className="account-panel"><p><strong>{user?.name}</strong></p><p>@{user?.username}</p><p>{user?.email}</p><button className="submit-button" type="button" disabled={busy} onClick={logout}>{busy ? <LoadingDots /> : <>Sign Out <ArrowIcon /></>}</button></div>}
         <p className="fine-print">Keep your password and verification codes private. KingsHall will never ask you to share them with another person.</p>
       </section>
