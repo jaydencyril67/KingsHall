@@ -761,3 +761,12 @@ input,textarea{font-size:12px}
 @keyframes khAlertsReveal{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:560px){.kh-alerts-control-topline{margin-bottom:7px}.kh-alerts-compact-hint{font-size:8px}.kh-alerts-item-expand{font-size:11.5px}.kh-alerts-expanded-content>p{font-size:10.5px}}
 @media(prefers-reduced-motion:reduce){.kh-alerts-group-heading>svg,.kh-alerts-item-expand>svg{transition:none}.kh-alerts-expanded-content,.kh-alerts-control-panel .kh-alerts-search{animation:none}}
+
+
+/* Anchor Alerts popouts above their triggers, matching the app's upward popout pattern. */
+.kh-alerts-anchored-popout,
+.kh-alerts-detail-popout{top:auto!important;bottom:calc(100% + 8px)!important}
+.kh-alerts-filter-popout,
+.kh-alerts-confirm-popout,
+.kh-alerts-item-popout{transform-origin:bottom center}
+.kh-alerts-detail-popout{transform-origin:bottom right}
