@@ -67,7 +67,6 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   const [totalUnread, setTotalUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [workingId, setWorkingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -133,21 +132,8 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
     return order.filter(key => groups.has(key)).map(key => ({ title: key, items: groups.get(key)! }));
   }, [filtered]);
 
-  async function markRead(alert: AlertItem) {
-    if (alert.read_at || workingId || markingAll) return;
-    setWorkingId(String(alert.id));
-    try {
-      const response = await alertsFetch('/api/alerts/' + encodeURIComponent(String(alert.id)) + '/read', { method: 'POST' });
-      const data = await response.json().catch(() => ({})) as { error?: string; unreadCount?: number };
-      if (!response.ok) throw new Error(data.error || 'Could not mark this alert as read.');
-      setAlerts(current => current.map(item => String(item.id) === String(alert.id) ? { ...item, read_at: new Date().toISOString() } : item));
-      if (typeof data.unreadCount === 'number') { setTotalUnread(data.unreadCount); onUnreadCount(data.unreadCount); }
-    } catch (error) { setLoadError(error instanceof Error ? error.message : 'Could not mark this alert as read.'); }
-    finally { setWorkingId(null); }
-  }
-
   async function markAllRead() {
-    if (markingAll || workingId || totalUnread === 0) return;
+    if (markingAll || totalUnread === 0) return;
     setConfirmMarkAll(false);
     setMarkingAll(true);
     try {
@@ -184,7 +170,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
           {filterMenuOpen && <div className="kh-alerts-anchored-popout kh-alerts-filter-popout" role="menu" aria-label="Choose alert filter">{FILTERS.map(item => <button type="button" role="menuitemradio" aria-checked={filter === item.id} className={'kh-alerts-popout-option' + (filter === item.id ? ' is-selected' : '')} key={item.id} onClick={() => { setFilter(item.id); setFilterMenuOpen(false); }}><span>{item.label}</span>{item.id === 'unread' && totalUnread > 0 && <small>{totalUnread > 99 ? '99+' : totalUnread}</small>}{filter === item.id && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}</div>}
         </div>
         <div className="kh-alerts-anchored-wrap" ref={bulkAnchorRef}>
-          <button type="button" className="kh-alerts-mark-all" onClick={() => { setConfirmMarkAll(value => !value); setFilterMenuOpen(false); }} disabled={markingAll || workingId !== null || totalUnread === 0} aria-expanded={confirmMarkAll} aria-haspopup="true">{markingAll ? <><LoadingDots /> Updating</> : 'Mark all read'}</button>
+          <button type="button" className="kh-alerts-mark-all" onClick={() => { setConfirmMarkAll(value => !value); setFilterMenuOpen(false); }} disabled={markingAll || totalUnread === 0} aria-expanded={confirmMarkAll} aria-haspopup="true">{markingAll ? <><LoadingDots /> Updating</> : 'Mark all read'}</button>
           {confirmMarkAll && <div className="kh-alerts-anchored-popout kh-alerts-confirm-popout" role="dialog" aria-label="Mark all alerts as read"><strong>Clear unread status?</strong><p>Mark all {totalUnread} unread {totalUnread === 1 ? 'alert' : 'alerts'} as read.</p><div><button type="button" onClick={() => setConfirmMarkAll(false)}>Cancel</button><button type="button" className="is-primary" onClick={() => void markAllRead()}>Mark all read</button></div></div>}
         </div>
       </div>
