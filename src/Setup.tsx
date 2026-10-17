@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
@@ -44,22 +43,19 @@ function ColorField({ value, onClick, disabled }: { value: string; onClick: () =
 function LightingStyleSelect({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
   const [open, setOpen] = useState(false);
   const selected = LIGHT_STYLES.find(style => style.value === value) || LIGHT_STYLES[0];
-  return <>
-    <button type="button" className="kh-nationality-trigger kh-setup-lighting-trigger" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+  return <div className={'kh-nationality-field kh-setup-lighting-select' + (open ? ' is-open' : '')}>
+    <button type="button" className="kh-nationality-trigger kh-setup-lighting-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(current => !current)}>
       <span>{selected.label}</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
     </button>
-    {open && createPortal(<div className="kh-lighting-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
-      <section className="kh-lighting-modal" role="dialog" aria-modal="true" aria-label={label} onClick={event => event.stopPropagation()}>
-        <div className="kh-lighting-modal-heading"><strong>Lighting style</strong><button type="button" aria-label="Close lighting styles" onClick={() => setOpen(false)}>×</button></div>
-        <div className="kh-lighting-modal-options" role="listbox" aria-label={label}>
-          {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-lighting-modal-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
-            <span><strong>{style.label}</strong></span>
-            {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
-          </button>)}
-        </div>
-      </section>
-    </div>, document.body)}
-  </>;
+    {open && <div className="kh-nationality-popout">
+      <div className="kh-nationality-list" role="listbox" aria-label={label}>
+        {LIGHT_STYLES.map(style => <button type="button" role="option" aria-selected={value === style.value} className="kh-nationality-option" key={style.value} onClick={() => { onChange(style.value); setOpen(false); }}>
+          <span><strong>{style.label}</strong></span>
+          {value === style.value && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}
+        </button>)}
+      </div>
+    </div>}
+  </div>;
 }
 export default function SetupPage() {
   const [nowbarEnabled, setNowbarEnabled] = useState(() => readBool('kh_nowbar_color_enabled', false));
