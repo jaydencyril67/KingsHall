@@ -944,3 +944,8 @@ input,textarea{font-size:12px}
 .kh-color-save-note{display:flex;align-items:center;gap:8px;margin:14px 2px 0;color:#9299a5;font-size:10px;line-height:1.6}
 .kh-color-save-note>span{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#cbd7e9;box-shadow:0 0 8px rgba(203,215,233,.45)}
 @media(max-width:420px){.kh-color-picker{width:min(76vw,270px)}.kh-color-page-content{padding:13px 12px 20px}.kh-color-wheel-card{padding:13px 10px}.kh-color-current code{font-size:10px}}
+
+
+/* HallsChat-matched app-header alert lighting: steady edge while unread alerts exist, pulse only for a new alert. */
+@keyframes kh-header-alert-color-pulse{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--kh-header-alert-color) 72%,transparent),0 0 15px color-mix(in srgb,var(--kh-header-alert-color) 46%,transparent),0 14px 30px rgba(0,0,0,.24);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--kh-header-alert-color) 34%,transparent))}50%{box-shadow:0 0 0 2px color-mix(in srgb,var(--kh-header-alert-color) 82%,transparent),0 0 23px color-mix(in srgb,var(--kh-header-alert-color) 62%,transparent),0 14px 30px rgba(0,0,0,.24);filter:drop-shadow(0 0 10px color-mix(in srgb,var(--kh-header-alert-color) 48%,transparent))}}
+@media(prefers-reduced-motion:reduce){.topbar.kh-header-alert-color-active{animation:none!important}}
