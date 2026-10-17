@@ -298,10 +298,10 @@ export default function SecurityPage({ user }: Props) {
     finally { setTwoFactorBusy(false); }
   }
 
-  async function requestWalletVerification(): Promise<void> {
-    if ((!walletDraft && !walletPendingDeleteId) || savingWallets || walletVerificationRequested) return;
+  async function requestWalletVerification(actionOverride?: 'add' | 'edit' | 'delete'): Promise<void> {
+    if ((!walletDraft && !walletPendingDeleteId && actionOverride !== 'delete') || savingWallets || walletVerificationRequested) return;
     let action: 'add' | 'edit' | 'delete';
-    if (walletPendingDeleteId) {
+    if (actionOverride === 'delete' || walletPendingDeleteId) {
       action = 'delete';
     } else {
       if (!walletDraft) return;
@@ -392,8 +392,9 @@ export default function SecurityPage({ user }: Props) {
     setWalletEmailVerificationCode('');
     setWalletActionMenuId(null);
     setOpenNetworkId(null);
-    setNotice('Confirm wallet deletion with your email verification code.');
-    setNoticeOk(false);
+    setNotice('Sending a verification code to your verified email…');
+    setNoticeOk(true);
+    await requestWalletVerification('delete');
   }
 
   return <div className="kh-identity-page kh-security-page">
