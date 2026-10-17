@@ -80,14 +80,19 @@ export default function SetupPage() {
     setApkRelease(current => ({ ...current, status: 'checking', message: '' }));
     try {
       const isAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-      const appInfo = isAndroid ? await NativeAppUpdate.getAppInfo() : null;
+      let appInfo: { versionName: string; versionCode: number } | null = null;
+      if (isAndroid) {
+        // Older installed APKs may predate the native updater plugin; still fetch the latest release
+        // so the user can download the first updater-enabled APK through the browser fallback.
+        try { appInfo = await NativeAppUpdate.getAppInfo(); } catch { appInfo = null; }
+      }
       const query = appInfo?.versionName ? '?installedVersion=' + encodeURIComponent(appInfo.versionName) : '';
       const response = await alertsFetch('/api/notifications/app-update-check' + query, { cache: 'no-store' });
       const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseUrl?: string; releaseNotes?: string; message?: string };
       if (!response.ok) throw new Error(data.message || 'Unable to check the latest KingsHall APK.');
       if (!data.latestVersion || !data.downloadUrl) throw new Error('No published KingsHall APK release is available yet.');
       setApkRelease({
-        status: isAndroid ? (data.updateAvailable ? 'update' : 'current') : 'latest',
+        status: isAndroid && appInfo ? (data.updateAvailable ? 'update' : 'current') : 'latest',
         installedVersion: appInfo?.versionName || undefined,
         latestVersion: data.latestVersion,
         downloadUrl: data.downloadUrl,
