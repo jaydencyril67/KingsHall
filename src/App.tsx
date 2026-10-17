@@ -4,6 +4,7 @@ import NowBar from './NowBar';
 import IdentityPage from './Identity';
 import SecurityPage from './Security';
 import AlertsPage from './Alerts';
+import AboutPage from './About';
 import { alertsFetch } from './alertsClient';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
@@ -11,7 +12,7 @@ import type { FormEvent } from 'react';
 import './App.css';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
-type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS';
+type HomeSection = 'HOME' | 'IDENTITY' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -39,7 +40,7 @@ function go(path: string) {
 }
 function sectionFromHash(): HomeSection {
   const value = window.location.hash.slice(1).toUpperCase();
-  return (['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
+  return (['HOME', 'IDENTITY', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS', 'ABOUT'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
 }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
 function KingsHallMark() { return <img className="kh-brand-mark-svg" src="/kingshall-mark.svg?v=4" alt="" />; }
@@ -216,7 +217,7 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
-    if (section === 'IDENTITY' || section === 'SECURITY') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'IDENTITY' || section === 'SECURITY' || section === 'ABOUT') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
@@ -253,7 +254,7 @@ export default function App() {
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" onClick={() => navigate('login')}>Sign In <ArrowIcon /></button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
-        {homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
+        {homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
         <div className="kh-home-heading">
           <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
           <p className="kh-home-greeting">WELCOME BACK</p>
