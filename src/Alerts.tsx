@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingDots from './components/LoadingDots';
 import { alertsFetch } from './alertsClient';
 
@@ -71,6 +71,13 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   const [markingAll, setMarkingAll] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [actionsMenuId, setActionsMenuId] = useState<string | null>(null);
+  const [detailsAlertId, setDetailsAlertId] = useState<string | null>(null);
+  const [confirmMarkAll, setConfirmMarkAll] = useState(false);
+  const filterAnchorRef = useRef<HTMLDivElement>(null);
+  const bulkAnchorRef = useRef<HTMLDivElement>(null);
+  const actionAnchorRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +94,23 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
   }, [onUnreadCount]);
 
   useEffect(() => { void load(); }, [load, version]);
+
+  useEffect(() => {
+    if (!filterMenuOpen && !actionsMenuId && !confirmMarkAll) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (filterAnchorRef.current?.contains(target) || bulkAnchorRef.current?.contains(target) || actionAnchorRef.current?.contains(target)) return;
+      setFilterMenuOpen(false);
+      setActionsMenuId(null);
+      setConfirmMarkAll(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setFilterMenuOpen(false); setActionsMenuId(null); setConfirmMarkAll(false); setDetailsAlertId(null); }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown); };
+  }, [filterMenuOpen, actionsMenuId, confirmMarkAll]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -125,6 +149,7 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
 
   async function markAllRead() {
     if (markingAll || workingId || totalUnread === 0) return;
+    setConfirmMarkAll(false);
     setMarkingAll(true);
     try {
       const response = await alertsFetch('/api/alerts/read-all', { method: 'POST', body: '{}' });
@@ -150,10 +175,17 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
 
     <div className="kh-alerts-control-panel">
       <label className="kh-alerts-search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search your alerts…" aria-label="Search alerts" />{search && <button type="button" onClick={() => setSearch('')} aria-label="Clear search">×</button>}</label>
-      <div className="kh-alerts-filter-row" role="group" aria-label="Filter alerts">
-        {FILTERS.map(item => <button key={item.id} type="button" className={'kh-alert-filter' + (filter === item.id ? ' is-active' : '')} aria-pressed={filter === item.id} onClick={() => setFilter(item.id)}>{item.label}{item.id === 'unread' && totalUnread > 0 && <span>{totalUnread > 99 ? '99+' : totalUnread}</span>}</button>)}
+      <div className="kh-alerts-control-actions">
+        <div className="kh-alerts-anchored-wrap" ref={filterAnchorRef}>
+          <button type="button" className={'kh-alerts-popout-trigger' + (filterMenuOpen ? ' is-open' : '')} aria-haspopup="true" aria-expanded={filterMenuOpen} onClick={() => { setFilterMenuOpen(value => !value); setConfirmMarkAll(false); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4" /></svg><span>{FILTERS.find(item => item.id === filter)?.label || 'All activity'}</span><svg className="kh-alerts-trigger-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg></button>
+          {filterMenuOpen && <div className="kh-alerts-anchored-popout kh-alerts-filter-popout" role="menu" aria-label="Choose alert filter">{FILTERS.map(item => <button type="button" role="menuitemradio" aria-checked={filter === item.id} className={'kh-alerts-popout-option' + (filter === item.id ? ' is-selected' : '')} key={item.id} onClick={() => { setFilter(item.id); setFilterMenuOpen(false); }}><span>{item.label}</span>{item.id === 'unread' && totalUnread > 0 && <small>{totalUnread > 99 ? '99+' : totalUnread}</small>}{filter === item.id && <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>}</button>)}</div>}
+        </div>
+        <div className="kh-alerts-anchored-wrap" ref={bulkAnchorRef}>
+          <button type="button" className="kh-alerts-mark-all" onClick={() => { setConfirmMarkAll(value => !value); setFilterMenuOpen(false); }} disabled={markingAll || workingId !== null || totalUnread === 0} aria-expanded={confirmMarkAll} aria-haspopup="true">{markingAll ? <><LoadingDots /> Updating</> : 'Mark all read'}</button>
+          {confirmMarkAll && <div className="kh-alerts-anchored-popout kh-alerts-confirm-popout" role="dialog" aria-label="Mark all alerts as read"><strong>Clear unread status?</strong><p>Mark all {totalUnread} unread {totalUnread === 1 ? 'alert' : 'alerts'} as read.</p><div><button type="button" onClick={() => setConfirmMarkAll(false)}>Cancel</button><button type="button" className="is-primary" onClick={() => void markAllRead()}>Mark all read</button></div></div>}
+        </div>
       </div>
-      <div className="kh-alerts-list-summary"><span>{loading ? 'Checking for activity…' : `${filtered.length} ${filtered.length === 1 ? 'alert' : 'alerts'}`}{filter !== 'all' || search ? ' found' : ''}</span><button type="button" className="kh-alerts-mark-all" onClick={() => void markAllRead()} disabled={markingAll || workingId !== null || totalUnread === 0}>{markingAll ? <><LoadingDots /> Updating</> : 'Mark all read'}</button></div>
+      <div className="kh-alerts-list-summary"><span>{loading ? 'Checking for activity…' : `${filtered.length} ${filtered.length === 1 ? 'alert' : 'alerts'}`}{filter !== 'all' || search ? ' found' : ''}</span><span className="kh-alerts-summary-context">{filter !== 'all' ? 'Filtered view' : 'Latest activity'}</span></div>
     </div>
 
     {loadError && <div className="kh-alerts-error" role="alert"><span>{loadError}</span><button type="button" onClick={() => { setLoadError(''); setLoading(true); void load(); }}>Try again</button></div>}
@@ -172,7 +204,11 @@ export default function AlertsPage({ version, onUnreadCount, onBack }: Props) {
             <h3>{alert.title}</h3><p>{alert.message}</p>
             <time dateTime={alert.created_at} title={dateOf(alert.created_at)?.toLocaleString() || ''}>{timeLabel(alert.created_at)}</time>
           </div>
-          {!alert.read_at && <button className="kh-alert-read-button" type="button" aria-label={`Mark ${alert.title} as read`} title="Mark as read" disabled={workingId === String(alert.id) || markingAll} onClick={() => void markRead(alert)}>{workingId === String(alert.id) ? <LoadingDots /> : <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>}</button>}
+          <div className="kh-alerts-anchored-wrap kh-alerts-item-actions" ref={actionsMenuId === String(alert.id) ? actionAnchorRef : null}>
+            <button className={'kh-alert-read-button kh-alert-more-button' + (actionsMenuId === String(alert.id) ? ' is-open' : '')} type="button" aria-label={`Actions for ${alert.title}`} title="Alert actions" aria-haspopup="true" aria-expanded={actionsMenuId === String(alert.id)} onClick={() => { setActionsMenuId(current => current === String(alert.id) ? null : String(alert.id)); setDetailsAlertId(null); setFilterMenuOpen(false); setConfirmMarkAll(false); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg></button>
+            {actionsMenuId === String(alert.id) && <div className="kh-alerts-anchored-popout kh-alerts-item-popout" role="menu" aria-label="Alert actions"><button type="button" role="menuitem" onClick={() => { setDetailsAlertId(current => current === String(alert.id) ? null : String(alert.id)); setActionsMenuId(null); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></svg>View details</button>{!alert.read_at && <button type="button" role="menuitem" disabled={workingId === String(alert.id) || markingAll} onClick={() => { setActionsMenuId(null); void markRead(alert); }}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>{workingId === String(alert.id) ? 'Marking read…' : 'Mark as read'}</button>}</div>}
+          </div>
+          {detailsAlertId === String(alert.id) && <div className="kh-alerts-detail-popout" role="dialog" aria-label={`Details for ${alert.title}`}><div className="kh-alerts-detail-head"><span>{categoryLabel(alert.category)} alert</span><button type="button" aria-label="Close alert details" onClick={() => setDetailsAlertId(null)}>×</button></div><strong>{alert.title}</strong><p>{alert.message}</p><div className="kh-alerts-detail-meta"><span>{dateOf(alert.created_at)?.toLocaleString() || 'Time unavailable'}</span><span className={alert.read_at ? '' : 'is-unread'}>{alert.read_at ? 'Read' : 'Unread'}</span></div>{!alert.read_at && <button type="button" className="kh-alerts-detail-action" disabled={workingId === String(alert.id) || markingAll} onClick={() => void markRead(alert)}>{workingId === String(alert.id) ? <LoadingDots /> : 'Mark as read'}</button>}</div>}
         </article>)}</div>
       </section>)}
       {alerts.length >= 50 && filter === 'all' && !search && <p className="kh-alerts-limit-note">Showing your 50 most recent alerts.</p>}
