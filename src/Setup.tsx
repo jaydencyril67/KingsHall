@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
