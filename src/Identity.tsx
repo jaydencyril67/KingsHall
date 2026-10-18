@@ -10,7 +10,7 @@ import LoadingDots from './components/LoadingDots';
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
   id: string; firstName: string; middleName: string; lastName: string; username: string; email: string; emailVerified: boolean; memberSince: string;
-  dateOfBirth: string; phone: string; phoneVerified: boolean; country: string; state: string; city: string; address: string;
+  dateOfBirth: string; phone: string; country: string; state: string; city: string; address: string;
   postalCode: string; nationality: string; gender: string; occupation: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
@@ -143,10 +143,6 @@ function formatDobInput(isoDate: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(isoDate || '');
   return match ? match[3] + '/' + match[2] + '/' + match[1] : '';
 }
-function normalizePhone(value: string): string {
-  const digits = value.replace(/\D/g, '');
-  return digits ? '+' + digits : '';
-}
 function parseDobInput(value: string): string | null {
   if (!value.trim()) return '';
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
@@ -173,7 +169,7 @@ function isAdultDob(isoDate: string): boolean {
 }
 const blankProfile = (user: Props['user']): IdentityProfile => ({
   id: user?.id || '', firstName: '', middleName: '', lastName: '', username: user?.username || '', email: user?.email || '',
-  emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', phoneVerified: false, country: '',
+  emailVerified: Boolean(user?.isEmailVerified), memberSince: '', dateOfBirth: '', phone: '', country: '',
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
   language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
