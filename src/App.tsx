@@ -438,8 +438,8 @@ export default function App() {
       </section>
     </section>}
     <footer className="footer"><span>© {new Date().getFullYear()} KingsHall</span><span><FeatureIcon type="shield" /> Identity · Access · Ecosystem</span></footer>
-    {appAuthRequests.length > 0 && user && <div role="dialog" aria-modal="true" aria-labelledby="app-auth-title" style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'grid', placeItems: 'center', padding: 18, background: 'rgba(3,8,18,.78)', backdropFilter: 'blur(14px)' }}>
-      <section style={{ width: 'min(100%, 460px)', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,.22)', borderRadius: 24, padding: 'clamp(20px,5vw,30px)', background: 'linear-gradient(145deg, rgba(26,39,61,.98), rgba(11,18,32,.98))', color: '#f5f7fb', boxShadow: '0 24px 90px rgba(0,0,0,.45)' }}>
+    {appAuthRequests.length > 0 && user && <div role="dialog" aria-modal="true" aria-labelledby="app-auth-title" style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'grid', placeItems: 'center', padding: 18, background: 'rgba(3,3,4,.80)', backdropFilter: 'blur(14px)' }}>
+      <section style={{ width: 'min(100%, 460px)', boxSizing: 'border-box', border: '1px solid var(--kh-card-primary-border)', borderRadius: 24, padding: 'clamp(20px,5vw,30px)', background: 'var(--kh-card-primary-surface)', color: '#f3f4f6', boxShadow: 'var(--kh-card-inset-highlight), 0 24px 90px rgba(0,0,0,.45)', backdropFilter: 'blur(22px) saturate(125%)' }}>
         <div className="card-top"><span className="card-symbol"><FeatureIcon type="shield" /></span><span className="secure"><i /> SIGN-IN APPROVAL</span></div>
         <h2 id="app-auth-title" style={{ marginTop: 18 }}>Approve CryBots sign-in</h2>
         <p className="card-subtitle">Someone is requesting access to your KingsHall identity through {appAuthRequests[0].appName}. Only approve this if you started the sign-in yourself.</p>
@@ -448,7 +448,7 @@ export default function App() {
             <label htmlFor="app-auth-code">Two-digit code shown in CryBots</label>
             <input id="app-auth-code" name="appAuthCode" value={appAuthCode} onChange={event => { setAppAuthCode(event.target.value.replace(/\D/g, '').slice(0, 2)); setAppAuthError(''); }} inputMode="numeric" pattern="[0-9]{2}" maxLength={2} autoComplete="off" placeholder="00" required autoFocus />
           </div>
-          {appAuthError && <p role="alert" style={{ color: '#ffb8b8', fontSize: 13 }}>{appAuthError}</p>}
+          {appAuthError && <p role="alert" style={{ color: '#e8bcbc', fontSize: 13 }}>{appAuthError}</p>}
           <button className="submit-button" type="submit" disabled={appAuthBusy || appAuthCode.length !== 2}>{appAuthBusy ? <LoadingDots /> : 'Approve sign-in'}{!appAuthBusy && <ArrowIcon />}</button>
         </form>
         <button className="text-button" type="button" disabled={appAuthBusy} onClick={() => void respondToAppAuth('deny', appAuthRequests[0].id)}>Deny request</button>
