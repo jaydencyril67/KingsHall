@@ -29,9 +29,6 @@ function writeBrowserAccounts(accounts: string[]) {
   document.cookie = 'kh_saved_accounts=' + encodeURIComponent(JSON.stringify(normalized)) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
   return normalized;
 }
-function setPreferredBrowserAccount(email: string) {
-  document.cookie = 'kh_account_hint=' + encodeURIComponent(email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
-}
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
 function codeCooldownRemaining(changedAt: string | null | undefined): number {
@@ -448,12 +445,11 @@ export default function SecurityPage({ user }: Props) {
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
 
       <section className="kh-identity-card kh-security-browser-accounts">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Choose which saved KingsHall identity connected apps should detect. Only email addresses are shared; passwords and security codes are never stored here.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Manage accounts saved on this browser. You can remove an account here; sign-in and account selection happen in the connected app.</p></div></div>
         {savedBrowserAccounts.length > 0 ? <div className="kh-security-browser-account-list">
           {savedBrowserAccounts.map(email => <div className="kh-security-browser-account" key={email}>
             <span className="kh-security-browser-account-email">{email}</span>
             <div className="kh-security-browser-account-actions">
-              <button type="button" className="secondary-button" onClick={() => { setPreferredBrowserAccount(email); setNotice('Preferred account set for CryBots and HallsChat.'); setNoticeOk(true); }}>Use for connected apps</button>
               <button type="button" className="secondary-button" onClick={() => {
                 const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
                 setSavedBrowserAccounts(remaining);
@@ -461,8 +457,8 @@ export default function SecurityPage({ user }: Props) {
                 const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
                 if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
                 if (currentHint === email) {
-                  if (remaining[0]) setPreferredBrowserAccount(remaining[0]);
-                  else document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
+                  document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
+                  localStorage.removeItem('kingshall_account_hint');
                 }
                 setNotice('Saved account removed from this browser.'); setNoticeOk(true);
               }}>Remove</button>
