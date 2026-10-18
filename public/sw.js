@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kingshall-pwa-v4-icon-aligned';
+const CACHE_NAME = 'kingshall-pwa-v5-circular-icon-structure';
 const APP_SHELL = [
   '/',
   '/index.html',
