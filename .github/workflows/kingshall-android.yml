@@ -270,7 +270,7 @@ jobs:
           <resources>
               <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
                   <item name="android:windowSplashScreenBackground">@color/kingshall_splash_background</item>
-                  <item name="android:windowSplashScreenAnimatedIcon">@drawable/kingshall_splash_logo</item>
+                  <item name="android:windowSplashScreenAnimatedIcon">@drawable/kingshall_splash_logo_v31</item>
                   <item name="android:windowSplashScreenBrandingImage">@drawable/kingshall_branding</item>
                   <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
               </style>
