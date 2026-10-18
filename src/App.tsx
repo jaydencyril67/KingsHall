@@ -20,12 +20,15 @@ type Result = { message?: string; error?: string; code?: string; email?: string;
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 type KingsHallAccountPlugin = { addAccount(options: { email: string; username: string; displayName: string }): Promise<{ accountName: string; alreadyPresent?: boolean }> };
 const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount');
-async function registerDeviceAccount(user: User) {
+function saveBrowserAccountHint(user: User) {
   // This cookie contains only an account-selection hint, never credentials or session tokens.
   // The parent domain lets KingsHall apps on its subdomains reuse the same browser account hint.
   if (user.email && window.location.hostname.endsWith('kingshall.online')) {
     document.cookie = 'kh_account_hint=' + encodeURIComponent(user.email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
   }
+}
+async function registerDeviceAccount(user: User) {
+  saveBrowserAccountHint(user);
   if (!Capacitor.isNativePlatform()) return;
   const deviceUsername = user.username || user.email.split('@')[0] || 'member';
   await DeviceAccount.addAccount({ email: user.email, username: deviceUsername, displayName: user.name || user.username || deviceUsername });
@@ -119,7 +122,7 @@ export default function App() {
     const sync = () => { const p = window.location.pathname; setPath(p); setMode(p === '/signin' ? 'login' : p === '/request-access' ? 'request' : p === '/verify-email' ? 'verify' : p === '/onboard' ? 'onboard' : p === '/access-review' ? 'review' : (p === '/home' || p === '/account') ? 'home' : 'landing'); setReviewProcessed(false); setHomeSection(sectionFromHash()); setNotice(''); };
     window.addEventListener('popstate', sync);
     const refresh = sessionStorage.getItem('kh_refresh');
-    if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (params.get('app') === 'crybots' && candidate.protocol === 'https:' && candidate.hostname === 'crybots.kingshall.online' && candidate.pathname === '/signin') safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
+    if (refresh) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (params.get('app') === 'crybots' && candidate.protocol === 'https:' && candidate.hostname === 'crybots.kingshall.online' && candidate.pathname === '/signin') safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.')); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
