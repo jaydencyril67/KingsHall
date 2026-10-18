@@ -20,11 +20,11 @@ function readBrowserAccounts(): string[] {
   try {
     const value = JSON.parse(window.localStorage.getItem(SAVED_ACCOUNTS_KEY) || '[]');
     if (!Array.isArray(value)) return [];
-    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(item)))].slice(0, 10);
+    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
   } catch { return []; }
 }
 function writeBrowserAccounts(accounts: string[]) {
-  const normalized = [...new Set(accounts.map(item => item.trim().toLowerCase()).filter(item => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(item)))].slice(0, 10);
+  const normalized = [...new Set(accounts.map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
   window.localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(normalized));
   document.cookie = 'kh_saved_accounts=' + encodeURIComponent(JSON.stringify(normalized)) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
   return normalized;
@@ -111,6 +111,10 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => readBrowserAccounts());
+  useEffect(() => {
+    const accounts = writeBrowserAccounts(readBrowserAccounts());
+    setSavedBrowserAccounts(accounts);
+  }, []);
   const [kui, setKui] = useState('');
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [loading, setLoading] = useState(true);
