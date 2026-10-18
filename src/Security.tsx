@@ -32,10 +32,10 @@ function writeBrowserAccounts(accounts: string[]) {
 }
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
-function codeCooldownRemaining(changedAt: string | null | undefined): number {
+function codeCooldownRemaining(changedAt: string | null | undefined, cooldownMs = 30 * 24 * 60 * 60 * 1000): number {
   if (!changedAt) return 0;
   const changedTime = new Date(changedAt).getTime();
-  return Number.isFinite(changedTime) ? Math.max(0, changedTime + 30 * 24 * 60 * 60 * 1000 - Date.now()) : 0;
+  return Number.isFinite(changedTime) ? Math.max(0, changedTime + cooldownMs - Date.now()) : 0;
 }
 function formatCodeCooldown(milliseconds: number): string {
   const totalHours = Math.ceil(milliseconds / (60 * 60 * 1000));
@@ -204,7 +204,7 @@ export default function SecurityPage({ user }: Props) {
 
   const securityCodeCooldownMs = codeCooldownRemaining(securityCodeChangedAt);
   const fundingCodeCooldownMs = codeCooldownRemaining(fundingCodeChangedAt);
-  const accessCodeCooldownMs = codeCooldownRemaining(accessCodeChangedAt);
+  const accessCodeCooldownMs = codeCooldownRemaining(accessCodeChangedAt, 24 * 60 * 60 * 1000);
 
   const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
 
