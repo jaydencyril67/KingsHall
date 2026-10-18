@@ -23,7 +23,7 @@ const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount')
 function saveBrowserAccountHint(user: User) {
   // This cookie contains only an account-selection hint, never credentials or session tokens.
   // The parent domain lets KingsHall apps on its subdomains reuse the same browser account hint.
-  if (user.email && window.location.hostname.endsWith('kingshall.online')) {
+  if (user.email && (window.location.hostname === 'kingshall.online' || window.location.hostname.endsWith('.kingshall.online'))) {
     document.cookie = 'kh_account_hint=' + encodeURIComponent(user.email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
   }
 }
