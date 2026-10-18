@@ -1013,3 +1013,19 @@ input,textarea{font-size:12px}
 @keyframes kh-app-update-spin{to{transform:rotate(360deg)}}
 @media(max-width:380px){.kh-app-update-notice{top:66px;left:8px;right:8px;padding:11px}.kh-app-update-copy>strong{font-size:12px}.kh-app-update-copy>p{font-size:10.5px}.kh-app-update-primary,.kh-app-update-later{padding:8px 10px;font-size:10.5px}}
 @media(prefers-reduced-motion:reduce){.kh-app-update-spinner{animation:none}}
+
+
+/* Browser/PWA multi-account picker — email-only saved identities. */
+.kh-browser-accounts{margin:0 0 18px;padding:12px;border:1px solid var(--kh-card-primary-border,rgba(220,228,240,.16));border-radius:14px;background:rgba(255,255,255,.025)}
+.kh-browser-accounts-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.kh-browser-accounts-heading strong{color:var(--text,#eef1f6);font-size:12px;font-weight:700}
+.kh-browser-accounts-heading>span{color:var(--muted,#aeb5c1);font-size:10px}
+.kh-browser-account{display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid rgba(220,228,240,.08)}
+.kh-browser-account-select{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:5px 4px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.kh-browser-account.is-selected .kh-browser-account-select{border-color:rgba(185,199,223,.28);background:rgba(185,199,223,.07)}
+.kh-browser-account-avatar{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(220,228,240,.18);border-radius:50%;background:rgba(255,255,255,.055);color:var(--silver-bright,#e4eaf4);font-size:12px;font-weight:700}
+.kh-browser-account-email{min-width:0;overflow-wrap:anywhere;color:var(--text,#e6eaf1);font-size:11px;line-height:1.4}
+.kh-browser-account-check{margin-left:auto;color:var(--silver-bright,#dce5f4);font-size:16px}
+.kh-browser-account-remove{flex:0 0 auto;padding:6px 4px;border:0;background:transparent;color:var(--muted,#aeb5c1);font-size:10px;cursor:pointer}
+.kh-browser-account-remove:hover{color:var(--text,#f0f3f9);text-decoration:underline}
+@media(max-width:380px){.kh-browser-accounts{padding:9px}.kh-browser-account{gap:3px}.kh-browser-account-select{gap:7px}.kh-browser-account-email{font-size:10px}.kh-browser-account-remove{font-size:9px}}
