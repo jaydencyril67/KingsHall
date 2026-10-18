@@ -201,18 +201,20 @@ jobs:
             // so it sits cleanly inside the native splash's circular backdrop.
             const crown = Buffer.from(markSvg.replace('<rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>', ''));
             const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="330" fill="#000000" stroke="#000000" stroke-width="12"/></svg>');
-            // Match CryBots' native splash artwork scale: keep the mark centered
-            // inside a transparent 512px canvas instead of letting it fill the canvas.
-            // This preserves Android 12+ system splash sizing and the legacy 213dp layout.
-            const crownLayer = await sharp(crown).resize(330, 330, { fit: 'contain' }).png().toBuffer();
-            const circleLayer = await sharp(circle).resize(470, 470, { fit: 'fill' }).png().toBuffer();
-            await sharp({ create: { width: 512, height: 512, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-              .composite([
-                { input: circleLayer, left: 21, top: 21 },
-                { input: crownLayer, left: 91, top: 91 }
-              ])
-              .png()
-              .toFile('android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
+            // Match the custom refresh splash: 92px circular holder and 72px crown.
+            // The legacy layer is 92dp; Android 12+ needs a separately scaled
+            // 512px system-icon canvas because Android controls its rendered size.
+            const makeComposition = async (circleSize, crownSize, filename) => {
+              const crownLayer = await sharp(crown).resize(crownSize, crownSize, { fit: 'contain' }).png().toBuffer();
+              const circleLayer = await sharp(circle).resize(circleSize, circleSize, { fit: 'fill' }).png().toBuffer();
+              const canvas = sharp({ create: { width: 512, height: 512, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } });
+              await canvas.composite([
+                { input: circleLayer, left: Math.round((512 - circleSize) / 2), top: Math.round((512 - circleSize) / 2) },
+                { input: crownLayer, left: Math.round((512 - crownSize) / 2), top: Math.round((512 - crownSize) / 2) }
+              ]).png().toFile(filename);
+            };
+            await makeComposition(500, 391, 'android/app/src/main/res/drawable-nodpi/kingshall_splash_logo.png');
+            await makeComposition(164, 128, 'android/app/src/main/res/drawable-nodpi/kingshall_splash_logo_v31.png');
 
             const branding = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="320" viewBox="0 0 800 320"><rect width="800" height="320" fill="none"/><text x="400" y="174" text-anchor="middle" fill="#f4f4f4" font-family="STIX Two Text, serif" font-size="72" font-weight="700" letter-spacing="3">KingsHall</text></svg>');
             await sharp(branding).png().toFile('android/app/src/main/res/drawable-nodpi/kingshall_branding.png');
@@ -225,8 +227,8 @@ jobs:
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
               <item android:drawable="@color/kingshall_splash_background" />
               <item
-                  android:width="213dp"
-                  android:height="213dp"
+                  android:width="92dp"
+                  android:height="92dp"
                   android:gravity="center"
                   android:drawable="@drawable/kingshall_splash_logo" />
               <item
