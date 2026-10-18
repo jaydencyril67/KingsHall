@@ -201,9 +201,18 @@ jobs:
             // so it sits cleanly inside the native splash's circular backdrop.
             const crown = Buffer.from(markSvg.replace('<rect id="background" data-name="Background" width="720" height="721" fill="rgb(0,0,0)"/>', ''));
             const circle = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="721"><circle cx="360" cy="360.5" r="360" fill="#000000" stroke="#000000" stroke-width="0"/></svg>');
-            // Match the custom refresh splash: 92dp circular holder and 72dp crown.
-            // Legacy Android uses a 512px composition in a 92dp layer. Android 12+
-            // gets a centered 164px circle + 128px crown on its 512px system canvas.
+            // One visible size on every Android version: 92dp circle + 72dp crown.
+            // Android 12+ uses a 512px icon canvas displayed as 288dp, so calculate
+            // the exact pixel equivalents (164px circle, 128px crown) from those same dp sizes.
+            const holderDp = 92;
+            const artworkDp = 72;
+            const systemCanvasPx = 512;
+            const systemCanvasDp = 288;
+            const systemHolderPx = Math.round(holderDp / systemCanvasDp * systemCanvasPx);
+            const systemArtworkPx = Math.round(artworkDp / systemCanvasDp * systemCanvasPx);
+            if (systemHolderPx !== 164 || systemArtworkPx !== 128) {
+              throw new Error('KingsHall Android 12+ splash scale no longer matches the 92dp / 72dp legacy size.');
+            }
             const makeComposition = async (circleSize, crownSize, filename) => {
               const crownLayer = await sharp(crown).resize(crownSize, crownSize, { fit: 'contain' }).png().toBuffer();
               const circleLayer = await sharp(circle).resize(circleSize, circleSize, { fit: 'fill' }).png().toBuffer();
