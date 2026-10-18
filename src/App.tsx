@@ -270,6 +270,19 @@ export default function App() {
           if (data.user) {
             try { await registerDeviceAccount(data.user); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }
             catch { setDeviceAccountStatus('You are signed in, but Android could not add the device account.'); }
+            const params = new URLSearchParams(window.location.search);
+            const returnTo = params.get('returnTo') || '';
+            const requestedApp = params.get('app') || '';
+            let safeReturn: URL | null = null;
+            try {
+              const candidate = new URL(returnTo);
+              if (requestedApp === 'crybots' && candidate.protocol === 'https:' && candidate.hostname === 'crybots.kingshall.online' && candidate.pathname === '/signin') safeReturn = candidate;
+            } catch {}
+            if (safeReturn) {
+              safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email);
+              window.location.assign(safeReturn.toString());
+              return;
+            }
             navigate('home'); say(data.message || 'Signed in successfully. Welcome to your KingsHall home.', true);
           } else { navigate('home'); say(data.message || 'Signed in successfully. Welcome to KingsHall.', true); }
         } catch (err) {
