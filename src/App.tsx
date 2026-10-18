@@ -96,8 +96,6 @@ export default function App() {
         const data = await response.json() as { requests?: Array<{ id: string; appName: string; expiresAt: string }> };
         if (!stopped) {
           setAppAuthRequests(data.requests || []);
-          setAppAuthCode('');
-          setAppAuthError('');
         }
       } catch {}
     };
@@ -105,6 +103,7 @@ export default function App() {
     const timer = window.setInterval(() => { void poll(); }, 2500);
     return () => { stopped = true; window.clearInterval(timer); };
   }, [user?.id]);
+  useEffect(() => { setAppAuthCode(''); setAppAuthError(''); }, [appAuthRequests[0]?.id]);
   useEffect(() => {
     if (alertsVersion <= 0) return;
     setHeaderPulseActive(true);
