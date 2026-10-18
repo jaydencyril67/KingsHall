@@ -19,7 +19,7 @@
   ],
   "icons": [
     {
-      "src": "/kingshall-pwa-icon.svg?v=4",
+      "src": "/pwa-launch-icon.svg?v=1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
