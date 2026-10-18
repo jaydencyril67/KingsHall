@@ -4,6 +4,7 @@ const APP_SHELL = [
   '/index.html',
   '/manifest.webmanifest',
   '/kingshall-mark.svg',
+  '/pwa-launch-icon.svg?v=2',
   '/kingshall-pwa-icon.svg?v=4'
 ];
 
