@@ -5,7 +5,7 @@ import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
-type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseUrl?: string; releaseNotes?: string; message?: string };
+type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseNotes?: string; message?: string };
 type Channels = { email: boolean; inApp: boolean; push: boolean };
 type AlertTypes = Record<AlertType, boolean>;
 const TYPE_OPTIONS: { key: AlertType; label: string; group: string }[] = [
@@ -88,7 +88,7 @@ export default function SetupPage() {
       }
       const query = appInfo?.versionName ? '?installedVersion=' + encodeURIComponent(appInfo.versionName) : '';
       const response = await alertsFetch('/api/notifications/app-update-check' + query, { cache: 'no-store' });
-      const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseUrl?: string; releaseNotes?: string; message?: string };
+      const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseNotes?: string; message?: string };
       if (!response.ok) throw new Error(data.message || 'Unable to check the latest KingsHall APK.');
       if (!data.latestVersion || !data.downloadUrl) throw new Error('No published KingsHall APK release is available yet.');
       setApkRelease({
@@ -96,7 +96,6 @@ export default function SetupPage() {
         installedVersion: appInfo?.versionName || undefined,
         latestVersion: data.latestVersion,
         downloadUrl: data.downloadUrl,
-        releaseUrl: data.releaseUrl,
         releaseNotes: data.releaseNotes || ''
       });
     } catch (error) {
@@ -239,7 +238,6 @@ export default function SetupPage() {
         <button type="button" className="secondary-button" onClick={() => void checkApkRelease()} disabled={apkRelease.status === 'checking'}>{apkRelease.status === 'checking' ? 'Checking…' : 'Check for updates'}</button>
         <button type="button" className="kh-setup-release-primary" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
       </div>
-      {apkRelease.releaseUrl && <a className="kh-setup-release-link" href={apkRelease.releaseUrl} target="_blank" rel="noopener noreferrer">View GitHub release</a>}
     </>;
     return <>
       {groups.map(group => <div className="kh-setup-type-group" key={group}><span className="kh-setup-group-label">{group}</span>{TYPE_OPTIONS.filter(option => option.group === group).map(option => <div className="kh-setup-setting-row" key={option.key}><div className="kh-setup-setting-copy"><strong>{option.label}</strong></div><Toggle checked={types[option.key]} onChange={value => updateType(option.key, value)} label={option.label} /></div>)}</div>)}
