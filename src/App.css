@@ -1015,12 +1015,13 @@ input,textarea{font-size:12px}
 @media(prefers-reduced-motion:reduce){.kh-app-update-spinner{animation:none}}
 
 
-/* Browser/PWA multi-account picker — email-only saved identities. */
+/* Browser/PWA saved identities — native APKs use the Android account manager instead. */
 .kh-security-browser-accounts{margin-bottom:18px}
 .kh-security-browser-account-list{display:grid;gap:9px;margin-top:14px}
-.kh-security-browser-account{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:12px 13px;border:1px solid var(--kh-card-primary-border,rgba(255,255,255,.14));border-radius:14px;background:var(--kh-card-primary-surface,rgba(255,255,255,.035))}
+.kh-security-browser-account{position:relative;min-width:0}
+.kh-security-browser-account-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:12px 13px;border:1px solid var(--kh-card-primary-border,rgba(255,255,255,.14));border-radius:14px;background:var(--kh-card-primary-surface,rgba(255,255,255,.035));color:inherit;text-align:left;font:inherit;cursor:pointer;transition:background .16s ease,border-color .16s ease}
+.kh-security-browser-account-trigger:hover,.kh-security-browser-account-trigger[aria-expanded="true"]{background:rgba(255,255,255,.055);border-color:rgba(220,226,234,.22)}
 .kh-security-browser-account-email{min-width:0;overflow-wrap:anywhere;font-size:13px;font-weight:650}
-.kh-security-browser-account-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;flex-shrink:0}
-.kh-security-browser-account-actions .secondary-button{min-height:34px;padding:7px 10px;font-size:11px}
+.kh-security-browser-account-chevron{flex:0 0 auto;color:var(--muted,#aeb5c1);font-size:16px;line-height:1}
+.kh-security-browser-account-popout{bottom:calc(100% + 7px);right:9px}
 .kh-security-browser-accounts-empty{margin:14px 0 0;color:var(--muted,#aeb5c1);font-size:13px;line-height:1.6}
-@media(max-width:520px){.kh-security-browser-account{align-items:flex-start;flex-direction:column}.kh-security-browser-account-actions{width:100%;justify-content:flex-start}.kh-security-browser-account-actions .secondary-button{flex:1}}
