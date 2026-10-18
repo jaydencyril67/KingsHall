@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 
@@ -108,6 +109,7 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => readBrowserAccounts());
+  const [browserAccountActionMenuEmail, setBrowserAccountActionMenuEmail] = useState<string | null>(null);
   useEffect(() => {
     const accounts = writeBrowserAccounts(readBrowserAccounts());
     setSavedBrowserAccounts(accounts);
@@ -150,6 +152,7 @@ export default function SecurityPage({ user }: Props) {
       if (target instanceof Element && target.closest('.kh-wallet-network-field')) return;
       if (target instanceof Element && target.closest('.kh-security-code-input-wrap')) return;
       if (!(target instanceof Element && target.closest('.kh-wallet-address-item'))) setWalletActionMenuId(null);
+      if (!(target instanceof Element && target.closest('.kh-security-browser-account'))) setBrowserAccountActionMenuEmail(null);
       setSecurityFieldMenu(null);
       setOpenNetworkId(null);
       setNetworkSearch('');
@@ -159,6 +162,7 @@ export default function SecurityPage({ user }: Props) {
         setOpenNetworkId(null);
         setNetworkSearch('');
         setWalletActionMenuId(null);
+        setBrowserAccountActionMenuEmail(null);
       }
     };
     document.addEventListener('pointerdown', closeNetworkSelector);
@@ -444,15 +448,20 @@ export default function SecurityPage({ user }: Props) {
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
 
-      <section className="kh-identity-card kh-security-browser-accounts">
+      {!Capacitor.isNativePlatform() && <section className="kh-identity-card kh-security-browser-accounts">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Manage accounts saved on this browser. You can remove an account here; sign-in and account selection happen in the connected app.</p></div></div>
         {savedBrowserAccounts.length > 0 ? <div className="kh-security-browser-account-list">
           {savedBrowserAccounts.map(email => <div className="kh-security-browser-account" key={email}>
-            <span className="kh-security-browser-account-email">{email}</span>
-            <div className="kh-security-browser-account-actions">
-              <button type="button" className="secondary-button" onClick={() => {
+            <button type="button" className="kh-security-browser-account-trigger" aria-expanded={browserAccountActionMenuEmail === email} onClick={() => setBrowserAccountActionMenuEmail(current => current === email ? null : email)}>
+              <span className="kh-security-browser-account-email">{email}</span>
+              <span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
+            </button>
+            {browserAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
+              <button type="button" className="is-danger" onClick={event => {
+                event.stopPropagation();
                 const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
                 setSavedBrowserAccounts(remaining);
+                setBrowserAccountActionMenuEmail(null);
                 let currentHint = '';
                 const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
                 if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
@@ -462,10 +471,10 @@ export default function SecurityPage({ user }: Props) {
                 }
                 setNotice('Saved account removed from this browser.'); setNoticeOk(true);
               }}>Remove</button>
-            </div>
+            </div>}
           </div>)}
         </div> : <p className="kh-security-browser-accounts-empty">No saved browser accounts yet. Sign in to KingsHall on this browser to add one.</p>}
-      </section>
+      </section>}
 
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security{loading && <span className="kh-identity-section-loading" aria-label="Loading security details"><LoadingDots /></span>}</h2><p>Manage your account security settings below.</p></div></div>
