@@ -24,7 +24,7 @@ function readSavedBrowserAccounts(): string[] {
   try {
     const value = JSON.parse(window.localStorage.getItem('kh_saved_accounts') || '[]');
     if (!Array.isArray(value)) return [];
-    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(item)))].slice(0, 10);
+    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
   } catch { return []; }
 }
 function setBrowserAccountHint(email: string) {
