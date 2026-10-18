@@ -21,6 +21,11 @@ const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online'
 type KingsHallAccountPlugin = { addAccount(options: { email: string; username: string; displayName: string }): Promise<{ accountName: string; alreadyPresent?: boolean }> };
 const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount');
 async function registerDeviceAccount(user: User) {
+  // This cookie contains only an account-selection hint, never credentials or session tokens.
+  // The parent domain lets KingsHall apps on its subdomains reuse the same browser account hint.
+  if (user.email && window.location.hostname.endsWith('kingshall.online')) {
+    document.cookie = 'kh_account_hint=' + encodeURIComponent(user.email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
+  }
   if (!Capacitor.isNativePlatform()) return;
   const deviceUsername = user.username || user.email.split('@')[0] || 'member';
   await DeviceAccount.addAccount({ email: user.email, username: deviceUsername, displayName: user.name || user.username || deviceUsername });
