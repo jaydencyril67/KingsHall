@@ -108,9 +108,10 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => readBrowserAccounts());
+  const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => Capacitor.isNativePlatform() ? [] : readBrowserAccounts());
   const [browserAccountActionMenuEmail, setBrowserAccountActionMenuEmail] = useState<string | null>(null);
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) return;
     const accounts = writeBrowserAccounts(readBrowserAccounts());
     setSavedBrowserAccounts(accounts);
   }, []);
