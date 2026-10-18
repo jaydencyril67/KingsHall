@@ -1029,3 +1029,12 @@ input,textarea{font-size:12px}
 .kh-browser-account-remove{flex:0 0 auto;padding:6px 4px;border:0;background:transparent;color:var(--muted,#aeb5c1);font-size:10px;cursor:pointer}
 .kh-browser-account-remove:hover{color:var(--text,#f0f3f9);text-decoration:underline}
 @media(max-width:380px){.kh-browser-accounts{padding:9px}.kh-browser-account{gap:3px}.kh-browser-account-select{gap:7px}.kh-browser-account-email{font-size:10px}.kh-browser-account-remove{font-size:9px}}
+
+.kh-security-browser-accounts{margin-bottom:18px}
+.kh-security-browser-account-list{display:grid;gap:9px;margin-top:14px}
+.kh-security-browser-account{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:12px 13px;border:1px solid var(--kh-card-primary-border,rgba(255,255,255,.14));border-radius:14px;background:var(--kh-card-primary-surface,rgba(255,255,255,.035))}
+.kh-security-browser-account-email{min-width:0;overflow-wrap:anywhere;font-size:13px;font-weight:650}
+.kh-security-browser-account-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;flex-shrink:0}
+.kh-security-browser-account-actions .secondary-button{min-height:34px;padding:7px 10px;font-size:11px}
+.kh-security-browser-accounts-empty{margin:14px 0 0;color:var(--muted,#aeb5c1);font-size:13px;line-height:1.6}
+@media(max-width:520px){.kh-security-browser-account{align-items:flex-start;flex-direction:column}.kh-security-browser-account-actions{width:100%;justify-content:flex-start}.kh-security-browser-account-actions .secondary-button{flex:1}}
