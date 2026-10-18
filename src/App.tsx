@@ -28,17 +28,22 @@ function readSavedBrowserAccounts(): string[] {
   } catch { return []; }
 }
 function setBrowserAccountHint(email: string) {
-  // Cross-subdomain hint contains only the selected email, never credentials.
+  // Shared browser cookies contain email hints only, never credentials.
   if (email && (window.location.hostname === 'kingshall.online' || window.location.hostname.endsWith('.kingshall.online'))) {
     document.cookie = 'kh_account_hint=' + encodeURIComponent(email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
   }
+}
+function writeBrowserAccountsCookie(accounts: string[]) {
+  if (window.location.hostname !== 'kingshall.online' && !window.location.hostname.endsWith('.kingshall.online')) return;
+  document.cookie = 'kh_saved_accounts=' + encodeURIComponent(JSON.stringify(accounts.slice(0, 10))) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
 }
 function saveBrowserAccountHint(user: User) {
   const email = user.email?.trim().toLowerCase();
   if (!email) return;
   try {
-    const accounts = readSavedBrowserAccounts().filter(item => item !== email);
-    window.localStorage.setItem('kh_saved_accounts', JSON.stringify([email, ...accounts].slice(0, 10)));
+    const accounts = [email, ...readSavedBrowserAccounts().filter(item => item !== email)].slice(0, 10);
+    window.localStorage.setItem('kh_saved_accounts', JSON.stringify(accounts));
+    writeBrowserAccountsCookie(accounts);
   } catch {}
   setBrowserAccountHint(email);
 }
@@ -86,7 +91,6 @@ export default function App() {
   const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false); const [resendingVerification, setResendingVerification] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
   const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => readSavedBrowserAccounts());
-  const [loginIdentity, setLoginIdentity] = useState('');
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [unreadAlerts, setUnreadAlerts] = useState(0);
@@ -477,25 +481,7 @@ export default function App() {
         <p className="card-subtitle">{mode === 'login' ? 'Use your existing KingsHall credentials.' : mode === 'request' ? 'No account is created when you submit this form.' : mode === 'verify' ? 'Enter the code from your email.' : mode === 'review' ? 'This one-time review link expires after 7 days.' : mode === 'onboard' ? 'Your account is created only after your password is saved.' : 'You are signed in to KingsHall.'}</p>
 
         {mode === 'login' && <>
-          {savedBrowserAccounts.length > 0 && <section className="kh-browser-accounts" aria-label="Saved KingsHall accounts">
-            <div className="kh-browser-accounts-heading"><strong>Saved accounts</strong><span>Choose an account</span></div>
-            {savedBrowserAccounts.map(email => <div className={loginIdentity.trim().toLowerCase() === email ? 'kh-browser-account is-selected' : 'kh-browser-account'} key={email}>
-              <button type="button" className="kh-browser-account-select" onClick={() => { setLoginIdentity(email); setBrowserAccountHint(email); }}>
-                <span className="kh-browser-account-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</span><span className="kh-browser-account-email">{email}</span><span className="kh-browser-account-check" aria-hidden="true">{loginIdentity.trim().toLowerCase() === email ? '✓' : '›'}</span>
-              </button>
-              <button type="button" className="kh-browser-account-remove" aria-label={'Remove saved account ' + email} onClick={() => {
-                const remaining = savedBrowserAccounts.filter(item => item !== email);
-                setSavedBrowserAccounts(remaining);
-                try { window.localStorage.setItem('kh_saved_accounts', JSON.stringify(remaining)); } catch {}
-                if (loginIdentity.trim().toLowerCase() === email) setLoginIdentity('');
-                if (document.cookie.split('; ').some(item => item.startsWith('kh_account_hint=') && decodeURIComponent(item.slice('kh_account_hint='.length)).toLowerCase() === email)) {
-                  if (remaining[0]) setBrowserAccountHint(remaining[0]);
-                  else document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
-                }
-              }}>Remove</button>
-            </div>)}
-          </section>}
-          <form onSubmit={submit}><div className="field"><label htmlFor="login-identity">Email or username</label><input id="login-identity" name="identity" value={loginIdentity} onChange={event => setLoginIdentity(event.target.value)} autoComplete="username" placeholder="Enter your email or username" required /></div><div className="field"><label htmlFor="login-password">Password</label><input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Sign In'}{!busy && <ArrowIcon />}</button><p className="form-footnote">New here? <button type="button" onClick={() => navigate('request')}>Request access</button></p></form>
+          <form onSubmit={submit}><div className="field"><label htmlFor="login-identity">Email or username</label><input id="login-identity" name="identity" autoComplete="username" placeholder="Enter your email or username" required /></div><div className="field"><label htmlFor="login-password">Password</label><input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Sign In'}{!busy && <ArrowIcon />}</button><p className="form-footnote">New here? <button type="button" onClick={() => navigate('request')}>Request access</button></p></form>
         </>}
         {mode === 'request' && <form onSubmit={submit}><div className="field"><label htmlFor="request-name">Full name</label><input id="request-name" name="name" autoComplete="name" minLength={2} maxLength={80} placeholder="Your full name" required /></div><div className="field"><label htmlFor="request-email">Email address</label><input id="request-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" required /></div><div className="field"><label htmlFor="request-purpose">What interests you about KingsHall? <span className="optional">(optional)</span></label><textarea id="request-purpose" name="purpose" rows={3} maxLength={500} placeholder="Tell us what you hope to explore…" /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Submit Request'}{!busy && <ArrowIcon />}</button></form>}
         {mode === 'review' && (() => { const decision = new URLSearchParams(window.location.search).get('decision'); const valid = Boolean(new URLSearchParams(window.location.search).get('token') && ['accept', 'reject'].includes(decision || '')); return <form onSubmit={submit}><p className="card-subtitle">{decision === 'reject' ? 'Confirm that you want to decline this application. A kind, friendly email will be sent to the applicant.' : 'Confirm that you want to approve this application. The applicant will receive a secure link to create a password; their account will not exist until they complete onboarding.'}</p><button className="submit-button" type="submit" disabled={busy || reviewProcessed || !valid}>{busy ? <LoadingDots /> : reviewProcessed ? 'Decision recorded' : decision === 'reject' ? 'Confirm rejection' : 'Confirm acceptance'}{!busy && !reviewProcessed && <ArrowIcon />}</button>{!valid && <p className="form-footnote">This review link is invalid or incomplete.</p>}</form>; })()}
