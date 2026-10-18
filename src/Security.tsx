@@ -15,6 +15,23 @@ type Profile = {
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
+const SAVED_ACCOUNTS_KEY = 'kh_saved_accounts';
+function readBrowserAccounts(): string[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(SAVED_ACCOUNTS_KEY) || '[]');
+    if (!Array.isArray(value)) return [];
+    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(item)))].slice(0, 10);
+  } catch { return []; }
+}
+function writeBrowserAccounts(accounts: string[]) {
+  const normalized = [...new Set(accounts.map(item => item.trim().toLowerCase()).filter(item => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(item)))].slice(0, 10);
+  window.localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(normalized));
+  document.cookie = 'kh_saved_accounts=' + encodeURIComponent(JSON.stringify(normalized)) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
+  return normalized;
+}
+function setPreferredBrowserAccount(email: string) {
+  document.cookie = 'kh_account_hint=' + encodeURIComponent(email.trim().toLowerCase()) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
+}
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
 function newWallet(): Wallet { return { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), label: '', network: 'TRC20', address: '' }; }
 function codeCooldownRemaining(changedAt: string | null | undefined): number {
@@ -93,6 +110,7 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => readBrowserAccounts());
   const [kui, setKui] = useState('');
   const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
   const [loading, setLoading] = useState(true);
@@ -424,6 +442,30 @@ export default function SecurityPage({ user }: Props) {
       <p>Manage your wallet addresses and review account-protection settings from one dedicated page.</p>
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
+
+      <section className="kh-identity-card kh-security-browser-accounts">
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Choose which saved KingsHall identity connected apps should detect. Only email addresses are shared; passwords and security codes are never stored here.</p></div></div>
+        {savedBrowserAccounts.length > 0 ? <div className="kh-security-browser-account-list">
+          {savedBrowserAccounts.map(email => <div className="kh-security-browser-account" key={email}>
+            <span className="kh-security-browser-account-email">{email}</span>
+            <div className="kh-security-browser-account-actions">
+              <button type="button" className="secondary-button" onClick={() => { setPreferredBrowserAccount(email); setNotice('Preferred account set for CryBots and HallsChat.'); setNoticeOk(true); }}>Use for connected apps</button>
+              <button type="button" className="secondary-button" onClick={() => {
+                const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
+                setSavedBrowserAccounts(remaining);
+                let currentHint = '';
+                const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
+                if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
+                if (currentHint === email) {
+                  if (remaining[0]) setPreferredBrowserAccount(remaining[0]);
+                  else document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
+                }
+                setNotice('Saved account removed from this browser.'); setNoticeOk(true);
+              }}>Remove</button>
+            </div>
+          </div>)}
+        </div> : <p className="kh-security-browser-accounts-empty">No saved browser accounts yet. Sign in to KingsHall on this browser to add one.</p>}
+      </section>
 
       <section className="kh-identity-card kh-identity-security">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security{loading && <span className="kh-identity-section-loading" aria-label="Loading security details"><LoadingDots /></span>}</h2><p>Manage your account security settings below.</p></div></div>
