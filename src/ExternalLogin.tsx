@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { alertsFetch } from './alertsClient';
+import Toast from './Toast';
 
 type ApprovalResponse = {
   error?: string;
@@ -189,11 +190,11 @@ export default function ExternalLoginPage() {
         <video ref={videoRef} autoPlay playsInline muted aria-label="Camera preview for scanning a KingsHall external login QR code" style={{ display: 'block', width: '100%', maxHeight: 320, objectFit: 'cover' }} />
         <p className="kh-home-muted" style={{ padding: '0 12px 12px', margin: 0, fontSize: 12 }}>Hold the QR code steady inside the camera view.</p>
       </div>}
-      {scanError && <p role="status" className="kh-home-muted" style={{ margin: 0, fontSize: 12 }}>{scanError}</p>}
+      {scanError && <Toast message={scanError} tone="warning" onClose={() => setScanError('')} />}
     </article>
       </div>
-    {error && <p role="alert" style={{ marginTop: 14, padding: 12, borderRadius: 12, border: '1px solid rgba(220,80,80,.34)', background: 'rgba(220,60,60,.09)', color: 'var(--kh-text-primary, #f3f4f6)', fontSize: 13 }}>{error}</p>}
-    {notice && <p role="status" style={{ marginTop: 14, padding: 12, borderRadius: 12, border: '1px solid rgba(160,190,220,.25)', background: 'rgba(160,190,220,.07)', color: 'var(--kh-text-primary, #f3f4f6)', fontSize: 13, lineHeight: 1.55 }}>{notice}</p>}
+    {error && <Toast message={error} tone="error" onClose={() => setError('')} />}
+    {notice && <Toast message={notice} tone="success" onClose={() => setNotice('')} />}
     <p className="kh-home-muted" style={{ marginTop: 16, fontSize: 11, lineHeight: 1.6 }}>Each request expires automatically after five minutes and can be approved only once. Your KingsHall session stays on this device; the target device receives only its CryBots or HallsChat session.</p>
     </div>
   </section>;
