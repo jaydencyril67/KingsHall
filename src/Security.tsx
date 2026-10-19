@@ -3,19 +3,20 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 import AccountVerification from './AccountVerification';
+import { createPasskey, isWebAuthnAvailable } from './webauthn';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type Profile = {
-  securityCodeChangedAt?: string | null; fundingCodeChangedAt?: string | null; accessCodeChangedAt?: string | null;
+  securityCodeChangedAt?: string | null; accessCodeChangedAt?: string | null;
   id?: string; kui?: string; firstName?: string; middleName?: string; lastName?: string; username?: string; email?: string;
   dateOfBirth?: string; phone?: string; country?: string; state?: string; city?: string; address?: string;
   postalCode?: string; nationality?: string; gender?: string; occupation?: string; bio?: string; avatarData?: string; coverPhoto?: string;
   website?: string; instagram?: string; facebook?: string; xHandle?: string; telegram?: string; discord?: string;
   linkedin?: string; language?: string; timeZone?: string; preferredCurrency?: string; pronouns?: string;
-  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; fundingCodeSet?: boolean; accessCodeSet?: boolean;
+  relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; accessCodeSet?: boolean;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
-type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
+type ResponseData = { profile?: Profile; message?: string; error?: string; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 type AndroidAccountPlugin = {
   listAccounts(): Promise<{ accounts: string[] }>;
@@ -149,12 +150,12 @@ export default function SecurityPage({ user }: Props) {
     setSavedBrowserAccounts(accounts);
   }, []);
   const [kui, setKui] = useState('');
-  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '', fundingCode: '' });
+  const [securityDraft, setSecurityDraft] = useState({ password: '', kui: '', securityCode: '', accessCode: '', twoFactor: '' });
   const [loading, setLoading] = useState(true);
   const [savingWallets, setSavingWallets] = useState(false);
   const [savingSecuritySettings, setSavingSecuritySettings] = useState(false);
-  const [activeSecurityField, setActiveSecurityField] = useState<'password' | 'securityCode' | 'accessCode' | 'fundingCode' | null>(null);
-  const [securityFieldMenu, setSecurityFieldMenu] = useState<'password' | 'securityCode' | 'accessCode' | 'fundingCode' | null>(null);
+  const [activeSecurityField, setActiveSecurityField] = useState<'password' | 'securityCode' | 'accessCode' | null>(null);
+  const [securityFieldMenu, setSecurityFieldMenu] = useState<'password' | 'securityCode' | 'accessCode' | null>(null);
   const [emailVerificationCode, setEmailVerificationCode] = useState('');
   const [verificationRequested, setVerificationRequested] = useState(false);
   const [walletDraft, setWalletDraft] = useState<Wallet | null>(null);
@@ -163,12 +164,14 @@ export default function SecurityPage({ user }: Props) {
   const [walletEmailVerificationCode, setWalletEmailVerificationCode] = useState('');
   const [walletPendingDeleteId, setWalletPendingDeleteId] = useState<string | null>(null);
   const [securityCodeSet, setSecurityCodeSet] = useState(false);
-  const [fundingCodeSet, setFundingCodeSet] = useState(false);
   const [accessCodeSet, setAccessCodeSet] = useState(false);
   const [securityCodeChangedAt, setSecurityCodeChangedAt] = useState<string | null>(null);
-  const [fundingCodeChangedAt, setFundingCodeChangedAt] = useState<string | null>(null);
   const [accessCodeChangedAt, setAccessCodeChangedAt] = useState<string | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorLoginEnabled, setTwoFactorLoginEnabled] = useState(false);
+  const [biometricConfigured, setBiometricConfigured] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
   const [twoFactorSecret, setTwoFactorSecret] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -210,18 +213,19 @@ export default function SecurityPage({ user }: Props) {
 
   useEffect(() => {
     let current = true;
-    Promise.all([request('/api/identity'), request('/api/identity/2fa/status')]).then(([data, twoFactor]) => {
+    Promise.all([request('/api/identity'), request('/api/identity/2fa/status'), request('/api/identity/biometric/status')]).then(([data, twoFactor, biometric]) => {
       if (!current) return;
       setWallets((data.profile?.wallets || []).filter(wallet => Boolean(wallet.address?.trim())));
       setKui(data.profile?.kui || '');
-      setFundingCodeSet(Boolean(data.profile?.fundingCodeSet));
       setSecurityCodeSet(Boolean(data.profile?.securityCodeSet));
       setAccessCodeSet(Boolean(data.profile?.accessCodeSet));
       setSecurityCodeChangedAt(data.profile?.securityCodeChangedAt || null);
-      setFundingCodeChangedAt(data.profile?.fundingCodeChangedAt || null);
       setAccessCodeChangedAt(data.profile?.accessCodeChangedAt || null);
       setTwoFactorEnabled(Boolean(twoFactor.enabled));
       setTwoFactorPending(Boolean(twoFactor.pending));
+      setTwoFactorLoginEnabled(Boolean(twoFactor.loginEnabled));
+      setBiometricConfigured(Boolean(biometric.configured));
+      setBiometricEnabled(Boolean(biometric.enabled));
     }).catch(error => {
       if (current) { setNotice((error as Error).message || 'Could not load your security details.'); setNoticeOk(false); }
     }).finally(() => { if (current) setLoading(false); });
@@ -237,7 +241,6 @@ export default function SecurityPage({ user }: Props) {
   }
 
   const securityCodeCooldownMs = codeCooldownRemaining(securityCodeChangedAt);
-  const fundingCodeCooldownMs = codeCooldownRemaining(fundingCodeChangedAt);
   const accessCodeCooldownMs = codeCooldownRemaining(accessCodeChangedAt, 24 * 60 * 60 * 1000);
 
   const passwordValid = securityDraft.password.length >= 12 && securityDraft.password.length <= 128 && /[a-z]/.test(securityDraft.password) && /[A-Z]/.test(securityDraft.password) && /[0-9]/.test(securityDraft.password) && /[^A-Za-z0-9]/.test(securityDraft.password);
@@ -260,7 +263,6 @@ export default function SecurityPage({ user }: Props) {
     const field = activeSecurityField;
     if (field === 'password' && !passwordValid) { setNotice('Password must be 12–128 characters and include uppercase, lowercase, a number and a symbol.'); setNoticeOk(false); return; }
     if (field === 'securityCode' && !/^\\d{8}$/.test(securityDraft.securityCode)) { setNotice('Security Code must contain exactly 8 digits.'); setNoticeOk(false); return; }
-    if (field === 'fundingCode' && !/^\\d{4}$/.test(securityDraft.fundingCode)) { setNotice('Funding Code must contain exactly 4 digits.'); setNoticeOk(false); return; }
     if (field === 'accessCode' && !/^\d{6}$/.test(securityDraft.accessCode)) { setNotice('Access Code must contain exactly 6 digits.'); setNoticeOk(false); return; }
     setSavingSecuritySettings(true); setNotice('');
     try {
@@ -274,14 +276,12 @@ export default function SecurityPage({ user }: Props) {
         const payload = {
           emailVerificationCode,
           ...(field === 'securityCode' ? { securityCode: securityDraft.securityCode } : {}),
-          ...(field === 'fundingCode' ? { fundingCode: securityDraft.fundingCode } : {}),
           ...(field === 'accessCode' ? { accessCode: securityDraft.accessCode } : {})
         };
         const result = await request('/api/identity/security-settings', payload);
-        setSecurityCodeSet(Boolean(result.securityCodeSet)); setFundingCodeSet(Boolean(result.fundingCodeSet)); setAccessCodeSet(Boolean(result.accessCodeSet));
+        setSecurityCodeSet(Boolean(result.securityCodeSet)); setAccessCodeSet(Boolean(result.accessCodeSet));
         const changedAt = new Date().toISOString();
         if (field === 'securityCode') setSecurityCodeChangedAt(changedAt);
-        if (field === 'fundingCode') setFundingCodeChangedAt(changedAt);
         if (field === 'accessCode') setAccessCodeChangedAt(changedAt);
         setNotice(result.message || 'Security setting updated.');
       }
@@ -296,7 +296,7 @@ export default function SecurityPage({ user }: Props) {
     setActiveSecurityField(null); setEmailVerificationCode(''); setVerificationRequested(false);
   }
 
-  function renderSecurityVerificationPanel(field: 'password' | 'securityCode' | 'accessCode' | 'fundingCode') {
+  function renderSecurityVerificationPanel(field: 'password' | 'securityCode' | 'accessCode') {
     if (activeSecurityField !== field) return null;
     return <div className="kh-security-verification-panel">
       {!verificationRequested ? <>
@@ -308,6 +308,32 @@ export default function SecurityPage({ user }: Props) {
         <small className="kh-security-verification-help">Check your verified KingsHall email. The code expires in 10 minutes.</small>
       </>}
     </div>;
+  }
+
+
+  async function setAuthenticatorLoginRequirement(enabled: boolean) {
+    try { const result=await request('/api/identity/2fa/login-setting',{enabled}); setTwoFactorLoginEnabled(Boolean(result.loginEnabled)); setNotice(result.message||'Authenticator sign-in setting updated.'); setNoticeOk(true); }
+    catch(error) { setNotice((error as Error).message||'Could not update authenticator sign-in setting.'); setNoticeOk(false); }
+  }
+  async function configureBiometric() {
+    if(biometricBusy)return;
+    if(!isWebAuthnAvailable()){setNotice('Passkeys are not available in this browser or app build.');setNoticeOk(false);return;}
+    setBiometricBusy(true);setNotice('');
+    try { const options=await request('/api/identity/biometric/registration/options',{}); const credential=await createPasskey(options); const result=await request('/api/identity/biometric/registration/verify',credential); setBiometricConfigured(true);setBiometricEnabled(false);setNotice(result.message||'Passkey configured. Enable it to require biometric verification at sign-in.');setNoticeOk(true); }
+    catch(error) { setNotice((error as Error).message||'Could not configure biometric sign-in.');setNoticeOk(false); }
+    finally { setBiometricBusy(false); }
+  }
+  async function setBiometricLoginRequirement(enabled: boolean) {
+    if(biometricBusy)return;setBiometricBusy(true);
+    try { const result=await request('/api/identity/biometric/login-setting',{enabled});setBiometricEnabled(Boolean(result.enabled));setNotice(result.message||'Biometric sign-in setting updated.');setNoticeOk(true); }
+    catch(error) { setNotice((error as Error).message||'Could not update biometric sign-in setting.');setNoticeOk(false); }
+    finally { setBiometricBusy(false); }
+  }
+  async function unbindBiometric() {
+    if(biometricBusy)return;if(!window.confirm('Remove the passkey from KingsHall and disable biometric sign-in?'))return;setBiometricBusy(true);
+    try { const result=await request('/api/identity/biometric/unbind',{});setBiometricConfigured(false);setBiometricEnabled(false);setNotice(result.message||'Passkey removed.');setNoticeOk(true); }
+    catch(error) { setNotice((error as Error).message||'Could not remove passkey.');setNoticeOk(false); }
+    finally { setBiometricBusy(false); }
   }
 
   async function startAuthenticator() {
@@ -569,16 +595,7 @@ export default function SecurityPage({ user }: Props) {
             {renderSecurityVerificationPanel('accessCode')}
             {accessCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(accessCodeCooldownMs)}.</small>}
           </div>
-          <div className="field kh-security-editable-field">
-            <label htmlFor="security-funding-code">4-digit Funding Code</label>
-            <div className="kh-security-code-input-wrap">
-              <input id="security-funding-code" readOnly={activeSecurityField !== 'fundingCode'} disabled={fundingCodeSet && fundingCodeCooldownMs > 0} onClick={() => { if (fundingCodeCooldownMs <= 0 && activeSecurityField !== 'fundingCode') setSecurityFieldMenu('fundingCode'); }} type={activeSecurityField === 'fundingCode' ? 'password' : 'text'} inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder={activeSecurityField === 'fundingCode' ? 'Enter a new 4-digit code' : fundingCodeSet ? '••••' : 'Not set'} value={activeSecurityField === 'fundingCode' ? securityDraft.fundingCode : (fundingCodeSet ? '••••' : '')} onChange={e => setSecurityDraft(old => ({ ...old, fundingCode: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />
-              {fundingCodeSet && <span className="kh-security-code-check" aria-label="Code saved"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}
-              {securityFieldMenu === 'fundingCode' && fundingCodeCooldownMs <= 0 && <button type="button" className="kh-security-edit-trigger kh-security-edit-popout" onClick={event => { event.stopPropagation(); setSecurityFieldMenu(null); setActiveSecurityField('fundingCode'); setSecurityDraft(old => ({ ...old, fundingCode: '' })); setVerificationRequested(false); setEmailVerificationCode(''); setNotice(''); }}>✎ Edit</button>}
-            </div>
-            {renderSecurityVerificationPanel('fundingCode')}
-            {fundingCodeCooldownMs > 0 && <small className="kh-code-cooldown-note">Change available in {formatCodeCooldown(fundingCodeCooldownMs)}.</small>}
-          </div>
+
         </div>
 
       </section>
