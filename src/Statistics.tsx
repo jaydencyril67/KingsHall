@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { alertsFetch } from './alertsClient';
-import type { User } from './types';
+type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 import './Statistics.css';
 type Profile = { memberSince?: string; emailVerified?: boolean; securityCodeSet?: boolean; fundingCodeSet?: boolean; accessCodeSet?: boolean; wallets?: Array<{ address?: string }> };
 type Activity = { id: string | number; category?: string; title?: string; message?: string; created_at: string; read_at?: string | null };
