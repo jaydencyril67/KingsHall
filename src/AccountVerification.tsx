@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import LoadingDots from './components/LoadingDots';
+import Toast from './Toast';
 
 type VerificationRequest = { id: string; name: string; username: string; email: string; requestedAt: string | null };
 type VerificationData = {
@@ -136,8 +137,8 @@ export default function AccountVerification() {
         </>}
     </>}
 
-    {notice && <p role="status" style={{ margin: 0, color: 'var(--theme-success)', fontSize: '.82rem' }}>{notice}</p>}
-    {error && <p role="alert" style={{ margin: 0, color: 'var(--theme-danger)', fontSize: '.82rem' }}>{error}</p>}
+    {notice && <Toast message={notice} tone="success" onClose={() => setNotice('')} />}
+    {error && <Toast message={error} tone="error" onClose={() => setError('')} />}
 
     {data.canReview && <div style={{ display: 'grid', gap: 10, borderTop: '1px solid var(--theme-border)', paddingTop: 14 }}>
       <div><h3 style={{ margin: 0, fontSize: '.95rem' }}>Manual review queue</h3><p style={{ margin: '4px 0 0', color: 'var(--theme-muted)', fontSize: '.78rem' }}>{data.requests?.length || 0} pending request(s)</p></div>
