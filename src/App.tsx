@@ -409,11 +409,13 @@ export default function App() {
       animation: headerPulseActive ? 'kh-header-alert-color-pulse 1.2s ease-in-out infinite' : 'none',
       '--kh-header-alert-color': headerAppearance.color
     } as CSSProperties) : undefined}>
-      <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
+      <span className="header-artwork">
+        <span className="header-logo"><KingsHallMark /></span>
+        {unreadAlerts > 0 ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
+      </span>
       <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (sessionStorage.getItem('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
       <span className="header-artwork header-artwork-right">
         <span className="header-logo"><KingsHallMark /></span>
-        {sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}
       </span>
     </header>
     {landing ? <>
