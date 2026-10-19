@@ -33,12 +33,12 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { let active = true; const run = () => { if (active) void refresh(); }; void refresh(true); const timer = window.setInterval(run, 30000); const visible = () => { if (document.visibilityState === 'visible') run(); }; window.addEventListener('focus', run); document.addEventListener('visibilitychange', visible); return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', run); document.removeEventListener('visibilitychange', visible); }; }, [refresh]);
-  const checks = [Boolean(user?.isEmailVerified), Boolean(profile?.securityCodeSet), Boolean(profile?.fundingCodeSet), Boolean(profile?.accessCodeSet), twoFactor];
+  const checks = [Boolean(user?.isEmailVerified), Boolean(profile?.securityCodeSet), Boolean(profile?.accessCodeSet), twoFactor];
   const score = profile ? Math.round(checks.filter(Boolean).length / checks.length * 100) : null;
   const walletCount = (profile?.wallets || []).filter(w => Boolean(w.address?.trim())).length;
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); const key = date.toLocaleDateString(); const count = activities.filter(item => new Date(item.created_at).toLocaleDateString() === key).length; return { label: date.toLocaleDateString([], { weekday: 'short' }), count }; }), [activities]);
   const maxActivity = Math.max(1, ...days.map(day => day.count));
-  const protections = [['Email verification', checks[0]], ['Security Code', checks[1]], ['Funding Code', checks[2]], ['Access Code', checks[3]], ['Authenticator (2FA)', checks[4]]] as const;
+  const protections = [['Email verification', checks[0]], ['Security Code', checks[1]], ['Access Code', checks[2]], ['Authenticator (2FA)', checks[3]]] as const;
   return <section className="kh-stats-page" aria-labelledby="kh-stats-title">
     <header className="kh-stats-heading"><div><span className="eyebrow"><span className="eyebrow-line" />KINGSHALL LIVE OVERVIEW</span><p className="kh-home-greeting">WELCOME BACK, {(user?.name || 'MEMBER').trim().split(/\s+/)[0]}</p><h1 id="kh-stats-title">Your account <em>at a glance.</em></h1><p className="kh-home-intro">Live account, security and activity statistics, refreshed automatically.</p></div></header>
     {error && <Toast message={error} tone="warning" onClose={() => setError('')} />}
