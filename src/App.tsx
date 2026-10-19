@@ -476,14 +476,27 @@ export default function App() {
           localStorage.setItem(settingsKey, JSON.stringify({ ...current, scheduledExitAt: '' }));
           window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId: user.id } }));
         } catch {}
-        const token = sessionStorage.getItem('kh_access');
+        let token = sessionStorage.getItem('kh_access');
         if (token) {
           try {
-            await fetch(API + '/api/auth/scheduled-logout', {
+            let response = await fetch(API + '/api/auth/scheduled-logout', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
               body: JSON.stringify({ scheduledLogoutAt: null })
             });
+            if (!response.ok) {
+              const refreshToken = sessionStorage.getItem('kh_refresh');
+              if (refreshToken) {
+                const refreshed = await api('/api/auth/refresh', { refreshToken });
+                store(refreshed);
+                token = refreshed.accessToken || '';
+                if (token) response = await fetch(API + '/api/auth/scheduled-logout', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                  body: JSON.stringify({ scheduledLogoutAt: null })
+                });
+              }
+            }
           } catch {}
         }
       }
