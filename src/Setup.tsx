@@ -227,9 +227,9 @@ export default function SetupPage() {
       <div className="kh-setup-release-version">
         <span className="kh-setup-release-mark" aria-hidden="true">↓</span>
         <div className="kh-setup-setting-copy">
-          <strong>{apkRelease.status === 'checking' ? 'Checking latest release…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
+          <strong>{apkRelease.status === 'checking' ? 'Checking latest release…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'Latest APK available · KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
           <span>{apkRelease.status === 'update' ? 'A newer signed Android APK is ready to install.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest signed Android APK available for download.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking GitHub for the latest signed APK.'}</span>
-          {apkRelease.installedVersion && <span>Installed version: {apkRelease.installedVersion}</span>}
+          {apkRelease.installedVersion && <span>Currently installed: v{apkRelease.installedVersion}</span>}
         </div>
       </div>
       {apkRelease.releaseNotes && <details className="kh-setup-release-notes"><summary>Release notes</summary><p>{apkRelease.releaseNotes}</p></details>}
