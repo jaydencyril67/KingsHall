@@ -494,7 +494,43 @@ export default function App() {
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
         {homeSection === 'EXTERNAL' ? <ExternalLoginPage /> : homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
+        <div className="kh-home-heading">
+          <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
+          <p className="kh-home-greeting">WELCOME BACK</p>
+          <h1>Your digital <em>home base.</em></h1>
+          <p className="kh-home-intro">Your KingsHall identity, device account, and ecosystem entry points — together in one place.</p>
+        </div>
+
+        <section className="kh-home-overview" aria-label="Account overview">
+          <article className="kh-home-card kh-home-identity" id="kh-home-identity">
+            <div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="shield" /></span><span className="kh-home-tag">IDENTITY ACTIVE</span></div>
+            <span className="kh-home-kicker">YOUR KINGSHALL ID</span>
+            <h2>{user?.name || 'KingsHall member'}</h2>
+            <p className="kh-home-muted">@{user?.username || 'member'}</p>
+            <div className="kh-home-detail"><span>Email</span><strong>{user?.email || 'Signed-in account'}</strong></div>
+            <div className="kh-home-detail"><span>Verification</span><strong>{user?.isEmailVerified ? 'Email verified' : 'Account session active'}</strong></div>
+            <div className="kh-home-detail"><span>Device account</span><strong>{deviceAccountStatus}</strong></div>
+          </article>
+          <article className="kh-home-card kh-home-welcome" id="kh-home-security">
+            <div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="lock" /></span><span className="kh-home-tag">SESSION</span></div>
+            <h2>Your session is active.</h2>
+            <p className="kh-home-muted">Keep your password and verification codes private. Sign out when you're using a shared device.</p>
+            <button className="secondary-button kh-home-signout" type="button" disabled={busy} onClick={logout}>{busy ? <LoadingDots /> : <>Sign Out <ArrowIcon /></>}</button>
+          </article>
+        </section>
         <StatisticsPage user={user} deviceAccountStatus={deviceAccountStatus} onNavigate={navigateHomeSection} />
+        <section className="kh-home-section" id="kh-home-apps">
+          <div className="kh-home-section-heading"><span className="eyebrow"><span className="eyebrow-line" />THE ECOSYSTEM</span><h2>Your connected possibilities.</h2><p>Explore KingsHall ecosystem applications from your home base.</p></div>
+          <div className="kh-home-app-grid">
+            <article className="kh-home-app-card"><span className="kh-home-card-icon"><FeatureIcon type="wallet" /></span><h3>CryBots</h3><p>Digital asset tools and bot experiences.</p><a href="https://crybots.kingshall.online" target="_blank" rel="noreferrer">Open CryBots <ArrowIcon /></a></article>
+            <article className="kh-home-app-card"><span className="kh-home-card-icon"><FeatureIcon type="chat" /></span><h3>HallsChat</h3><p>Social connections and conversations.</p><a href="https://hallschat.kingshall.online" target="_blank" rel="noreferrer">Open HallsChat <ArrowIcon /></a></article>
+            <article className="kh-home-app-card kh-home-app-coming"><span className="kh-home-card-icon"><FeatureIcon type="spark" /></span><h3>More to come</h3><p>A home for future compatible KingsHall services.</p><span className="kh-home-coming-label">ECOSYSTEM EXPANDING</span></article>
+          </div>
+        </section>
+        <section className="kh-home-lower-grid">
+          <article className="kh-home-card" id="kh-home-profile"><div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="apps" /></span><span className="kh-home-tag">PROFILE</span></div><h2>Your account details</h2><p className="kh-home-muted">This is the identity currently signed in to KingsHall.</p><div className="kh-home-detail"><span>Full name</span><strong>{user?.name || 'Not available'}</strong></div><div className="kh-home-detail"><span>Username</span><strong>@{user?.username || 'member'}</strong></div><div className="kh-home-detail"><span>Email</span><strong>{user?.email || 'Not available'}</strong></div></article>
+          <article className="kh-home-card" id="kh-home-help"><div className="kh-home-card-top"><span className="kh-home-card-icon"><FeatureIcon type="chat" /></span><span className="kh-home-tag">HELP & SAFETY</span></div><h2>Keep your account secure.</h2><p className="kh-home-muted">Never share your password or one-time verification codes. If you use a shared device, sign out before leaving.</p><button className="secondary-button kh-home-help-button" type="button" onClick={() => navigateHomeSection('IDENTITY')}>Review my identity <ArrowIcon /></button></article>
+        </section>
         </>}
       </section>
       <NowBar section={homeSection} onNavigate={navigateHomeSection} onExit={logout} />
