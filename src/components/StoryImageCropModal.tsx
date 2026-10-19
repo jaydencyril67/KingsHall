@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 
+import Toast from '../Toast';
 type StoryImageCropModalProps = {
   imageUrl: string;
   onCancel: () => void;
@@ -354,7 +355,7 @@ export default function StoryImageCropModal({ imageUrl, onCancel, onDone, title 
           </div>}
         </div>
       </div>
-      {errorMessage && <div className="social-story-crop-error" role="alert">{errorMessage}</div>}
+      {errorMessage && <Toast message={errorMessage} tone="error" onClose={() => setErrorMessage('')} />}
     </div>
   );
 }
