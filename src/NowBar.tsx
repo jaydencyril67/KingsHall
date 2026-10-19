@@ -15,23 +15,30 @@ const actions: { label: Section; icon: string }[] = [
 ];
 
 const STORAGE_KEY = 'kingshall-nowbar-action';
+const readButtonAppearance = () => ({
+  enabled: localStorage.getItem('kh_nowbar_button_color_enabled') === 'true',
+  color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_button_color') || '') ? localStorage.getItem('kh_nowbar_button_color')! : '#b9c7df'
+});
 const ORDER: Section[] = ['HOME'];
 
 export default function NowBar({ section, onNavigate, onExit }: Props) {
+  const [buttonAppearance, setButtonAppearance] = useState(readButtonAppearance);
   const [appearance, setAppearance] = useState(() => ({
     enabled: localStorage.getItem('kh_nowbar_color_enabled') === 'true',
     color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_color') || '') ? localStorage.getItem('kh_nowbar_color')! : '#b9c7df',
     light: localStorage.getItem('kh_nowbar_light_style') || 'stable'
   }));
   useEffect(() => {
+    const syncButtonAppearance = () => setButtonAppearance(readButtonAppearance());
     const syncAppearance = () => setAppearance({
       enabled: localStorage.getItem('kh_nowbar_color_enabled') === 'true',
       color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_color') || '') ? localStorage.getItem('kh_nowbar_color')! : '#b9c7df',
       light: localStorage.getItem('kh_nowbar_light_style') || 'stable'
     });
+    window.addEventListener('kh:nowbar-button-color-changed', syncButtonAppearance);
     window.addEventListener('kh:nowbar-color-changed', syncAppearance);
     window.addEventListener('storage', syncAppearance);
-    return () => { window.removeEventListener('kh:nowbar-color-changed', syncAppearance); window.removeEventListener('storage', syncAppearance); };
+    return () => { window.removeEventListener('kh:nowbar-button-color-changed', syncButtonAppearance); window.removeEventListener('kh:nowbar-color-changed', syncAppearance); window.removeEventListener('storage', syncAppearance); };
   }, []);
   const [view, setView] = useState<'title' | 'actions'>('title');
   const [mode, setMode] = useState<'compact' | 'expanded'>('compact');
@@ -189,6 +196,11 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
                 <button
                   data-nowbar-label={action.label}
                   className={`kh-nowbar-action ${action.label === section ? 'is-active' : ''} ${action.label === 'EXIT' ? 'is-exit' : ''}`}
+                  style={buttonAppearance.enabled ? {
+                    borderColor: buttonAppearance.color,
+                    borderWidth: '1.5px',
+                    boxShadow: `0 0 0 1px ${buttonAppearance.color}66, 0 0 10px ${buttonAppearance.color}55, inset 0 0 5px ${buttonAppearance.color}1f`
+                  } : undefined}
                   type="button"
                   aria-label={action.label}
                   onClick={() => {
