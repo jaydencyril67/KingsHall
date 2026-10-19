@@ -209,35 +209,45 @@ export default function App() {
     // silently restoring the previous browser session when multiple accounts exist.
     const showAccountChooser = window.location.pathname === '/signin' && validCompanionReturn && readSavedBrowserAccounts().length > 1;
     const refresh = sessionStorage.getItem('kh_refresh');
-    if (refresh && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
+    if (refresh && !(window.location.pathname === '/signin' && sessionStorage.getItem('kh_access')) && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
     if (window.location.pathname !== '/signin' || user) return;
     const accessToken = sessionStorage.getItem('kh_access');
     const refreshToken = sessionStorage.getItem('kh_refresh');
-    if (!accessToken || refreshToken) return;
+    const params = new URLSearchParams(window.location.search);
+    if (!accessToken || (params.has('returnTo') && readSavedBrowserAccounts().length > 1)) return;
     let cancelled = false;
     void (async () => {
+      let validUser: User | null = null;
       try {
         const response = await fetch(API + '/api/auth/me', { headers: { Authorization: 'Bearer ' + accessToken } });
-        if (!response.ok) throw new Error('Session is not valid');
-        const data = await response.json() as Result;
-        const validUser = data.user || (data as unknown as User);
-        if (cancelled || !validUser?.id) return;
+        if (response.ok) {
+          const data = await response.json() as Result;
+          validUser = data.user || (data as unknown as User);
+        }
+      } catch {}
+      if (!validUser && refreshToken) {
+        try {
+          const data = await api('/api/auth/refresh', { refreshToken });
+          store(data);
+          validUser = data.user || null;
+        } catch {}
+      }
+      if (cancelled) return;
+      if (validUser?.id) {
         setUser(validUser);
         setMode('home');
         setPath('/home');
         go('/home');
         setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active');
         void registerDeviceAccount(validUser).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'));
-      } catch {
-        if (!cancelled) {
-          clear();
-          setUser(null);
-          setMode('login');
-          setPath('/signin');
-        }
+      } else {
+        clear();
+        setUser(null);
+        setMode('login');
+        setPath('/signin');
       }
     })();
     return () => { cancelled = true; };
