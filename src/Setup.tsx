@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import Toast from './Toast';
 import { Capacitor } from '@capacitor/core';
-import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken, registerKingsHallWebPushSubscription, unregisterKingsHallWebPushSubscription } from './nativePush';
+import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken } from './nativePush';
+import { registerKingsHallWebPushSubscription, unregisterKingsHallWebPushSubscription } from './webPush';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
