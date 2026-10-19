@@ -533,7 +533,7 @@ export default function App() {
           if(data.requiresExtraSecurity && data.challengeToken && data.methods?.length){
             setLoginChallengeToken(data.challengeToken);setLoginChallengeMethods(data.methods);
             setLoginChallengeMethod(data.methods.length===1?data.methods[0]:'');setLoginChallengeCode('');
-            say(data.methods.length>1?'Password accepted. Choose 2FA or biometrics to finish signing in.':'Password accepted. Complete the enabled security check to finish signing in.',true);
+            say(data.methods.length>1?'Password accepted. Choose 2FA or biometrics to finish signing in.':'Password accepted. Complete the enabled security check to finish signing in.');
             return;
           }
           store(data); setUser(data.user || null);
