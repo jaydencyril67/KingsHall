@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Toast from './Toast';
+import VerificationBadge from './components/VerificationBadge';
 import { alertsFetch } from './alertsClient';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 import './Statistics.css';
@@ -8,6 +9,7 @@ type Activity = { id: string | number; category?: string; title?: string; messag
 type Props = { user: User | null; deviceAccountStatus: string; onNavigate: (section: 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'ALERTS') => void };
 export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'none' | 'pending' | 'verified' | 'rejected'>('none');
   const [twoFactor, setTwoFactor] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [unread, setUnread] = useState(0);
@@ -17,10 +19,11 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
   const refresh = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const [identityRes, twoFactorRes, alertsRes] = await Promise.all([alertsFetch('/api/identity'), alertsFetch('/api/identity/2fa/status'), alertsFetch('/api/alerts?limit=50')]);
-      const [identity, twoFactorData, alertData] = await Promise.all([identityRes.json().catch(() => ({})) as Promise<{ profile?: Profile; error?: string }>, twoFactorRes.json().catch(() => ({})) as Promise<{ enabled?: boolean }>, alertsRes.json().catch(() => ({})) as Promise<{ alerts?: Activity[]; unreadCount?: number }>]);
+      const [identityRes, twoFactorRes, alertsRes, verificationRes] = await Promise.all([alertsFetch('/api/identity'), alertsFetch('/api/identity/2fa/status'), alertsFetch('/api/alerts?limit=50'), alertsFetch('/api/identity/verification')]);
+      const [identity, twoFactorData, alertData, verificationData] = await Promise.all([identityRes.json().catch(() => ({})) as Promise<{ profile?: Profile; error?: string }>, twoFactorRes.json().catch(() => ({})) as Promise<{ enabled?: boolean }>, alertsRes.json().catch(() => ({})) as Promise<{ alerts?: Activity[]; unreadCount?: number }>, verificationRes.json().catch(() => ({})) as Promise<{ status?: 'none' | 'pending' | 'verified' | 'rejected' }>]);
       if (!identityRes.ok) throw new Error((identity as { error?: string }).error || 'Could not load account statistics.');
       setProfile(identity.profile || null);
+      setVerificationStatus(verificationRes.ok && verificationData.status === 'verified' ? 'verified' : (verificationRes.ok && (verificationData.status === 'pending' || verificationData.status === 'rejected') ? verificationData.status : 'none'));
       setTwoFactor(twoFactorRes.ok && twoFactorData.enabled === true);
       setActivities(alertsRes.ok ? (alertData.alerts || []) : []);
       setUnread(alertsRes.ok ? Number(alertData.unreadCount || 0) : 0);
@@ -40,7 +43,7 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
     <header className="kh-stats-heading"><div><span className="eyebrow"><span className="eyebrow-line" />KINGSHALL LIVE OVERVIEW</span><p className="kh-home-greeting">WELCOME BACK, {(user?.name || 'MEMBER').trim().split(/\s+/)[0]}</p><h1 id="kh-stats-title">Your account <em>at a glance.</em></h1><p className="kh-home-intro">Live account, security and activity statistics, refreshed automatically.</p></div><div className="kh-stats-live"><i /><span>{loading ? 'SYNCING' : error ? 'PARTIAL DATA' : 'LIVE DATA'}</span><small>{lastUpdated ? 'Updated ' + new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Connecting to KingsHall'}</small><button type="button" onClick={() => void refresh(true)} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh now'}</button></div></header>
     {error && <Toast message={error} tone="warning" onClose={() => setError('')} />}
     <section className="kh-stats-metrics" aria-label="Account statistics">
-      <article className="kh-stats-metric"><span>ACCOUNT STATUS</span><strong>{user?.isEmailVerified ? 'Verified' : 'Active'}</strong><small>{user?.isEmailVerified ? 'Email verification complete' : 'Email verification may be needed'}</small></article>
+      <article className="kh-stats-metric"><span>ACCOUNT STATUS</span><strong style={verificationStatus === 'verified' ? { display: 'inline-flex', alignItems: 'center', gap: 6 } : undefined}>{verificationStatus === 'verified' ? <>Verified <VerificationBadge size={18} title="Verified by KingsHall" /></> : 'Active'}</strong><small>{verificationStatus === 'verified' ? 'Verified by KingsHall' : 'Account is active'}</small></article>
       <article className="kh-stats-metric"><span>SECURITY SCORE</span><strong>{score === null ? '—' : score + '%'}</strong><div className="kh-stats-progress"><i style={{ width: (score || 0) + '%' }} /></div><small>Five available account protections</small></article>
       <article className="kh-stats-metric"><span>SAVED WALLETS</span><strong>{profile ? walletCount : '—'}</strong><small>Public receiving addresses linked</small></article>
       <article className="kh-stats-metric"><span>UNREAD ALERTS</span><strong>{loading && !lastUpdated ? '—' : unread}</strong><small>Notices needing attention</small><button type="button" onClick={() => onNavigate('ALERTS')}>Review alerts ↗</button></article>
