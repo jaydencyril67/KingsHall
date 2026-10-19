@@ -201,7 +201,7 @@ async function request(path: string, body?: unknown) {
       } catch { /* Keep the original API response so the user receives a useful error. */ }
     }
   }
-  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; verified?: boolean; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean; token?: string; signature?: string; publicKey?: string; expire?: number; urlEndpoint?: string };
+  const data = await response.json().catch(() => ({})) as { profile?: IdentityProfile; message?: string; error?: string; status?: 'none' | 'pending' | 'verified' | 'rejected'; verified?: boolean; securityCodeSet?: boolean; available?: boolean; validFormat?: boolean; providerAccepted?: boolean; token?: string; signature?: string; publicKey?: string; expire?: number; urlEndpoint?: string };
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
