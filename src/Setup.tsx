@@ -66,6 +66,8 @@ export default function SetupPage() {
   const [nowbarEnabled, setNowbarEnabled] = useState(() => readBool('kh_nowbar_color_enabled', false));
   const [nowbarColor, setNowbarColor] = useState(() => readColor('kh_nowbar_color', '#b9c7df'));
   const [nowbarLight, setNowbarLight] = useState(() => localStorage.getItem('kh_nowbar_light_style') || 'stable');
+  const [buttonColorEnabled, setButtonColorEnabled] = useState(() => readBool('kh_nowbar_button_color_enabled', false));
+  const [buttonColor, setButtonColor] = useState(() => readColor('kh_nowbar_button_color', '#b9c7df'));
   const [headerEnabled, setHeaderEnabled] = useState(() => readBool('kh_alert_color_enabled', true));
   const [headerColor, setHeaderColor] = useState(() => readColor('kh_alert_color', '#b9c7df'));
   const [channels, setChannels] = useState<Channels>(() => readJson<Channels>('kh_alert_channels', { email: false, inApp: true, push: false }));
@@ -187,6 +189,12 @@ export default function SetupPage() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('kh_nowbar_button_color_enabled', String(buttonColorEnabled));
+    localStorage.setItem('kh_nowbar_button_color', buttonColor);
+    window.dispatchEvent(new Event('kh:nowbar-button-color-changed'));
+  }, [buttonColorEnabled, buttonColor]);
+
+  useEffect(() => {
     localStorage.setItem('kh_alert_channels', JSON.stringify(channels));
     localStorage.setItem('kh_alert_types', JSON.stringify(types));
     setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -241,6 +249,8 @@ export default function SetupPage() {
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Enable the Nowbar accent effect.</span></div><Toggle checked={nowbarEnabled} onChange={setNowbarEnabled} label="Enable Nowbar colour and lighting" /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Accent colour</strong></div><ColorField value={nowbarColor} onClick={() => setColorPicker('nowbar')} disabled={!nowbarEnabled} /></div>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Lighting style</strong></div><LightingStyleSelect value={nowbarLight} onChange={setNowbarLight} label="Nowbar lighting style" /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Button border lighting</strong><span>Light up each navigation button separately, without changing the Nowbar edge light.</span></div><Toggle checked={buttonColorEnabled} onChange={setButtonColorEnabled} label="Enable individual Nowbar button border lighting" /></div>
+      <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Button colour</strong></div><ColorField value={buttonColor} onClick={() => setColorPicker('button')} disabled={!buttonColorEnabled} /></div>
     </>;
     if (panel === 'header') return <>
       <div className="kh-setup-setting-row"><div className="kh-setup-setting-copy"><strong>Colour and lighting</strong><span>Accent the app header when alerts are unread.</span></div><Toggle checked={headerEnabled} onChange={setHeaderEnabled} label="Enable alert header colour and lighting" /></div>
@@ -293,9 +303,10 @@ export default function SetupPage() {
         {activePanel === panel.key && <div className="kh-device-panel-inline">{panelContent(panel.key)}</div>}
       </article>)}
     </div>
-    <div className="kh-setup-footer kh-device-footer"><span>{savedAt ? 'Saved ' + savedAt : 'Preferences save automatically on this device.'}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
+    <div className="kh-setup-footer kh-device-footer"><span>{savedAt ? 'Saved ' + savedAt : 'Preferences save automatically on this device.'}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setButtonColorEnabled(false); setButtonColor('#b9c7df'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
     {notice && <Toast message={notice} tone={notice.toLowerCase().includes('unavailable') || notice.toLowerCase().includes('unable') ? 'warning' : 'success'} onClose={() => setNotice('')} />}
+    {colorPicker === 'button' && <ColorSelectionPage color={buttonColor} title="Choose Nowbar button colour" description="Choose the colour used for each individual navigation button border and glow." onChange={setButtonColor} onClose={() => setColorPicker(null)} />}
     {colorPicker === 'header' && <ColorSelectionPage color={headerColor} title="Choose header colour" description="Choose the accent colour used by the KingsHall app header lighting." onChange={setHeaderColor} onClose={() => setColorPicker(null)} />}
   </section>;
 }
