@@ -125,7 +125,7 @@ function isPersonalIdentityComplete(profile: Record<string, unknown> | null | un
   const requiredText = ['firstName', 'lastName', 'username', 'email', 'phone', 'nationality', 'state', 'postalCode', 'dateOfBirth', 'gender'];
   if (requiredText.some(key => typeof profile[key] !== 'string' || !(profile[key] as string).trim())) return false;
   if (!/^[a-z0-9]{3,24}$/.test(String(profile.username))) return false;
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(profile.email))) return false;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(profile.email))) return false;
   return ['Female', 'Male', 'Non-binary', 'Other'].includes(String(profile.gender));
 }
 function sectionFromHash(): HomeSection {
