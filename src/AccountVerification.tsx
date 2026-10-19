@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BadgeCheck, Check, Clock3, Mail, Send, ShieldCheck, X } from 'lucide-react';
 import LoadingDots from './components/LoadingDots';
 
 type VerificationRequest = { id: string; name: string; username: string; email: string; requestedAt: string | null };
@@ -114,23 +113,23 @@ export default function AccountVerification() {
 
   return <section className="kh-identity-card kh-identity-security" style={{ ...panelStyle, marginTop: 16 }}>
     <div className="kh-identity-card-head">
-      <span className="kh-home-card-icon"><ShieldCheck size={20} /></span>
+      <span className="kh-home-card-icon"><VerificationIcon type="shield" size={20} /></span>
       <div><h2>Account verification {loading && <span className="kh-identity-section-loading" aria-label="Loading verification status"><LoadingDots /></span>}</h2><p>KingsHall manages the badge shared with connected applications.</p></div>
     </div>
 
     {!loading && <>
-      {data.status === 'verified' ? <p role="status" style={{ margin: 0, color: 'var(--theme-success)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><BadgeCheck size={18} /> Your KingsHall account is verified{data.verifiedAt ? ' · ' + when(data.verifiedAt) : ''}.</p>
-        : data.status === 'pending' ? <p role="status" style={{ margin: 0, color: 'var(--theme-primary-hover)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><Clock3 size={18} /> Your request is waiting for manual review.{data.requestedAt ? ' Submitted ' + when(data.requestedAt) + '.' : ''}</p>
+      {data.status === 'verified' ? <p role="status" style={{ margin: 0, color: 'var(--theme-success)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="badge" size={18} /> Your KingsHall account is verified{data.verifiedAt ? ' · ' + when(data.verifiedAt) : ''}.</p>
+        : data.status === 'pending' ? <p role="status" style={{ margin: 0, color: 'var(--theme-primary-hover)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="clock" size={18} /> Your request is waiting for manual review.{data.requestedAt ? ' Submitted ' + when(data.requestedAt) + '.' : ''}</p>
         : <>
           <p style={infoStyle}>Your KingsHall account must be at least 30 days old. Every eligible request is reviewed manually by KingsHall. Followers, post counts, and likes do not affect eligibility.</p>
           {data.status === 'rejected' && data.reviewNote && <p role="status" style={{ ...infoStyle, color: 'var(--theme-danger)' }}>Review note: {data.reviewNote}</p>}
           {data.eligible === false && data.eligibilityMessage && <p role="status" style={{ ...infoStyle, color: 'var(--theme-muted)' }}>{data.eligibilityMessage}</p>}
           {!codeSent
-            ? <button className="submit-button" type="button" disabled={busy || data.eligible === false} onClick={() => void sendCode()}>{busy ? <LoadingDots /> : <><Mail size={16} /> Confirm account by email</>}</button>
+            ? <button className="submit-button" type="button" disabled={busy || data.eligible === false} onClick={() => void sendCode()}>{busy ? <LoadingDots /> : <><VerificationIcon type="mail" size={16} /> Confirm account by email</>}</button>
             : <form onSubmit={event => { event.preventDefault(); void submitRequest(); }} style={{ display: 'grid', gap: 10 }}>
                 <input style={inputStyle} aria-label="Six-digit KingsHall verification code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="Six-digit email code" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} />
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button className="submit-button" type="submit" disabled={busy || !/^\d{6}$/.test(code)}>{busy ? <LoadingDots /> : <><Send size={15} /> Submit for review</>}</button>
+                  <button className="submit-button" type="submit" disabled={busy || !/^\d{6}$/.test(code)}>{busy ? <LoadingDots /> : <><VerificationIcon type="send" size={15} /> Submit for review</>}</button>
                   <button className="secondary-button" type="button" disabled={busy} onClick={() => { setCodeSent(false); setCode(''); }}>Cancel</button>
                 </div>
               </form>}
@@ -146,12 +145,30 @@ export default function AccountVerification() {
       {(data.requests || []).length === 0 ? <p style={infoStyle}>There are no verification requests waiting for review.</p> : (data.requests || []).map(item => <article key={item.id} style={{ display: 'grid', gap: 8, padding: 12, border: '1px solid var(--theme-border)', borderRadius: 12, background: 'var(--theme-card-raised)' }}>
         <div><strong>{item.name || 'KingsHall member'}</strong><span style={{ marginLeft: 6, color: 'var(--theme-primary-hover)', fontSize: '.82rem' }}>@{item.username || 'member'}</span><div style={{ color: 'var(--theme-muted)', fontSize: '.78rem', overflowWrap: 'anywhere' }}>{item.email}</div><small style={{ color: 'var(--theme-muted)' }}>Submitted {when(item.requestedAt) || 'date unavailable'}</small></div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="submit-button" type="button" disabled={busy} onClick={() => void review(item, 'approve')}>{busy ? <LoadingDots /> : <><Check size={15} /> Approve</>}</button>
-          <button className="secondary-button" type="button" disabled={busy} onClick={() => void review(item, 'reject')}><X size={15} /> Decline</button>
+          <button className="submit-button" type="button" disabled={busy} onClick={() => void review(item, 'approve')}>{busy ? <LoadingDots /> : <><VerificationIcon type="check" size={15} /> Approve</>}</button>
+          <button className="secondary-button" type="button" disabled={busy} onClick={() => void review(item, 'reject')}><VerificationIcon type="close" size={15} /> Decline</button>
         </div>
       </article>)}
       <button className="secondary-button" type="button" disabled={busy || loading} onClick={() => void load()}>Refresh review queue</button>
     </div>}
     {loading && <div style={{ minHeight: 60, display: 'grid', placeItems: 'center' }}><LoadingDots /></div>}
   </section>;
+}
+
+function VerificationIcon({ type, size }: { type: 'shield' | 'badge' | 'clock' | 'mail' | 'send' | 'check' | 'close'; size: number }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true as const };
+  const content = type === 'shield'
+    ? <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11" />
+    : type === 'badge'
+      ? <><path d="M12 3l2.3 1.2 2.6-.2 1.1 2.4 2.1 1.6-.6 2.5.6 2.5-2.1 1.6-1.1 2.4-2.6-.2L12 21l-2.3-1.2-2.6.2L6 17.6l-2.1-1.6.6-2.5-.6-2.5L6 8.6l1.1-2.4 2.6.2Z" /><path d="m8.5 12.2 2.2 2.1 4.8-4.8" /></>
+      : type === 'clock'
+        ? <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>
+        : type === 'mail'
+          ? <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>
+          : type === 'send'
+            ? <><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></>
+            : type === 'check'
+              ? <path d="m5 12 4 4L19 6" />
+              : <path d="M18 6 6 18M6 6l12 12" />;
+  return <svg {...common}>{content}</svg>;
 }
