@@ -111,7 +111,7 @@ export default function App() {
     let cancelled = false;
     void alertsFetch('/api/alerts/preferences').then(async response => {
       if (!response.ok) return;
-      const payload = await response.json().catch(() => ({})) as { alertChannels?: Channels };
+      const payload = await response.json().catch(() => ({})) as { alertChannels?: { email: boolean; inApp: boolean; push: boolean } };
       if (cancelled || payload.alertChannels?.push !== true) return;
       await registerKingsHallNativePushToken(false);
     }).catch(error => {
