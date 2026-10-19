@@ -17,11 +17,12 @@ import LoadingDots from './components/LoadingDots';
 import type { FormEvent } from 'react';
 import './App.css';
 import AppUpdateMonitor from './AppUpdateMonitor';
+import { authenticateWithPasskey } from './webauthn';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
 type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT' | 'EXIT';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
-type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
+type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User; requiresExtraSecurity?: boolean; challengeToken?: string; methods?: Array<'2fa' | 'biometric'> };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 type KingsHallAccountPlugin = {
   addAccount(options: { email: string; username: string; displayName: string; refreshToken?: string }): Promise<{ accountName: string; alreadyPresent?: boolean }>;
@@ -150,6 +151,10 @@ export default function App() {
   const [mode, setMode] = useState<Mode>(() => window.location.pathname === '/signin' ? 'login' : window.location.pathname === '/request-access' ? 'request' : window.location.pathname === '/verify-email' ? 'verify' : window.location.pathname === '/onboard' ? 'onboard' : window.location.pathname === '/access-review' ? 'review' : (window.location.pathname === '/home' || window.location.pathname === '/account') ? 'home' : 'landing');
   const [notice, setNotice] = useState(''); const [success, setSuccess] = useState(false); const [busy, setBusy] = useState(false); const [resendingVerification, setResendingVerification] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
+  const [loginChallengeToken, setLoginChallengeToken] = useState('');
+  const [loginChallengeMethods, setLoginChallengeMethods] = useState<Array<'2fa' | 'biometric'>>([]);
+  const [loginChallengeMethod, setLoginChallengeMethod] = useState<'2fa' | 'biometric' | ''>('');
+  const [loginChallengeCode, setLoginChallengeCode] = useState('');
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [identitySetupRequired, setIdentitySetupRequired] = useState(false);
@@ -462,6 +467,34 @@ export default function App() {
       setBusy(false);
     }
   }
+
+  async function completeLoginSecurity(method: '2fa' | 'biometric') {
+    if(busy||!loginChallengeToken)return;
+    setBusy(true);say('');
+    try {
+      let data:Result;
+      if(method==='2fa'){
+        if(!/^\\d{6}$/.test(loginChallengeCode))throw new Error('Enter the six-digit authenticator code.');
+        data=await api('/api/auth/extra-security/verify-2fa',{challengeToken:loginChallengeToken,code:loginChallengeCode});
+      }else{
+        const options=await api('/api/auth/extra-security/biometric/options',{challengeToken:loginChallengeToken});
+        const credential=await authenticateWithPasskey(options);
+        data=await api('/api/auth/extra-security/biometric/verify',{challengeToken:loginChallengeToken,...credential});
+      }
+      if(!data.accessToken||!data.user)throw new Error('KingsHall did not return a completed sign-in session.');
+      store(data);setUser(data.user);
+      setLoginChallengeToken('');setLoginChallengeMethods([]);setLoginChallengeMethod('');setLoginChallengeCode('');
+      try{await registerDeviceAccount(data.user);setDeviceAccountStatus(Capacitor.isNativePlatform()?'KingsHall is registered in Android device accounts.':'You are signed in on this browser.');}
+      catch{setDeviceAccountStatus('You are signed in, but Android could not add the device account.');}
+      const params=new URLSearchParams(window.location.search),returnTo=params.get('returnTo')||'',requestedApp=params.get('app')||'';
+      let safeReturn:URL|null=null;
+      try{const candidate=new URL(returnTo);if(candidate.protocol==='https:'&&candidate.pathname==='/signin'&&((requestedApp==='crybots'&&candidate.hostname==='crybots.kingshall.online')||(requestedApp==='hallschat'&&candidate.hostname==='hallschat.kingshall.online')))safeReturn=candidate;}catch{}
+      if(safeReturn){safeReturn.hash='kingshall_account='+encodeURIComponent(data.user.email);window.location.assign(safeReturn.toString());return;}
+      navigate('home');say(data.message||'Security check passed. Welcome to KingsHall.',true);
+    }catch(error){say((error as Error).message||'The extra-security check failed.');}
+    finally{setBusy(false);if(method==='2fa')setLoginChallengeCode('');}
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); if (busy || resendingVerification) return; setBusy(true); say('');
     const form = e.currentTarget;
@@ -496,7 +529,14 @@ export default function App() {
       } else if (mode === 'login') {
         const identity = String(f.get('identity') || '');
         try {
-          const data = await api('/api/auth/login', { identity, password: f.get('password') }); store(data); setUser(data.user || null);
+          const data = await api('/api/auth/login', { identity, password: f.get('password') });
+          if(data.requiresExtraSecurity && data.challengeToken && data.methods?.length){
+            setLoginChallengeToken(data.challengeToken);setLoginChallengeMethods(data.methods);
+            setLoginChallengeMethod(data.methods.length===1?data.methods[0]:'');setLoginChallengeCode('');
+            say(data.methods.length>1?'Password accepted. Choose 2FA or biometrics to finish signing in.':'Password accepted. Complete the enabled security check to finish signing in.',true);
+            return;
+          }
+          store(data); setUser(data.user || null);
           if (data.user) {
             try { await registerDeviceAccount(data.user); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }
             catch { setDeviceAccountStatus('You are signed in, but Android could not add the device account.'); }
@@ -770,7 +810,17 @@ export default function App() {
         <p className="card-subtitle">{mode === 'login' ? 'Use your existing KingsHall credentials.' : mode === 'request' ? 'No account is created when you submit this form.' : mode === 'verify' ? 'Enter the code from your email.' : mode === 'review' ? 'This one-time review link expires after 7 days.' : mode === 'onboard' ? 'Your account is created only after your password is saved.' : 'You are signed in to KingsHall.'}</p>
 
         {mode === 'login' && <>
-          <form onSubmit={submit}><div className="field"><label htmlFor="login-identity">Email or username</label><input id="login-identity" name="identity" autoComplete="username" placeholder="Enter your email or username" required /></div><div className="field"><label htmlFor="login-password">Password</label><input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Sign In'}{!busy && <ArrowIcon />}</button><p className="form-footnote">New here? <button type="button" onClick={() => navigate('request')}>Request access</button></p></form>
+          {loginChallengeToken ? <div className="kh-login-extra-security">
+            <p className="card-subtitle">Your password was accepted. Complete the enabled security check to finish signing in.</p>
+            {loginChallengeMethods.length>1 && <div className="kh-login-extra-methods">
+              <button type="button" className="secondary-button" disabled={busy} onClick={()=>setLoginChallengeMethod('2fa')}>Authenticator app (2FA)</button>
+              <button type="button" className="secondary-button" disabled={busy} onClick={()=>setLoginChallengeMethod('biometric')}>Biometric / passkey</button>
+            </div>}
+            {loginChallengeMethods.length===1 && <p className="form-footnote">Required method: {loginChallengeMethods[0]==='2fa'?'Authenticator app (2FA)':'Biometric / passkey'}</p>}
+            {loginChallengeMethod==='2fa' && <form onSubmit={event=>{event.preventDefault();void completeLoginSecurity('2fa');}}><div className="field"><label htmlFor="login-extra-2fa">Six-digit authenticator code</label><input id="login-extra-2fa" type="password" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={loginChallengeCode} onChange={event=>setLoginChallengeCode(event.target.value.replace(/\\D/g,'').slice(0,6))} required /></div><button className="submit-button" type="submit" disabled={busy||loginChallengeCode.length!==6}>{busy?<LoadingDots />:'Verify 2FA and Sign In'}{!busy&&<ArrowIcon />}</button></form>}
+            {loginChallengeMethod==='biometric' && <div className="field"><p className="form-footnote">Confirm using the passkey configured for your KingsHall account.</p><button className="submit-button" type="button" disabled={busy} onClick={()=>void completeLoginSecurity('biometric')}>{busy?<LoadingDots />:'Verify with biometrics'}{!busy&&<ArrowIcon />}</button></div>}
+            <button type="button" className="secondary-button" disabled={busy} onClick={()=>{setLoginChallengeToken('');setLoginChallengeMethods([]);setLoginChallengeMethod('');setLoginChallengeCode('');say('Security check cancelled. Sign in again to restart.');}}>Cancel sign-in</button>
+          </div> : <form onSubmit={submit}><div className="field"><label htmlFor="login-identity">Email or username</label><input id="login-identity" name="identity" autoComplete="username" placeholder="Enter your email or username" required /></div><div className="field"><label htmlFor="login-password">Password</label><input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Sign In'}{!busy && <ArrowIcon />}</button><p className="form-footnote">New here? <button type="button" onClick={() => navigate('request')}>Request access</button></p></form>}
         </>}
         {mode === 'request' && <form onSubmit={submit}><div className="field"><label htmlFor="request-name">Full name</label><input id="request-name" name="name" autoComplete="name" minLength={2} maxLength={80} placeholder="Your full name" required /></div><div className="field"><label htmlFor="request-email">Email address</label><input id="request-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" required /></div><div className="field"><label htmlFor="request-purpose">What interests you about KingsHall? <span className="optional">(optional)</span></label><textarea id="request-purpose" name="purpose" rows={3} maxLength={500} placeholder="Tell us what you hope to explore…" /></div><button className="submit-button" type="submit" disabled={busy}>{busy ? <LoadingDots /> : 'Submit Request'}{!busy && <ArrowIcon />}</button></form>}
         {mode === 'review' && (() => { const params = new URLSearchParams(window.location.search); const decision = params.get('decision'); const verificationReview = params.get('type') === 'verification'; const validDecision = verificationReview ? ['approve', 'reject'].includes(decision || '') : ['accept', 'reject'].includes(decision || ''); const valid = Boolean(params.get('token') && validDecision); return <form onSubmit={submit}><p className="card-subtitle">{verificationReview ? (decision === 'reject' ? 'Confirm that you want to decline this account verification request. The applicant will be notified, and the decision will apply across KingsHall, CryBots and HallsChat.' : 'Confirm that you want to approve this account verification request. The verified badge will be issued centrally by KingsHall and shared with connected apps.') : (decision === 'reject' ? 'Confirm that you want to decline this application. A kind, friendly email will be sent to the applicant.' : 'Confirm that you want to approve this application. The applicant will receive a secure link to create a password; their account will not exist until they complete onboarding.')}</p><button className="submit-button" type="submit" disabled={busy || reviewProcessed || !valid}>{busy ? <LoadingDots /> : reviewProcessed ? 'Decision recorded' : decision === 'reject' ? 'Confirm rejection' : verificationReview ? 'Confirm verification approval' : 'Confirm acceptance'}{!busy && !reviewProcessed && <ArrowIcon />}</button>{!valid && <p className="form-footnote">This review link is invalid or incomplete.</p>}</form>; })()}
