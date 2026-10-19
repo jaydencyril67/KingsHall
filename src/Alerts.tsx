@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingDots from './components/LoadingDots';
+import Toast from './Toast';
 import { alertsFetch } from './alertsClient';
 
 type AlertItem = {
@@ -226,7 +227,7 @@ export default function AlertsPage({ version, onUnreadCount }: Props) {
       <div className="kh-alerts-list-summary"><span>{loading ? 'Checking for activity…' : `${filtered.length} ${filtered.length === 1 ? 'alert' : 'alerts'}`}{filter !== 'all' || search ? ' found' : ''}</span><span className="kh-alerts-summary-context">{filter !== 'all' ? 'Filtered view' : 'Latest activity'}</span></div>
     </div>
 
-    {loadError && <div className="kh-alerts-error" role="alert"><span>{loadError}</span><button type="button" onClick={() => { setLoadError(''); setLoading(true); void load(); }}>Try again</button></div>}
+    {loadError && <div style={{ display: 'grid', gap: 8 }}><Toast message={loadError} tone="error" onClose={() => setLoadError('')} /><button type="button" className="secondary-button" onClick={() => { setLoadError(''); setLoading(true); void load(); }}>Try again</button></div>}
     {loading ? <div className="kh-alerts-loading"><LoadingDots /><span> </span></div> : filtered.length === 0 ? <article className="kh-alerts-empty">
       <span className="kh-alerts-empty-icon"><AlertIcon category="general" /></span>
       <h2>{search || filter !== 'all' ? 'Nothing matches just yet.' : 'You’re all caught up.'}</h2>
