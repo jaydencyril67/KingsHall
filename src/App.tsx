@@ -120,6 +120,14 @@ function go(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'));
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
+function isPersonalIdentityComplete(profile: Record<string, unknown> | null | undefined): boolean {
+  if (!profile) return false;
+  const requiredText = ['firstName', 'lastName', 'username', 'email', 'phone', 'nationality', 'state', 'postalCode', 'dateOfBirth', 'gender'];
+  if (requiredText.some(key => typeof profile[key] !== 'string' || !(profile[key] as string).trim())) return false;
+  if (!/^[a-z0-9]{3,24}$/.test(String(profile.username))) return false;
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(String(profile.email))) return false;
+  return ['Female', 'Male', 'Non-binary', 'Other'].includes(String(profile.gender));
+}
 function sectionFromHash(): HomeSection {
   const value = window.location.hash.slice(1).toUpperCase();
   return (['HOME', 'IDENTITY', 'DEVICE', 'EXTERNAL', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS', 'ABOUT', 'EXIT'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
@@ -144,6 +152,7 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState(''); const [user, setUser] = useState<User | null>(null); const [reviewProcessed, setReviewProcessed] = useState(false);
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
+  const [identitySetupRequired, setIdentitySetupRequired] = useState(false);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [alertsVersion, setAlertsVersion] = useState(0);
@@ -152,6 +161,36 @@ export default function App() {
     enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
     color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df'
   }));
+  useEffect(() => {
+    if (!user?.id || mode !== 'home') {
+      if (!user?.id) setIdentitySetupRequired(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await alertsFetch('/api/identity');
+        if (!response.ok) throw new Error('Could not verify your personal identity details.');
+        const data = await response.json() as { profile?: Record<string, unknown> };
+        if (cancelled) return;
+        const complete = isPersonalIdentityComplete(data.profile);
+        setIdentitySetupRequired(!complete);
+        if (!complete) {
+          setHomeSection('IDENTITY');
+          setPath('/home');
+          if (window.location.pathname !== '/home' || window.location.hash !== '#identity') {
+            window.history.replaceState({}, '', '/home#identity');
+          }
+          setNotice('Please complete your Personal identity details to continue using KingsHall.');
+          setSuccess(false);
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+      } catch (error) {
+        if (!cancelled) console.warn('KingsHall identity completion check failed:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, mode]);
   useEffect(() => {
     if (!user?.id || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return;
     let cancelled = false;
@@ -641,6 +680,14 @@ export default function App() {
 
   const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/onboard' && path !== '/access-review' && path !== '/account' && path !== '/home');
   function navigateHomeSection(section: HomeSection) {
+    if (identitySetupRequired && section !== 'IDENTITY' && section !== 'EXIT') {
+      setHomeSection('IDENTITY');
+      if (window.location.pathname !== '/home' || window.location.hash !== '#identity') window.history.replaceState({}, '', '/home#identity');
+      setPath('/home'); setMode('home');
+      setNotice('Please complete your Personal identity details to continue using KingsHall.'); setSuccess(false);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
     setHomeSection(section);
     const hash = `#${section.toLowerCase()}`;
     if (window.location.pathname === '/home' && window.location.hash !== hash) {
@@ -709,7 +756,7 @@ export default function App() {
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" disabled={busy} onClick={() => void handleSignInClick()}>{busy ? <LoadingDots /> : <>Sign In <ArrowIcon /></>}</button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home kh-home-statistics" id="kh-home-top">
-        {homeSection === 'EXIT' ? <ExitPage userId={user?.id} onExit={() => { void logout(); }} onStaySignedIn={() => navigateHomeSection('HOME')} /> : homeSection === 'EXTERNAL' ? <ExternalLoginPage /> : homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <StatisticsPage user={user} deviceAccountStatus={deviceAccountStatus} onNavigate={navigateHomeSection} />}
+        {homeSection === 'EXIT' ? <ExitPage userId={user?.id} onExit={() => { void logout(); }} onStaySignedIn={() => navigateHomeSection('HOME')} /> : homeSection === 'EXTERNAL' ? <ExternalLoginPage /> : homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} onPersonalComplete={() => { setIdentitySetupRequired(false); setNotice('Personal identity details completed. You can now continue using KingsHall.'); setSuccess(true); }} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <StatisticsPage user={user} deviceAccountStatus={deviceAccountStatus} onNavigate={navigateHomeSection} />}
       </section>
       <NowBar section={homeSection} onNavigate={navigateHomeSection} onExit={() => navigateHomeSection('EXIT')} />
     </> : <section className="auth-layout">
