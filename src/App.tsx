@@ -93,6 +93,7 @@ export default function App() {
   const [deviceAccountStatus, setDeviceAccountStatus] = useState(Capacitor.isNativePlatform() ? 'Checking Android device account…' : 'Browser session active');
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const [appAuthRequests, setAppAuthRequests] = useState<Array<{ id: string; appName: string; expiresAt: string }>>([]);
   const [appAuthCode, setAppAuthCode] = useState('');
   const [appAuthBusy, setAppAuthBusy] = useState(false);
@@ -103,6 +104,16 @@ export default function App() {
     enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
     color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df'
   }));
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
   useEffect(() => {
     const syncHeaderAppearance = () => setHeaderAppearance({
       enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
@@ -399,8 +410,11 @@ export default function App() {
       '--kh-header-alert-color': headerAppearance.color
     } as CSSProperties) : undefined}>
       <span className="header-artwork"><span className="header-logo"><KingsHallMark /></span></span>
-      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (sessionStorage.getItem('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong></a>
-      <span className="header-artwork header-artwork-right">{sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}</span>
+      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (sessionStorage.getItem('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
+      <span className="header-artwork header-artwork-right">
+        <span className="header-logo"><KingsHallMark /></span>
+        {sessionStorage.getItem('kh_access') ? <button className="header-alerts-button" type="button" aria-label={unreadAlerts ? `Open alerts, ${unreadAlerts} unread` : 'Open alerts'} title="Alerts" onClick={() => navigateHomeSection('ALERTS')}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>{unreadAlerts > 0 && <span className="header-alerts-badge">{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>}</button> : <span className="header-status-dot" />}
+      </span>
     </header>
     {landing ? <>
       <section className="landing-hero" id="top">
