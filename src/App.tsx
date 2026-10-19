@@ -36,6 +36,17 @@ function readSavedBrowserAccounts(): string[] {
     return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
   } catch { return []; }
 }
+function clearRemovedAccount(email: string) {
+  try {
+    const cookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_removed_accounts='));
+    if (!cookie) return;
+    const parsed = JSON.parse(decodeURIComponent(cookie.slice('kh_removed_accounts='.length)));
+    if (Array.isArray(parsed)) {
+      const remaining = parsed.filter((item): item is string => typeof item === 'string' && item.trim().toLowerCase() !== email.trim().toLowerCase());
+      document.cookie = 'kh_removed_accounts=' + encodeURIComponent(JSON.stringify(remaining)) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
+    }
+  } catch {}
+}
 function setBrowserAccountHint(email: string) {
   // Shared browser cookies contain email hints only, never credentials.
   if (email && (window.location.hostname === 'kingshall.online' || window.location.hostname.endsWith('.kingshall.online'))) {
@@ -49,6 +60,7 @@ function writeBrowserAccountsCookie(accounts: string[]) {
 function saveBrowserAccountHint(user: User) {
   const email = user.email?.trim().toLowerCase();
   if (!email) return;
+  clearRemovedAccount(email);
   try {
     const accounts = [email, ...readSavedBrowserAccounts().filter(item => item !== email)].slice(0, 10);
     window.localStorage.setItem('kh_saved_accounts', JSON.stringify(accounts));
