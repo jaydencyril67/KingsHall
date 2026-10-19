@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
+import Toast from './Toast';
 
 const validHex = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
 const hexToRgb = (hex: string) => ({ r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) });
@@ -88,7 +89,7 @@ export default function ColorSelectionPage({ color, title, description, onChange
         <div className="kh-color-rgb-row">
           {(['r','g','b'] as const).map(channel=><label key={channel}>{channel.toUpperCase()}<input aria-label={channel.toUpperCase()+' colour value'} type="number" min="0" max="255" value={rgb[channel]} onChange={event=>updateRgb(channel,event.target.value)}/></label>)}
         </div>
-        {error&&<p className="kh-color-error" role="alert">{error}</p>}
+        {error && <Toast message={error} tone="error" onClose={() => setError('')} />}
       </section>
       <p className="kh-color-save-note"><span/> Colour changes are applied as you choose them.</p>
     </main>
