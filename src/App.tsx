@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { registerKingsHallNativePushToken } from './nativePush';
 import NowBar from './NowBar';
 import IdentityPage from './Identity';
 import SecurityPage from './Security';
@@ -104,6 +106,47 @@ export default function App() {
     enabled: localStorage.getItem('kh_alert_color_enabled') !== 'false',
     color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_alert_color') || '') ? localStorage.getItem('kh_alert_color')! : '#b9c7df'
   }));
+  useEffect(() => {
+    if (!user?.id || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return;
+    let cancelled = false;
+    void alertsFetch('/api/alerts/preferences').then(async response => {
+      if (!response.ok) return;
+      const payload = await response.json().catch(() => ({})) as { alertChannels?: Channels };
+      if (cancelled || payload.alertChannels?.push !== true) return;
+      await registerKingsHallNativePushToken(false);
+    }).catch(error => {
+      console.warn('KingsHall Android push token refresh failed:', error instanceof Error ? error.message : error);
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return;
+    let disposed = false;
+    let actionListener: { remove: () => Promise<void> } | undefined;
+    let receivedListener: { remove: () => Promise<void> } | undefined;
+    void PushNotifications.addListener('pushNotificationActionPerformed', () => {
+      if (disposed) return;
+      if (!sessionStorage.getItem('kh_access') && !sessionStorage.getItem('kh_refresh')) {
+        navigate('login');
+        return;
+      }
+      navigateHomeSection('ALERTS');
+    }).then(listener => {
+      if (disposed) void listener.remove();
+      else actionListener = listener;
+    }).catch(error => console.warn('Unable to attach KingsHall push action listener:', error));
+    void PushNotifications.addListener('pushNotificationReceived', () => {
+      if (!disposed) setAlertsVersion(current => current + 1);
+    }).then(listener => {
+      if (disposed) void listener.remove();
+      else receivedListener = listener;
+    }).catch(error => console.warn('Unable to attach KingsHall foreground push listener:', error));
+    return () => {
+      disposed = true;
+      if (actionListener) void actionListener.remove();
+      if (receivedListener) void receivedListener.remove();
+    };
+  }, []);
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', updateOnlineStatus);
