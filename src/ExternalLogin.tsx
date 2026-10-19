@@ -59,6 +59,7 @@ export default function ExternalLoginPage() {
       if (!response.ok) throw new Error(data.error || data.message || 'The sign-in request could not be approved.');
       setCode('');
       setScanning(false);
+      setScanError('');
       setNotice('Approved ' + (data.appName || 'the sign-in request') + (data.deviceLabel ? ' on ' + data.deviceLabel : '') + '. Return to that device; it will sign in automatically.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The sign-in request could not be approved.');
