@@ -467,7 +467,7 @@ export default function App() {
       } catch { return { idleEnabled: false, idleMinutes: 10, scheduledExitAt: '' }; }
     };
 
-    const triggerExit = (message: string, clearSchedule = false) => {
+    const triggerExit = async (message: string, clearSchedule = false) => {
       if (ended) return;
       ended = true;
       if (clearSchedule) {
@@ -476,8 +476,18 @@ export default function App() {
           localStorage.setItem(settingsKey, JSON.stringify({ ...current, scheduledExitAt: '' }));
           window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId: user.id } }));
         } catch {}
+        const token = sessionStorage.getItem('kh_access');
+        if (token) {
+          try {
+            await fetch(API + '/api/auth/scheduled-logout', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+              body: JSON.stringify({ scheduledLogoutAt: null })
+            });
+          } catch {}
+        }
       }
-      void logout(message);
+      await logout(message);
     };
 
     const resetIdleTimer = () => {
