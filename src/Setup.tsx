@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Toast from './Toast';
 import { Capacitor } from '@capacitor/core';
-import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken } from './nativePush';
+import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken, registerKingsHallWebPushSubscription, unregisterKingsHallWebPushSubscription } from './nativePush';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
@@ -213,21 +213,25 @@ export default function SetupPage() {
     if (key === 'push' && value) {
       void (async () => {
         try {
-          await registerKingsHallNativePushToken(true);
+          const isAndroidApp = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+          if (isAndroidApp) await registerKingsHallNativePushToken(true);
+          else await registerKingsHallWebPushSubscription();
           setChannels(current => ({ ...current, push: true }));
-          setNotice('Firebase push notifications are enabled for this Android device.');
+          setNotice(isAndroidApp ? 'Push notifications are enabled for this KingsHall Android device.' : 'Browser/PWA push notifications are enabled for this KingsHall device.');
         } catch (error) {
-          setNotice(error instanceof Error ? error.message : 'Unable to enable Firebase push notifications.');
+          setNotice(error instanceof Error ? error.message : 'Unable to enable push notifications.');
         }
       })();
       return;
     }
     if (key === 'push' && !value) {
       void (async () => {
+        const isAndroidApp = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
         try {
-          await unregisterKingsHallNativePushToken();
-        } catch {
-          // The saved push preference is still disabled, so the API will not deliver pushes.
+          if (isAndroidApp) await unregisterKingsHallNativePushToken();
+          else await unregisterKingsHallWebPushSubscription();
+        } catch (error) {
+          setNotice(error instanceof Error ? error.message : 'The device could not be unregistered, but push will be disabled for this account.');
         } finally {
           setChannels(current => ({ ...current, push: false }));
           setNotice('Push notifications disabled for this KingsHall account.');
