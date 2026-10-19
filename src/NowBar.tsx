@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type TouchEvent, type CSSProperties } from 'react';
 
-type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
-type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'ABOUT') => void; onExit: () => void };
+type Section = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'SECURITY' | 'UPDATES' | 'ABOUT' | 'EXIT';
+type Props = { section: string; onNavigate: (section: 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'SECURITY' | 'ABOUT') => void; onExit: () => void };
 
 const actions: { label: Section; icon: string }[] = [
   { label: 'HOME', icon: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6' },
   { label: 'IDENTITY', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' },
   { label: 'DEVICE', icon: 'M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM10 18h4' },
+  { label: 'EXTERNAL', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM19 14v3M14 19h7' },
   { label: 'SECURITY', icon: 'M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6zM9 12l2 2 4-4' },
   { label: 'UPDATES', icon: 'M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 17 6l3 6M4 12l3 6a7 7 0 0 0 11.4-3' },
   { label: 'ABOUT', icon: 'M12 16v-4M12 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
@@ -94,7 +95,7 @@ export default function NowBar({ section, onNavigate }: Props) {
   const activate = (label: Section) => {
     try { window.localStorage.setItem(STORAGE_KEY, label); } catch {}
     resetIdle();
-    if (label !== 'HOME' && label !== 'IDENTITY' && label !== 'DEVICE' && label !== 'SECURITY' && label !== 'ABOUT') return;
+    if (label !== 'HOME' && label !== 'IDENTITY' && label !== 'DEVICE' && label !== 'EXTERNAL' && label !== 'SECURITY' && label !== 'ABOUT') return;
     if (label === section) {
       setView('title');
       setMode('compact');
@@ -192,7 +193,7 @@ export default function NowBar({ section, onNavigate }: Props) {
                   aria-label={action.label}
                   onClick={() => {
                     if (holdTriggered.current) { holdTriggered.current = false; return; }
-                    if (action.label === 'HOME' || action.label === 'IDENTITY' || action.label === 'DEVICE' || action.label === 'SECURITY' || action.label === 'ABOUT') activate(action.label);
+                    if (action.label === 'HOME' || action.label === 'IDENTITY' || action.label === 'DEVICE' || action.label === 'EXTERNAL' || action.label === 'SECURITY' || action.label === 'ABOUT') activate(action.label);
                   }}
                 >
                   <span className="kh-nowbar-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={action.icon} /></svg></span>
