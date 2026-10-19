@@ -64,7 +64,7 @@ async function registerDeviceAccount(user: User) {
     email: user.email,
     username: deviceUsername,
     displayName: user.name || user.username || deviceUsername,
-    refreshToken: sessionStorage.getItem('kh_refresh') || undefined
+    refreshToken: getSessionValue('kh_refresh') || undefined
   });
 }
 async function api(path: string, body?: unknown): Promise<Result> {
@@ -75,8 +75,34 @@ async function api(path: string, body?: unknown): Promise<Result> {
   if (!response.ok) { const err = new Error(data.error || 'Request failed.') as Error & { code?: string; email?: string }; err.code = data.code; err.email = data.email; throw err; }
   return data;
 }
-function store(data: Result) { if (data.accessToken) sessionStorage.setItem('kh_access', data.accessToken); if (data.refreshToken) sessionStorage.setItem('kh_refresh', data.refreshToken); }
-function clear() { sessionStorage.removeItem('kh_access'); sessionStorage.removeItem('kh_refresh'); }
+function getSessionValue(key: 'kh_access' | 'kh_refresh'): string | null {
+  // Keep auth credentials across WebView/activity restarts. Migrate credentials
+  // from older builds that kept them only in sessionStorage.
+  const persistent = window.localStorage.getItem(key);
+  if (persistent) return persistent;
+  const legacy = window.sessionStorage.getItem(key);
+  if (legacy) {
+    try { window.localStorage.setItem(key, legacy); } catch {}
+    return legacy;
+  }
+  return null;
+}
+function store(data: Result) {
+  if (data.accessToken) {
+    window.localStorage.setItem('kh_access', data.accessToken);
+    window.sessionStorage.setItem('kh_access', data.accessToken);
+  }
+  if (data.refreshToken) {
+    window.localStorage.setItem('kh_refresh', data.refreshToken);
+    window.sessionStorage.setItem('kh_refresh', data.refreshToken);
+  }
+}
+function clear() {
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    storage.removeItem('kh_access');
+    storage.removeItem('kh_refresh');
+  }
+}
 function go(path: string) {
   if (window.location.pathname !== path) window.history.pushState({}, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -134,7 +160,7 @@ export default function App() {
     let receivedListener: { remove: () => Promise<void> } | undefined;
     void PushNotifications.addListener('pushNotificationActionPerformed', () => {
       if (disposed) return;
-      if (!sessionStorage.getItem('kh_access') && !sessionStorage.getItem('kh_refresh')) {
+      if (!getSessionValue('kh_access') && !getSessionValue('kh_refresh')) {
         navigate('login');
         return;
       }
@@ -193,14 +219,14 @@ export default function App() {
     // For app sign-in handoffs, let people choose a saved identity instead of
     // silently restoring the previous browser session when multiple accounts exist.
     const showAccountChooser = window.location.pathname === '/signin' && validCompanionReturn && readSavedBrowserAccounts().length > 1;
-    const refresh = sessionStorage.getItem('kh_refresh');
-    if (refresh && !(window.location.pathname === '/signin' && sessionStorage.getItem('kh_access')) && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
+    const refresh = getSessionValue('kh_refresh');
+    if (refresh && !(window.location.pathname === '/signin' && getSessionValue('kh_access')) && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); setUser(data.user || null); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
     if (window.location.pathname !== '/signin' || user) return;
-    const accessToken = sessionStorage.getItem('kh_access');
-    const refreshToken = sessionStorage.getItem('kh_refresh');
+    const accessToken = getSessionValue('kh_access');
+    const refreshToken = getSessionValue('kh_refresh');
     const params = new URLSearchParams(window.location.search);
     const entryReturnTo = params.get('returnTo') || '';
     let validCompanionReturn = false;
@@ -244,7 +270,7 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
   useEffect(() => {
-    if (!user || mode !== 'home' || !sessionStorage.getItem('kh_access')) return;
+    if (!user || mode !== 'home' || !getSessionValue('kh_access')) return;
     let stopped = false;
     let controller: AbortController | null = null;
     let retryTimer: number | null = null;
@@ -315,8 +341,8 @@ export default function App() {
     setMode(next); setPath(route); setNotice(''); go(route);
   }
   async function handleSignInClick() {
-    let accessToken = sessionStorage.getItem('kh_access');
-    let refreshToken = sessionStorage.getItem('kh_refresh');
+    let accessToken = getSessionValue('kh_access');
+    let refreshToken = getSessionValue('kh_refresh');
 
     // Android AccountManager is separate from WebView storage. Recover its
     // refresh credential when app data has been cleared and sessionStorage is empty.
@@ -378,8 +404,9 @@ export default function App() {
         }
         setUser(null);
       }
-      // Keep stored credentials intact on network/server errors; the user can still reach Sign In.
-      navigate('login');
+      // A network/server failure does not prove that the saved session is invalid.
+      // Keep the user on the landing page with credentials intact so they can retry.
+      say('KingsHall could not verify your saved session. Check your connection and try again.');
     } finally {
       setBusy(false);
     }
@@ -452,7 +479,7 @@ export default function App() {
     catch (e) { say((e as Error).message); } finally { setResendingVerification(false); }
   }
   async function logout(message = 'You have signed out.') {
-    const refreshToken = sessionStorage.getItem('kh_refresh'); setBusy(true);
+    const refreshToken = getSessionValue('kh_refresh'); setBusy(true);
     try { if (refreshToken) await api('/api/auth/logout', { refreshToken }); } catch {}
     clear();
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
@@ -488,7 +515,7 @@ export default function App() {
           localStorage.setItem(settingsKey, JSON.stringify({ ...current, scheduledExitAt: '' }));
           window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId: user.id } }));
         } catch {}
-        let token = sessionStorage.getItem('kh_access');
+        let token = getSessionValue('kh_access');
         if (token) {
           try {
             let response = await fetch(API + '/api/auth/scheduled-logout', {
@@ -497,7 +524,7 @@ export default function App() {
               body: JSON.stringify({ scheduledLogoutAt: null })
             });
             if (!response.ok) {
-              const refreshToken = sessionStorage.getItem('kh_refresh');
+              const refreshToken = getSessionValue('kh_refresh');
               if (refreshToken) {
                 const refreshed = await api('/api/auth/refresh', { refreshToken });
                 store(refreshed);
@@ -540,7 +567,7 @@ export default function App() {
     };
 
     const syncServerExitSettings = async () => {
-      const token = sessionStorage.getItem('kh_access');
+      const token = getSessionValue('kh_access');
       if (!token) return;
       try {
         const headers = { Authorization: 'Bearer ' + token };
@@ -636,7 +663,7 @@ export default function App() {
       <span className="header-artwork">
         <span className="header-logo"><KingsHallMark /></span>
       </span>
-      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (sessionStorage.getItem('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
+      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (getSessionValue('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
       <span className="header-artwork header-artwork-right">
         <span className="header-logo"><KingsHallMark /></span>
         {unreadAlerts > 0 ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
