@@ -625,7 +625,7 @@ export default function App() {
         </section>
         </>}
       </section>
-      <NowBar section={homeSection} onNavigate={navigateHomeSection} onExit={logout} />
+      <NowBar section={homeSection} onNavigate={navigateHomeSection} onExit={() => navigateHomeSection('EXIT')} />
     </> : <section className="auth-layout">
       <div className="auth-heading"><button className="back-link" onClick={() => navigate('landing')}>← Back to KingsHall</button><span className="eyebrow"><span className="eyebrow-line" />{mode === 'login' ? 'MEMBER ACCESS' : mode === 'request' ? 'ACCESS APPLICATION' : mode === 'verify' ? 'EMAIL VERIFICATION' : mode === 'review' ? (new URLSearchParams(window.location.search).get('type') === 'verification' ? 'VERIFICATION REVIEW' : 'ACCESS REVIEW') : mode === 'onboard' ? 'ACCOUNT SETUP' : 'YOUR ACCOUNT'}</span>
         <h1>{mode === 'login' ? <>Welcome <em>back.</em></> : mode === 'request' ? <>Request <em>access.</em></> : mode === 'verify' ? <>Verify your <em>email.</em></> : mode === 'review' ? (new URLSearchParams(window.location.search).get('type') === 'verification' ? <>Review <em>verification.</em></> : <>Review <em>access.</em></>) : mode === 'onboard' ? <>Come <em>onboard.</em></> : <>Your <em>KingsHall.</em></>}</h1>
