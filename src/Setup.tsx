@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken } from './nativePush';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
 import { alertsFetch } from './alertsClient';
 import ColorSelectionPage from './ColorSelectionPage';
@@ -200,6 +201,31 @@ export default function SetupPage() {
   }, [channels, types, preferencesLoaded]);
 
   const updateChannel = (key: keyof Channels, value: boolean) => {
+    if (key === 'push' && value) {
+      void (async () => {
+        try {
+          await registerKingsHallNativePushToken(true);
+          setChannels(current => ({ ...current, push: true }));
+          setNotice('Firebase push notifications are enabled for this Android device.');
+        } catch (error) {
+          setNotice(error instanceof Error ? error.message : 'Unable to enable Firebase push notifications.');
+        }
+      })();
+      return;
+    }
+    if (key === 'push' && !value) {
+      void (async () => {
+        try {
+          await unregisterKingsHallNativePushToken();
+        } catch {
+          // The saved push preference is still disabled, so the API will not deliver pushes.
+        } finally {
+          setChannels(current => ({ ...current, push: false }));
+          setNotice('Push notifications disabled for this KingsHall account.');
+        }
+      })();
+      return;
+    }
     setChannels(current => ({ ...current, [key]: value }));
     setNotice('Notification channel preferences updated.');
   };
