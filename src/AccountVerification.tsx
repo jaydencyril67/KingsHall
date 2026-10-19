@@ -121,7 +121,7 @@ export default function AccountVerification() {
       {data.status === 'verified' ? <p role="status" style={{ margin: 0, color: 'var(--theme-success)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="badge" size={18} /> Your KingsHall account is verified{data.verifiedAt ? ' · ' + when(data.verifiedAt) : ''}.</p>
         : data.status === 'pending' ? <p role="status" style={{ margin: 0, color: 'var(--theme-primary-hover)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="clock" size={18} /> Your request is waiting for manual review.{data.requestedAt ? ' Submitted ' + when(data.requestedAt) + '.' : ''}</p>
         : <>
-          <p style={infoStyle}>Your KingsHall account must be at least 30 days old. Every eligible request is reviewed manually by KingsHall. Followers, post counts, and likes do not affect eligibility.</p>
+          <p style={infoStyle}>Your KingsHall account must be at least 30 days old. Every eligible request is reviewed manually by KingsHall.</p>
           {data.status === 'rejected' && data.reviewNote && <p role="status" style={{ ...infoStyle, color: 'var(--theme-danger)' }}>Review note: {data.reviewNote}</p>}
           {data.eligible === false && data.eligibilityMessage && <p role="status" style={{ ...infoStyle, color: 'var(--theme-muted)' }}>{data.eligibilityMessage}</p>}
           {!codeSent
