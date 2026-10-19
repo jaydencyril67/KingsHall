@@ -488,6 +488,31 @@ export default function App() {
       scheduledTimer = window.setTimeout(checkScheduledExit, Math.min(time - Date.now(), 2147483647));
     };
 
+    const syncServerExitSettings = async () => {
+      const token = sessionStorage.getItem('kh_access');
+      if (!token) return;
+      try {
+        const headers = { Authorization: 'Bearer ' + token };
+        const [idleResponse, scheduleResponse] = await Promise.all([
+          fetch(API + '/api/auth/idle-logout', { headers }),
+          fetch(API + '/api/auth/scheduled-logout', { headers })
+        ]);
+        if (!idleResponse.ok || !scheduleResponse.ok || ended) return;
+        const idle = await idleResponse.json() as { idleLogoutEnabled?: boolean; idleLogoutMinutes?: number };
+        const schedule = await scheduleResponse.json() as { scheduledLogoutAt?: string | null };
+        const next = {
+          ...readExitSettings(),
+          idleEnabled: idle.idleLogoutEnabled === true,
+          idleMinutes: [5, 10, 15, 20, 25, 30].includes(Number(idle.idleLogoutMinutes)) ? Number(idle.idleLogoutMinutes) : 10,
+          scheduledExitAt: typeof schedule.scheduledLogoutAt === 'string' ? schedule.scheduledLogoutAt : ''
+        };
+        localStorage.setItem(settingsKey, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId: user.id } }));
+      } catch {
+        // Local settings remain available if the API is temporarily unreachable.
+      }
+    };
+
     const handleActivity = () => resetIdleTimer();
     const handleSettingsChanged = (event: Event) => {
       const detail = (event as CustomEvent<{ userId?: string }>).detail;
@@ -511,6 +536,7 @@ export default function App() {
     document.addEventListener('visibilitychange', handleResume);
     resetIdleTimer();
     checkScheduledExit();
+    void syncServerExitSettings();
 
     return () => {
       if (idleTimer !== undefined) window.clearTimeout(idleTimer);
