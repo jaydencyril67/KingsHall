@@ -16,7 +16,7 @@ type Profile = {
   relationshipStatus?: string; wallets?: Wallet[]; securityCodeSet?: boolean; accessCodeSet?: boolean;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
-type ResponseData = { profile?: Profile; message?: string; error?: string; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
+type ResponseData = { profile?: Profile; message?: string; error?: string; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; loginEnabled?: boolean; configured?: boolean; credentialCount?: number; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 type AndroidAccountPlugin = {
   listAccounts(): Promise<{ accounts: string[] }>;
@@ -601,7 +601,7 @@ export default function SecurityPage({ user }: Props) {
       </section>
 
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Two-factor authenticator</h2><p>Bind an authenticator app. Sign-in enforcement remains off for now.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Two-factor authenticator</h2><p>Bind an authenticator app, then enable it separately to require a code at sign-in.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field kh-two-factor-status-field"><label>Binding status</label><div className="kh-two-factor-status" role="status"><span>{twoFactorEnabled ? 'Bound and verified' : twoFactorPending ? 'Setup pending verification' : 'Not bound'}</span>{twoFactorEnabled && <span className="kh-security-code-check kh-two-factor-status-check" aria-label="Bound and verified"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           {twoFactorEnabled && <div className="field"><label>Require 2FA at sign-in</label><button type="button" className={twoFactorLoginEnabled ? 'secondary-button' : 'submit-button'} disabled={loading} onClick={() => void setAuthenticatorLoginRequirement(!twoFactorLoginEnabled)}>{twoFactorLoginEnabled ? 'Disable sign-in requirement' : 'Enable at sign-in'}</button><small className="kh-postal-feedback">{twoFactorLoginEnabled ? 'Sign-in will require a current authenticator code.' : 'Authenticator is bound but will not be requested at sign-in until enabled here.'}</small></div>}
