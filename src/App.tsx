@@ -662,7 +662,7 @@ export default function App() {
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
-  const showHeaderAlerts = homeSection !== 'EXIT' && unreadAlerts > 0;
+  const showHeaderAlerts = Boolean(user && getSessionValue('kh_access')) && unreadAlerts > 0;
   return <main className="kh-shell">
     <AppUpdateMonitor />
     <header className={`topbar${headerAppearance.enabled && showHeaderAlerts ? ' kh-header-alert-color-active' : ''}`} style={headerAppearance.enabled && showHeaderAlerts ? ({
