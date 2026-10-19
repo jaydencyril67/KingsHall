@@ -17,7 +17,7 @@ const actions: { label: Section; icon: string }[] = [
 const STORAGE_KEY = 'kingshall-nowbar-action';
 const ORDER: Section[] = ['HOME'];
 
-export default function NowBar({ section, onNavigate }: Props) {
+export default function NowBar({ section, onNavigate, onExit }: Props) {
   const [appearance, setAppearance] = useState(() => ({
     enabled: localStorage.getItem('kh_nowbar_color_enabled') === 'true',
     color: /^#[0-9a-f]{6}$/i.test(localStorage.getItem('kh_nowbar_color') || '') ? localStorage.getItem('kh_nowbar_color')! : '#b9c7df',
