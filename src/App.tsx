@@ -459,11 +459,11 @@ export default function App() {
     } as CSSProperties) : undefined}>
       <span className="header-artwork">
         <span className="header-logo"><KingsHallMark /></span>
-        {unreadAlerts > 0 ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
       </span>
       <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (sessionStorage.getItem('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
       <span className="header-artwork header-artwork-right">
         <span className="header-logo"><KingsHallMark /></span>
+        {unreadAlerts > 0 ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
       </span>
     </header>
     {landing ? <>
