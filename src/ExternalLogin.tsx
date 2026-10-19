@@ -146,21 +146,15 @@ export default function ExternalLoginPage() {
     padding: '12px 14px', fontSize: 20, fontWeight: 800, letterSpacing: '.22em',
     textAlign: 'center' as const, textTransform: 'uppercase' as const, outline: 'none'
   };
-  const panelStyle = {
-    border: '1px solid var(--kh-card-primary-border, rgba(255,255,255,.16))',
-    borderRadius: 18, background: 'rgba(255,255,255,.035)', padding: 16,
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,.05)'
-  };
-
-  return <section className="kh-home-card" style={{ width: '100%', maxWidth: 760, margin: '0 auto', boxSizing: 'border-box' }}>
-    <div className="kh-home-card-top">
-      <span className="kh-home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM19 14v3M14 19h7" /></svg></span>
-      <span className="kh-home-tag">SECURE DEVICE APPROVAL</span>
-    </div>
-    <span className="kh-home-kicker">KINGSHALL ECOSYSTEM</span>
-    <h2 style={{ marginTop: 8 }}>External Login</h2>
-    <p className="kh-home-muted" style={{ lineHeight: 1.65 }}>Connect CryBots or HallsChat on another phone, tablet, or computer without signing in to KingsHall on that device. Scan its QR code or enter its one-time login code below.</p>
-    <div style={{ ...panelStyle, marginTop: 18, display: 'grid', gap: 12 }}>
+  return <section className="kh-about-page" aria-labelledby="kh-external-login-title">
+    <header className="kh-about-heading">
+      <span className="eyebrow"><span className="eyebrow-line" />SECURE DEVICE APPROVAL</span>
+      <h1 id="kh-external-login-title">External <em>Login.</em></h1>
+      <p>Connect CryBots or HallsChat on another phone, tablet, or computer without signing in to KingsHall on that device. Approve with its one-time code or scan its QR code.</p>
+    </header>
+    <div className="kh-about-content">
+      <div className="kh-about-info-grid">
+    <article className="kh-about-info-card" style={{ display: 'grid', alignContent: 'start', gap: 12 }}>
       <h3 style={{ margin: 0, fontSize: 15 }}>Approve with a login code</h3>
       <p className="kh-home-muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.55 }}>Enter the six uppercase letters/numbers shown by CryBots or HallsChat. Only approve a request you started yourself.</p>
       <form onSubmit={approveCode} style={{ display: 'grid', gap: 10 }}>
@@ -182,8 +176,8 @@ export default function ExternalLoginPage() {
         />
         <button className="submit-button" type="submit" disabled={busy || code.length !== 6}>{busy ? 'Approving…' : 'Approve sign-in'}</button>
       </form>
-    </div>
-    <div style={{ ...panelStyle, marginTop: 12, display: 'grid', gap: 12 }}>
+    </article>
+    <article className="kh-about-info-card" style={{ display: 'grid', alignContent: 'start', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 15 }}>Approve with QR code</h3>
@@ -196,9 +190,11 @@ export default function ExternalLoginPage() {
         <p className="kh-home-muted" style={{ padding: '0 12px 12px', margin: 0, fontSize: 12 }}>Hold the QR code steady inside the camera view.</p>
       </div>}
       {scanError && <p role="status" className="kh-home-muted" style={{ margin: 0, fontSize: 12 }}>{scanError}</p>}
-    </div>
+    </article>
+      </div>
     {error && <p role="alert" style={{ marginTop: 14, padding: 12, borderRadius: 12, border: '1px solid rgba(220,80,80,.34)', background: 'rgba(220,60,60,.09)', color: 'var(--kh-text-primary, #f3f4f6)', fontSize: 13 }}>{error}</p>}
     {notice && <p role="status" style={{ marginTop: 14, padding: 12, borderRadius: 12, border: '1px solid rgba(160,190,220,.25)', background: 'rgba(160,190,220,.07)', color: 'var(--kh-text-primary, #f3f4f6)', fontSize: 13, lineHeight: 1.55 }}>{notice}</p>}
     <p className="kh-home-muted" style={{ marginTop: 16, fontSize: 11, lineHeight: 1.6 }}>Each request expires automatically after five minutes and can be approved only once. Your KingsHall session stays on this device; the target device receives only its CryBots or HallsChat session.</p>
+    </div>
   </section>;
 }
