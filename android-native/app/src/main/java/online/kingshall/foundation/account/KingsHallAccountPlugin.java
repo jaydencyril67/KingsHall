@@ -70,6 +70,53 @@ public class KingsHallAccountPlugin extends Plugin {
     }
 
 
+    @PluginMethod
+    public void listAccounts(PluginCall call) {
+        AccountManager manager = AccountManager.get(getContext());
+        JSObject result = new JSObject();
+        com.getcapacitor.JSArray accounts = new com.getcapacitor.JSArray();
+        for (Account account : manager.getAccountsByType(ACCOUNT_TYPE)) {
+            accounts.put(account.name);
+        }
+        result.put("accounts", accounts);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void removeAccount(PluginCall call) {
+        String email = call.getString("email", "").trim().toLowerCase(java.util.Locale.ROOT);
+        if (email.isEmpty()) {
+            call.reject("Choose a saved KingsHall account to remove.");
+            return;
+        }
+        AccountManager manager = AccountManager.get(getContext());
+        for (Account account : manager.getAccountsByType(ACCOUNT_TYPE)) {
+            if (!account.name.equalsIgnoreCase(email)) continue;
+            boolean removed = manager.removeAccountExplicitly(account);
+            if (!removed) {
+                call.reject("Android could not remove this KingsHall account.");
+                return;
+            }
+            SharedPreferences prefs = getContext().getSharedPreferences(
+                    KingsHallAuthenticator.PREFS, android.content.Context.MODE_PRIVATE);
+            prefs.edit()
+                    .remove(KingsHallAuthenticator.profileKey(email, KingsHallAuthenticator.KEY_USERNAME))
+                    .remove(KingsHallAuthenticator.profileKey(email, KingsHallAuthenticator.KEY_DISPLAY_NAME))
+                    .apply();
+            String trustFragment = ":" + KingsHallAuthenticator.profileKey(email, "account");
+            SharedPreferences trustPrefs = getContext().getSharedPreferences(
+                    KingsHallAuthenticator.TRUST_PREFS, android.content.Context.MODE_PRIVATE);
+            SharedPreferences.Editor trustEditor = trustPrefs.edit();
+            for (String key : trustPrefs.getAll().keySet()) {
+                if (key.contains(trustFragment)) trustEditor.remove(key);
+            }
+            trustEditor.apply();
+            call.resolve();
+            return;
+        }
+        call.reject("That KingsHall account is no longer saved on this device.");
+    }
+
     // AccountManager keeps this credential outside the app's WebView storage, so
     // clearing the app's data does not automatically discard the saved session.
     @PluginMethod
