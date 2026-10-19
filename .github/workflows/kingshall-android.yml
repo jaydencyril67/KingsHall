@@ -113,6 +113,7 @@ jobs:
           npm install
           npm install --no-save --package-lock=false \
             @capacitor/assets@3.0.5 \
+            @capacitor/push-notifications@6.0.2 \
             sharp
 
       - name: Verify KingsHall web build
@@ -131,6 +132,90 @@ jobs:
 
       - name: Sync built web app into Android
         run: npx cap sync android
+
+      - name: Configure Firebase for KingsHall Android push
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+          FIREBASE_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p android/app
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+
+          raw = os.environ.get("FIREBASE_GOOGLE_SERVICES_JSON", "").strip()
+          encoded = os.environ.get("FIREBASE_GOOGLE_SERVICES_JSON_BASE64", "").strip()
+          if raw:
+              content = raw
+              source = "raw JSON secret"
+          elif encoded:
+              try:
+                  decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+                  json.loads(decoded)
+                  content = decoded
+                  source = "Base64 secret"
+              except Exception:
+                  # Recover older setups that accidentally stored raw JSON in this secret.
+                  content = encoded
+                  source = "legacy secret (raw JSON detected)"
+          else:
+              raise SystemExit(
+                  "Missing Firebase Android configuration. Add FIREBASE_GOOGLE_SERVICES_JSON "
+                  "or FIREBASE_GOOGLE_SERVICES_JSON_BASE64 to KingsHall repository Actions secrets."
+              )
+
+          try:
+              config = json.loads(content)
+          except Exception as exc:
+              raise SystemExit(f"Firebase Android configuration is not valid JSON: {exc}") from exc
+
+          packages = [
+              client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              for client in config.get("client", [])
+          ]
+          if "online.kingshall.foundation" not in packages:
+              raise SystemExit(
+                  "Firebase config must contain the KingsHall Android package online.kingshall.foundation."
+              )
+          Path("android/app/google-services.json").write_text(
+              json.dumps(config, indent=2) + "\\n",
+              encoding="utf-8",
+          )
+
+          root = Path("android/build.gradle")
+          root_text = root.read_text()
+          if "com.google.gms:google-services" not in root_text:
+              marker = "dependencies {"
+              start = root_text.find(marker)
+              end = root_text.find("}", start) if start >= 0 else -1
+              if end < 0:
+                  raise SystemExit("Could not find the Android root Gradle dependencies block.")
+              root_text = root_text[:end] + "\\n        classpath 'com.google.gms:google-services:4.4.2'" + root_text[end:]
+              root.write_text(root_text)
+
+          app = Path("android/app/build.gradle")
+          app_text = app.read_text()
+          plugin = "apply plugin: 'com.google.gms.google-services'"
+          if plugin not in app_text:
+              app_text += "\\n" + plugin + "\\n"
+          marker = "dependencies {"
+          start = app_text.find(marker)
+          end = app_text.find("}", start) if start >= 0 else -1
+          if end < 0:
+              raise SystemExit("Could not find the Android app dependencies block.")
+          additions = []
+          if "implementation platform('com.google.firebase:firebase-bom:33.7.0')" not in app_text:
+              additions.append("    implementation platform('com.google.firebase:firebase-bom:33.7.0')")
+          if "implementation 'com.google.firebase:firebase-messaging'" not in app_text:
+              additions.append("    implementation 'com.google.firebase:firebase-messaging'")
+          if additions:
+              app_text = app_text[:end] + "\\n" + "\\n".join(additions) + "\\n" + app_text[end:]
+          app.write_text(app_text)
+          print(f"Configured Firebase Cloud Messaging for online.kingshall.foundation ({source}).")
+          PY
 
       - name: Match KingsHall APK launcher icons to the PWA master icon
         run: |
