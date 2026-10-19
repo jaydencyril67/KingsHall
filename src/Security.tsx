@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
+import AccountVerification from './AccountVerification';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type Profile = {
@@ -559,6 +560,7 @@ export default function SecurityPage({ user }: Props) {
         </div>}
         {(walletDraft || walletPendingDeleteId) && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : walletPendingDeleteId ? 'Verify & delete' : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && !walletPendingDeleteId && wallets.length >= 20)} onClick={() => { if (walletDraft || walletPendingDeleteId) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletPendingDeleteId(null); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft || walletPendingDeleteId ? 'Send code' : '+ Add wallet address'}</button>}
       </section>
+      <AccountVerification />
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
 }
