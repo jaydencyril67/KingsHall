@@ -41,9 +41,11 @@ export default function ExternalLoginPage() {
   const [error, setError] = useState('');
   const [scanError, setScanError] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const approvalInFlightRef = useRef(false);
 
   async function sendApproval(path: string, body: Record<string, string>) {
-    if (busy) return;
+    if (approvalInFlightRef.current) return;
+    approvalInFlightRef.current = true;
     setBusy(true);
     setError('');
     setNotice('');
@@ -61,6 +63,7 @@ export default function ExternalLoginPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The sign-in request could not be approved.');
     } finally {
+      approvalInFlightRef.current = false;
       setBusy(false);
     }
   }
