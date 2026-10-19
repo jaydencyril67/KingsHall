@@ -69,7 +69,7 @@ export default function SetupPage() {
   const [headerColor, setHeaderColor] = useState(() => readColor('kh_alert_color', '#b9c7df'));
   const [channels, setChannels] = useState<Channels>(() => readJson<Channels>('kh_alert_channels', { email: false, inApp: true, push: false }));
   const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }));
-  const [notice, setNotice] = useState('Preferences save automatically on this device.');
+  const [notice, setNotice] = useState('');
   const [apkRelease, setApkRelease] = useState<ApkRelease>({ status: 'checking' });
   const [apkActionMessage, setApkActionMessage] = useState('');
   const [apkDownloading, setApkDownloading] = useState(false);
@@ -292,8 +292,9 @@ export default function SetupPage() {
         {activePanel === panel.key && <div className="kh-device-panel-inline">{panelContent(panel.key)}</div>}
       </article>)}
     </div>
-    <div className="kh-setup-footer kh-device-footer"><span>{notice}{savedAt ? ' · Saved ' + savedAt : ''}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
+    <div className="kh-setup-footer kh-device-footer"><span>{savedAt ? 'Saved ' + savedAt : 'Preferences save automatically on this device.'}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
+    {notice && <Toast message={notice} tone={notice.toLowerCase().includes('unavailable') || notice.toLowerCase().includes('unable') ? 'warning' : 'success'} onClose={() => setNotice('')} />}
     {colorPicker === 'header' && <ColorSelectionPage color={headerColor} title="Choose header colour" description="Choose the accent colour used by the KingsHall app header lighting." onChange={setHeaderColor} onClose={() => setColorPicker(null)} />}
   </section>;
 }
