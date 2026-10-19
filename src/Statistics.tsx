@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Toast from './Toast';
 import { alertsFetch } from './alertsClient';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 import './Statistics.css';
