@@ -99,10 +99,6 @@ export default function App() {
   const [homeSection, setHomeSection] = useState<HomeSection>(() => sectionFromHash());
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
-  const [appAuthRequests, setAppAuthRequests] = useState<Array<{ id: string; appName: string; expiresAt: string }>>([]);
-  const [appAuthCode, setAppAuthCode] = useState('');
-  const [appAuthBusy, setAppAuthBusy] = useState(false);
-  const [appAuthError, setAppAuthError] = useState('');
   const [alertsVersion, setAlertsVersion] = useState(0);
   const [headerPulseActive, setHeaderPulseActive] = useState(false);
   const [headerAppearance, setHeaderAppearance] = useState(() => ({
@@ -169,26 +165,6 @@ export default function App() {
     window.addEventListener('storage', syncHeaderAppearance);
     return () => { window.removeEventListener('kh:alert-color-changed', syncHeaderAppearance); window.removeEventListener('storage', syncHeaderAppearance); };
   }, []);
-  useEffect(() => {
-    if (!user?.id) { setAppAuthRequests([]); return; }
-    let stopped = false;
-    const poll = async () => {
-      const token = sessionStorage.getItem('kh_access');
-      if (!token) return;
-      try {
-        const response = await fetch(API + '/api/app-auth/pending', { headers: { Authorization: 'Bearer ' + token } });
-        if (!response.ok) return;
-        const data = await response.json() as { requests?: Array<{ id: string; appName: string; expiresAt: string }> };
-        if (!stopped) {
-          setAppAuthRequests(data.requests || []);
-        }
-      } catch {}
-    };
-    void poll();
-    const timer = window.setInterval(() => { void poll(); }, 2500);
-    return () => { stopped = true; window.clearInterval(timer); };
-  }, [user?.id]);
-  useEffect(() => { setAppAuthCode(''); setAppAuthError(''); }, [appAuthRequests[0]?.id]);
   useEffect(() => {
     if (alertsVersion <= 0) return;
     setHeaderPulseActive(true);
@@ -588,29 +564,6 @@ export default function App() {
     };
   }, [user?.id, mode]);
 
-  async function respondToAppAuth(action: 'approve' | 'deny', requestId: string) {
-    const token = sessionStorage.getItem('kh_access');
-    if (!token || appAuthBusy) return;
-    setAppAuthBusy(true);
-    setAppAuthError('');
-    try {
-      const response = await fetch(API + '/api/app-auth/' + action, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify(action === 'approve' ? { requestId, code: appAuthCode } : { requestId })
-      });
-      const data = await response.json().catch(() => ({})) as { message?: string; error?: string };
-      if (!response.ok) throw new Error(data.error || 'Unable to process this sign-in request.');
-      setAppAuthRequests(current => current.filter(request => request.id !== requestId));
-      setAppAuthCode('');
-      setAppAuthError('');
-      say(data.message || (action === 'approve' ? 'Sign-in approved.' : 'Sign-in request denied.'), action === 'approve');
-    } catch (error) {
-      setAppAuthError((error as Error).message || 'Unable to process this sign-in request.');
-    } finally {
-      setAppAuthBusy(false);
-    }
-  }
   const landing = mode === 'landing' || (path !== '/signin' && path !== '/request-access' && path !== '/verify-email' && path !== '/onboard' && path !== '/access-review' && path !== '/account' && path !== '/home');
   function navigateHomeSection(section: HomeSection) {
     setHomeSection(section);
@@ -705,23 +658,6 @@ export default function App() {
       </section>
     </section>}
     <footer className="footer"><span>© {new Date().getFullYear()} KingsHall</span><span><FeatureIcon type="shield" /> Identity · Access · Ecosystem</span></footer>
-    {appAuthRequests.length > 0 && user && <div role="dialog" aria-modal="true" aria-labelledby="app-auth-title" style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'grid', placeItems: 'center', padding: 18, background: 'rgba(3,3,4,.80)', backdropFilter: 'blur(14px)' }}>
-      <section style={{ width: 'min(100%, 460px)', boxSizing: 'border-box', border: '1px solid var(--kh-card-primary-border)', borderRadius: 24, padding: 'clamp(20px,5vw,30px)', background: 'var(--kh-card-primary-surface)', color: '#f3f4f6', boxShadow: 'var(--kh-card-inset-highlight), 0 24px 90px rgba(0,0,0,.45)', backdropFilter: 'blur(22px) saturate(125%)' }}>
-        <div className="card-top"><span className="card-symbol"><FeatureIcon type="shield" /></span><span className="secure"><i /> SIGN-IN APPROVAL</span></div>
-        <h2 id="app-auth-title" style={{ marginTop: 18 }}>Approve CryBots sign-in</h2>
-        <p className="card-subtitle">Someone is requesting access to your KingsHall identity through {appAuthRequests[0].appName}. Only approve this if you started the sign-in yourself.</p>
-        <form onSubmit={(event) => { event.preventDefault(); void respondToAppAuth('approve', appAuthRequests[0].id); }}>
-          <div className="field">
-            <label htmlFor="app-auth-code">Two-digit code shown in CryBots</label>
-            <input id="app-auth-code" name="appAuthCode" value={appAuthCode} onChange={event => { setAppAuthCode(event.target.value.replace(/\D/g, '').slice(0, 2)); setAppAuthError(''); }} inputMode="numeric" pattern="[0-9]{2}" maxLength={2} autoComplete="off" placeholder="00" required autoFocus />
-          </div>
-          {appAuthError && <p role="alert" style={{ color: '#e8bcbc', fontSize: 13 }}>{appAuthError}</p>}
-          <button className="submit-button" type="submit" disabled={appAuthBusy || appAuthCode.length !== 2}>{appAuthBusy ? <LoadingDots /> : 'Approve sign-in'}{!appAuthBusy && <ArrowIcon />}</button>
-        </form>
-        <button className="text-button" type="button" disabled={appAuthBusy} onClick={() => void respondToAppAuth('deny', appAuthRequests[0].id)}>Deny request</button>
-        <p className="fine-print">This approval expires automatically. Never approve a request you did not initiate.</p>
-      </section>
-    </div>}
     <Toast message={notice} tone={success ? 'success' : 'error'} onClose={() => setNotice('')} />
   </main>;
 }
