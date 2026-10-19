@@ -259,7 +259,7 @@ export default function SetupPage() {
         </div>
       </div>
       {apkRelease.releaseNotes && <details className="kh-setup-release-notes"><summary>Release notes</summary><p>{apkRelease.releaseNotes}</p></details>}
-      {apkActionMessage && <p className="kh-setup-inline-note" role="status" aria-live="polite">{apkActionMessage}</p>}
+      {apkActionMessage && <Toast message={apkActionMessage} tone="info" onClose={() => setApkActionMessage('')} />}
       <div className="kh-setup-release-actions">
         <button type="button" className="secondary-button" onClick={() => void checkApkRelease()} disabled={apkRelease.status === 'checking'}>{apkRelease.status === 'checking' ? 'Checking…' : 'Check for updates'}</button>
         <button type="button" className="kh-setup-release-primary" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
