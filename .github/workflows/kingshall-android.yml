@@ -181,7 +181,7 @@ jobs:
                   "Firebase config must contain the KingsHall Android package online.kingshall.foundation."
               )
           Path("android/app/google-services.json").write_text(
-              json.dumps(config, indent=2) + "\\n",
+              json.dumps(config, indent=2) + "\n",
               encoding="utf-8",
           )
 
@@ -193,14 +193,14 @@ jobs:
               end = root_text.find("}", start) if start >= 0 else -1
               if end < 0:
                   raise SystemExit("Could not find the Android root Gradle dependencies block.")
-              root_text = root_text[:end] + "\\n        classpath 'com.google.gms:google-services:4.4.2'" + root_text[end:]
+              root_text = root_text[:end] + "\n        classpath 'com.google.gms:google-services:4.4.2'" + root_text[end:]
               root.write_text(root_text)
 
           app = Path("android/app/build.gradle")
           app_text = app.read_text()
           plugin = "apply plugin: 'com.google.gms.google-services'"
           if plugin not in app_text:
-              app_text += "\\n" + plugin + "\\n"
+              app_text += "\n" + plugin + "\n"
           marker = "dependencies {"
           start = app_text.find(marker)
           end = app_text.find("}", start) if start >= 0 else -1
@@ -212,7 +212,7 @@ jobs:
           if "implementation 'com.google.firebase:firebase-messaging'" not in app_text:
               additions.append("    implementation 'com.google.firebase:firebase-messaging'")
           if additions:
-              app_text = app_text[:end] + "\\n" + "\\n".join(additions) + "\\n" + app_text[end:]
+              app_text = app_text[:end] + "\n" + "\n".join(additions) + "\n" + app_text[end:]
           app.write_text(app_text)
           print(f"Configured Firebase Cloud Messaging for online.kingshall.foundation ({source}).")
           PY
