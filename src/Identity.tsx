@@ -16,7 +16,7 @@ type IdentityProfile = {
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
   avatarData: string; coverPhoto: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null; usernameChangedAt: string | null; namesChangedAt: string | null; nationalityChangedAt: string | null; phoneChangedAt: string | null; postalCodeChangedAt: string | null; regionChangedAt: string | null; genderChangedAt: string | null;
 };
-type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
+type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null; onPersonalComplete?: () => void };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 /** Add ImageKit URL transformations only to URLs hosted beneath the configured ImageKit endpoint. */
 function imageKitDeliveryUrl(url: string, transformations: string, endpoint: string): string {
@@ -205,7 +205,7 @@ async function request(path: string, body?: unknown) {
   if (!response.ok) throw new Error(data.error || 'The request could not be completed.');
   return data;
 }
-export default function IdentityPage({ user }: Props) {
+export default function IdentityPage({ user, onPersonalComplete }: Props) {
   const [profile, setProfile] = useState<IdentityProfile>(() => blankProfile(user));
   const [dobInput, setDobInput] = useState('');
   const [nationalityOpen, setNationalityOpen] = useState(false);
@@ -531,6 +531,7 @@ export default function IdentityPage({ user }: Props) {
       setNoticeOk(true);
       setPersonalBound(true);
       setPersonalEditing(false);
+      onPersonalComplete?.();
       return true;
     } catch (error) {
       setNotice((error as Error).message || 'Could not save your personal details.');
