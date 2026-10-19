@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 type ExitSettings = { idleEnabled: boolean; idleMinutes: number; scheduledExitAt: string };
 type Props = { userId?: string; onExit: () => void; onStaySignedIn: () => void };
 const defaults: ExitSettings = { idleEnabled: false, idleMinutes: 10, scheduledExitAt: '' };
+const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const keyFor = (userId?: string) => 'kh_exit_settings_' + (userId || 'guest');
 function readSettings(key: string): ExitSettings {
   try {
@@ -36,16 +37,40 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const next = readSettings(settingsKey);
-    setSettings(next);
-    setDraftMinutes(next.idleMinutes);
-    const scheduleDate = new Date(next.scheduledExitAt);
-    setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
+    let cancelled = false;
+    const applySettings = (next: ExitSettings) => {
+      setSettings(next);
+      setDraftMinutes(next.idleMinutes);
+      const scheduleDate = new Date(next.scheduledExitAt);
+      setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
       setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
+    };
+    applySettings(readSettings(settingsKey));
     setStatus('');
-  }, [settingsKey]);
+    const token = sessionStorage.getItem('kh_access');
+    if (token) {
+      void Promise.all([
+        fetch(API + '/api/auth/idle-logout', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(API + '/api/auth/scheduled-logout', { headers: { Authorization: 'Bearer ' + token } })
+      ]).then(async ([idleResponse, scheduleResponse]) => {
+        if (!idleResponse.ok || !scheduleResponse.ok) return;
+        const idle = await idleResponse.json() as { idleLogoutEnabled?: boolean; idleLogoutMinutes?: number };
+        const schedule = await scheduleResponse.json() as { scheduledLogoutAt?: string | null };
+        if (cancelled) return;
+        const next: ExitSettings = {
+          idleEnabled: idle.idleLogoutEnabled === true,
+          idleMinutes: [5, 10, 15, 20, 25, 30].includes(Number(idle.idleLogoutMinutes)) ? Number(idle.idleLogoutMinutes) : 10,
+          scheduledExitAt: typeof schedule.scheduledLogoutAt === 'string' ? schedule.scheduledLogoutAt : ''
+        };
+        localStorage.setItem(settingsKey, JSON.stringify(next));
+        applySettings(next);
+        window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId } }));
+      }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, [settingsKey, userId]);
 
-  const persist = (next: ExitSettings, message: string) => {
+  const persist = async (next: ExitSettings, message: string) => {
     setSaving(true);
     try {
       localStorage.setItem(settingsKey, JSON.stringify(next));
@@ -53,9 +78,23 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
       setDraftMinutes(next.idleMinutes);
       const scheduleDate = new Date(next.scheduledExitAt);
       setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
-    setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
+      setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
       window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId } }));
-      setStatus(message);
+      let syncFailed = false;
+      const token = sessionStorage.getItem('kh_access');
+      if (token) {
+        const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+        const requests: Promise<Response>[] = [];
+        if (next.idleEnabled !== settings.idleEnabled || next.idleMinutes !== settings.idleMinutes) {
+          requests.push(fetch(API + '/api/auth/idle-logout', { method: 'PUT', headers, body: JSON.stringify({ enabled: next.idleEnabled, minutes: next.idleMinutes }) }));
+        }
+        if (next.scheduledExitAt !== settings.scheduledExitAt) {
+          requests.push(fetch(API + '/api/auth/scheduled-logout', { method: 'PUT', headers, body: JSON.stringify({ scheduledLogoutAt: next.scheduledExitAt || null }) }));
+        }
+        const responses = await Promise.all(requests);
+        syncFailed = responses.some(response => !response.ok);
+      }
+      setStatus(syncFailed ? message + ' Cloud sync failed; this device copy is still saved.' : message);
     } catch {
       setStatus('KingsHall could not save these settings on this device.');
     } finally {
