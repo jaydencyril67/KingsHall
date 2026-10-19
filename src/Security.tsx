@@ -19,7 +19,7 @@ type ResponseData = { profile?: Profile; message?: string; error?: string; fundi
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const SAVED_ACCOUNTS_KEY = 'kh_saved_accounts';
 const REMOVED_ACCOUNTS_KEY = 'kh_removed_accounts';
-const EMAIL_PATTERN = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function readCookieList(key: string): string[] {
   const item = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(key + '='));
   if (!item) return [];
@@ -35,7 +35,8 @@ function readBrowserAccounts(): string[] {
   try {
     const value = JSON.parse(window.localStorage.getItem(SAVED_ACCOUNTS_KEY) || '[]');
     if (!Array.isArray(value)) return [];
-    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
+    const removed = new Set(readCookieList(REMOVED_ACCOUNTS_KEY));
+    return [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim().toLowerCase()).filter(item => EMAIL_PATTERN.test(item) && !removed.has(item)))].slice(0, 10);
   } catch { return []; }
 }
 function writeBrowserAccounts(accounts: string[]) {
