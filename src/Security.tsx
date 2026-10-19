@@ -18,6 +18,19 @@ type Props = { user: { id: string; name: string; username: string; email: string
 type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
 const SAVED_ACCOUNTS_KEY = 'kh_saved_accounts';
+const REMOVED_ACCOUNTS_KEY = 'kh_removed_accounts';
+const EMAIL_PATTERN = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+function readCookieList(key: string): string[] {
+  const item = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(key + '='));
+  if (!item) return [];
+  try {
+    const value = JSON.parse(decodeURIComponent(item.slice(key.length + 1)));
+    return Array.isArray(value) ? [...new Set(value.filter((entry): entry is string => typeof entry === 'string').map(entry => entry.trim().toLowerCase()).filter(entry => EMAIL_PATTERN.test(entry)))] : [];
+  } catch { return []; }
+}
+function writeCookieList(key: string, values: string[], maxAge = 31536000) {
+  document.cookie = key + '=' + encodeURIComponent(JSON.stringify(values)) + '; Domain=.kingshall.online; Path=/; Max-Age=' + maxAge + '; Secure; SameSite=Lax';
+}
 function readBrowserAccounts(): string[] {
   try {
     const value = JSON.parse(window.localStorage.getItem(SAVED_ACCOUNTS_KEY) || '[]');
@@ -28,7 +41,7 @@ function readBrowserAccounts(): string[] {
 function writeBrowserAccounts(accounts: string[]) {
   const normalized = [...new Set(accounts.map(item => item.trim().toLowerCase()).filter(item => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)))].slice(0, 10);
   window.localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(normalized));
-  document.cookie = 'kh_saved_accounts=' + encodeURIComponent(JSON.stringify(normalized)) + '; Domain=.kingshall.online; Path=/; Max-Age=31536000; Secure; SameSite=Lax';
+  writeCookieList('kh_saved_accounts', normalized);
   return normalized;
 }
 const NETWORKS = ['TRC20', 'TRX', 'BRC20', 'ERC20', 'BEP20', 'BTC', 'SOL', 'TON', 'POLYGON', 'OTHER'];
@@ -461,6 +474,8 @@ export default function SecurityPage({ user }: Props) {
             {browserAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
               <button type="button" className="is-danger" onClick={event => {
                 event.stopPropagation();
+                const removed = [...new Set([...readCookieList(REMOVED_ACCOUNTS_KEY), email])].slice(-50);
+                writeCookieList(REMOVED_ACCOUNTS_KEY, removed);
                 const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
                 setSavedBrowserAccounts(remaining);
                 setBrowserAccountActionMenuEmail(null);
