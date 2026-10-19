@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import LoadingDots from './components/LoadingDots';
 import Toast from './Toast';
+import VerificationBadge from './components/VerificationBadge';
 
 type VerificationRequest = { id: string; name: string; username: string; email: string; requestedAt: string | null };
 type VerificationData = {
@@ -119,7 +120,7 @@ export default function AccountVerification() {
     </div>
 
     {!loading && <>
-      {data.status === 'verified' ? <p role="status" style={{ margin: 0, color: 'var(--theme-success)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="badge" size={18} /> Your KingsHall account is verified{data.verifiedAt ? ' · ' + when(data.verifiedAt) : ''}.</p>
+      {data.status === 'verified' ? <p role="status" style={{ margin: 0, color: 'var(--theme-success)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationBadge size={18} title="Verified by KingsHall" /> Your KingsHall account is verified{data.verifiedAt ? ' · ' + when(data.verifiedAt) : ''}.</p>
         : data.status === 'pending' ? <p role="status" style={{ margin: 0, color: 'var(--theme-primary-hover)', display: 'flex', alignItems: 'center', gap: 8, fontSize: '.86rem' }}><VerificationIcon type="clock" size={18} /> Your request is waiting for manual review.{data.requestedAt ? ' Submitted ' + when(data.requestedAt) + '.' : ''}</p>
         : <>
           <p style={infoStyle}>Your KingsHall account must be at least 30 days old. Every eligible request is reviewed manually by KingsHall.</p>
