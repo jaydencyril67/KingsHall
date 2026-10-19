@@ -6,6 +6,7 @@ import { isNativeGalleryAvailable } from './utils/nativeImagePicker';
 import { Country, State } from 'country-state-city';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
+import VerificationBadge from './components/VerificationBadge';
 
 type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
@@ -637,6 +638,10 @@ export default function IdentityPage({ user, onPersonalComplete }: Props) {
             </div>
             <input ref={photoInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'profile')} />
             <input ref={coverInputRef} type="file" accept="image/*" hidden aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} onChange={event => selectPhoto(event, 'cover')} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', margin: '2px 0 4px', fontSize: '1rem', fontWeight: 800, color: 'var(--theme-text-primary)' }}>
+            <span>{[profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || user?.name || user?.username || 'Your KingsHall identity'}</span>
+            {accountVerified && <VerificationBadge size={18} title="Verified by KingsHall" />}
           </div>
           <fieldset className="kh-identity-editable-fields" disabled={!personalEditing || loading || personalBound}>
           <div className="kh-identity-grid">
