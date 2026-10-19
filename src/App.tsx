@@ -23,7 +23,11 @@ type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'APPS' | 'SECUR
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
-type KingsHallAccountPlugin = { addAccount(options: { email: string; username: string; displayName: string }): Promise<{ accountName: string; alreadyPresent?: boolean }> };
+type KingsHallAccountPlugin = {
+  addAccount(options: { email: string; username: string; displayName: string; refreshToken?: string }): Promise<{ accountName: string; alreadyPresent?: boolean }>;
+  restoreSession(): Promise<{ email?: string; refreshToken?: string }>;
+  clearSession(options: { email?: string }): Promise<void>;
+};
 const DeviceAccount = registerPlugin<KingsHallAccountPlugin>('KingsHallAccount');
 function readSavedBrowserAccounts(): string[] {
   try {
@@ -56,7 +60,12 @@ async function registerDeviceAccount(user: User) {
   saveBrowserAccountHint(user);
   if (!Capacitor.isNativePlatform()) return;
   const deviceUsername = user.username || user.email.split('@')[0] || 'member';
-  await DeviceAccount.addAccount({ email: user.email, username: deviceUsername, displayName: user.name || user.username || deviceUsername });
+  await DeviceAccount.addAccount({
+    email: user.email,
+    username: deviceUsername,
+    displayName: user.name || user.username || deviceUsername,
+    refreshToken: sessionStorage.getItem('kh_refresh') || undefined
+  });
 }
 async function api(path: string, body?: unknown): Promise<Result> {
   let response: Response;
@@ -306,8 +315,25 @@ export default function App() {
     setMode(next); setPath(route); setNotice(''); go(route);
   }
   async function handleSignInClick() {
-    const accessToken = sessionStorage.getItem('kh_access');
-    const refreshToken = sessionStorage.getItem('kh_refresh');
+    let accessToken = sessionStorage.getItem('kh_access');
+    let refreshToken = sessionStorage.getItem('kh_refresh');
+
+    // Android AccountManager is separate from WebView storage. Recover its
+    // refresh credential when app data has been cleared and sessionStorage is empty.
+    if (!accessToken && !refreshToken && Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      try {
+        const saved = await DeviceAccount.restoreSession();
+        if (saved.refreshToken) {
+          refreshToken = saved.refreshToken;
+          if (saved.email) {
+            try { window.localStorage.setItem('kh_saved_accounts', JSON.stringify([saved.email.toLowerCase()])); } catch {}
+          }
+        }
+      } catch {
+        // If Android account recovery is unavailable, fall through to normal sign-in.
+      }
+    }
+
     if (!accessToken && !refreshToken) { navigate('login'); return; }
     setBusy(true);
     try {
@@ -338,12 +364,18 @@ export default function App() {
         return;
       }
       clear();
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+        try { await DeviceAccount.clearSession({}); } catch {}
+      }
       setUser(null);
       navigate('login');
     } catch (err) {
       const message = (err as Error)?.message || '';
       if (/refresh session invalid|refresh session invalid or expired|access token expired or invalid|account not found/i.test(message)) {
         clear();
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+          try { await DeviceAccount.clearSession({}); } catch {}
+        }
         setUser(null);
       }
       // Keep stored credentials intact on network/server errors; the user can still reach Sign In.
@@ -422,7 +454,11 @@ export default function App() {
   async function logout(message = 'You have signed out.') {
     const refreshToken = sessionStorage.getItem('kh_refresh'); setBusy(true);
     try { if (refreshToken) await api('/api/auth/logout', { refreshToken }); } catch {}
-    clear(); setUser(null); setBusy(false); navigate('landing'); say(message, true);
+    clear();
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      try { await DeviceAccount.clearSession({ email: user?.email }); } catch {}
+    }
+    setUser(null); setBusy(false); navigate('landing'); say(message, true);
   }
 
   useEffect(() => {
