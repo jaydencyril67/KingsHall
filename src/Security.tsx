@@ -396,7 +396,7 @@ export default function SecurityPage({ user }: Props) {
     setTwoFactorBusy(true);
     try {
       const result = await request('/api/identity/2fa/disable', { code: twoFactorCode });
-      setTwoFactorEnabled(false); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
+      setTwoFactorEnabled(false); setTwoFactorLoginEnabled(false); setTwoFactorPending(false); setTwoFactorSecret(''); setTwoFactorCode('');
       setNotice(result.message || 'Authenticator unbound.'); setNoticeOk(true);
     } catch (error) { setNotice((error as Error).message || 'Could not unbind authenticator.'); setNoticeOk(false); }
     finally { setTwoFactorBusy(false); }
