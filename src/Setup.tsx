@@ -78,7 +78,7 @@ export default function SetupPage() {
   const [apkDownloading, setApkDownloading] = useState(false);
   const [savedAt, setSavedAt] = useState('');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-  const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | null>(null);
+  const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | 'button' | null>(null);
   const [activePanel, setActivePanel] = useState<'nowbar' | 'header' | 'channels' | 'types' | 'release' | null>(null);
   const checkApkRelease = async () => {
     setApkRelease(current => ({ ...current, status: 'checking', message: '' }));
