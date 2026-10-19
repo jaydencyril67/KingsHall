@@ -24,6 +24,7 @@ public class KingsHallAccountPlugin extends Plugin {
         String email = call.getString("email", "").trim().toLowerCase(java.util.Locale.ROOT);
         String username = call.getString("username", "").trim();
         String displayName = call.getString("displayName", "").trim();
+        String refreshToken = call.getString("refreshToken", "").trim();
 
         if (email.isEmpty()) {
             call.reject("A verified KingsHall email is required to register the device account.");
@@ -36,6 +37,7 @@ public class KingsHallAccountPlugin extends Plugin {
             for (Account existing : manager.getAccountsByType(ACCOUNT_TYPE)) {
                 if (existing.name.equalsIgnoreCase(email)) {
                     savePrivateIdentity(email, username, displayName);
+                    if (!refreshToken.isEmpty()) manager.setPassword(existing, refreshToken);
                     // Keep profile fields out of AccountManager user-data, which is readable by visible apps.
                     manager.setUserData(existing, "username", "");
                     manager.setUserData(existing, "displayName", "");
@@ -55,6 +57,7 @@ public class KingsHallAccountPlugin extends Plugin {
                 return;
             }
             savePrivateIdentity(email, username, displayName);
+            if (!refreshToken.isEmpty()) manager.setPassword(account, refreshToken);
             makeCompanionAccountSelectable(manager, account);
 
             JSObject result = new JSObject();
@@ -64,6 +67,36 @@ public class KingsHallAccountPlugin extends Plugin {
         } catch (SecurityException | IllegalArgumentException error) {
             call.reject("Android blocked device-account registration.", error);
         }
+    }
+
+
+    // AccountManager keeps this credential outside the app's WebView storage, so
+    // clearing the app's data does not automatically discard the saved session.
+    @PluginMethod
+    public void restoreSession(PluginCall call) {
+        AccountManager manager = AccountManager.get(getContext());
+        for (Account account : manager.getAccountsByType(ACCOUNT_TYPE)) {
+            String refreshToken = manager.getPassword(account);
+            if (refreshToken == null || refreshToken.length() < 40) continue;
+            JSObject result = new JSObject();
+            result.put("email", account.name);
+            result.put("refreshToken", refreshToken);
+            call.resolve(result);
+            return;
+        }
+        call.resolve(new JSObject());
+    }
+
+    @PluginMethod
+    public void clearSession(PluginCall call) {
+        String email = call.getString("email", "").trim().toLowerCase(java.util.Locale.ROOT);
+        AccountManager manager = AccountManager.get(getContext());
+        for (Account account : manager.getAccountsByType(ACCOUNT_TYPE)) {
+            if (email.isEmpty() || account.name.equalsIgnoreCase(email)) {
+                manager.setPassword(account, null);
+            }
+        }
+        call.resolve();
     }
 
     private void savePrivateIdentity(String email, String username, String displayName) {
