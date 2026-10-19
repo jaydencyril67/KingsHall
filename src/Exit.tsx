@@ -14,11 +14,6 @@ function readSettings(key: string): ExitSettings {
     };
   } catch { return { ...defaults }; }
 }
-function localDateTimeValue(value: string) {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return '';
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
 function formatDate(value: string) {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
@@ -46,7 +41,7 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
     setDraftMinutes(next.idleMinutes);
     const scheduleDate = new Date(next.scheduledExitAt);
     setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
-    setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
+      setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
     setStatus('');
   }, [settingsKey]);
 
@@ -57,7 +52,7 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
       setSettings(next);
       setDraftMinutes(next.idleMinutes);
       const scheduleDate = new Date(next.scheduledExitAt);
-    setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
+      setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
     setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
       window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId } }));
       setStatus(message);
