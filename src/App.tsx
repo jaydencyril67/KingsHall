@@ -213,6 +213,36 @@ export default function App() {
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
+    if (window.location.pathname !== '/signin' || user) return;
+    const accessToken = sessionStorage.getItem('kh_access');
+    const refreshToken = sessionStorage.getItem('kh_refresh');
+    if (!accessToken || refreshToken) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(API + '/api/auth/me', { headers: { Authorization: 'Bearer ' + accessToken } });
+        if (!response.ok) throw new Error('Session is not valid');
+        const data = await response.json() as Result;
+        const validUser = data.user || (data as unknown as User);
+        if (cancelled || !validUser?.id) return;
+        setUser(validUser);
+        setMode('home');
+        setPath('/home');
+        go('/home');
+        setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active');
+        void registerDeviceAccount(validUser).then(() => setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.')).catch(() => setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'));
+      } catch {
+        if (!cancelled) {
+          clear();
+          setUser(null);
+          setMode('login');
+          setPath('/signin');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
     if (!user || mode !== 'home' || !sessionStorage.getItem('kh_access')) return;
     let stopped = false;
     let controller: AbortController | null = null;
