@@ -11,8 +11,6 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.CreateCredentialException;
 import androidx.credentials.exceptions.GetCredentialException;
-import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException;
-import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException;
 import androidx.credentials.PublicKeyCredential;
 import androidx.credentials.GetPublicKeyCredentialOption;
 import com.getcapacitor.JSObject;
