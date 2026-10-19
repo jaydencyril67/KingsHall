@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Toast from './Toast';
 import { Capacitor } from '@capacitor/core';
 import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken } from './nativePush';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
