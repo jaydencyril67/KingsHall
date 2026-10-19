@@ -28,7 +28,14 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
   const settingsKey = useMemo(() => keyFor(userId), [userId]);
   const [settings, setSettings] = useState<ExitSettings>(() => readSettings(keyFor(userId)));
   const [draftMinutes, setDraftMinutes] = useState(settings.idleMinutes);
-  const [draftSchedule, setDraftSchedule] = useState(() => localDateTimeValue(settings.scheduledExitAt));
+  const [draftScheduleDate, setDraftScheduleDate] = useState(() => {
+    const date = new Date(settings.scheduledExitAt);
+    return Number.isFinite(date.getTime()) ? [String(date.getDate()).padStart(2, '0'), String(date.getMonth() + 1).padStart(2, '0'), date.getFullYear()].join('/') : '';
+  });
+  const [draftScheduleTime, setDraftScheduleTime] = useState(() => {
+    const date = new Date(settings.scheduledExitAt);
+    return Number.isFinite(date.getTime()) ? String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') : '';
+  });
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -37,7 +44,9 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
     const next = readSettings(settingsKey);
     setSettings(next);
     setDraftMinutes(next.idleMinutes);
-    setDraftSchedule(localDateTimeValue(next.scheduledExitAt));
+    const scheduleDate = new Date(next.scheduledExitAt);
+    setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
+    setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
     setStatus('');
   }, [settingsKey]);
 
@@ -47,7 +56,9 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
       localStorage.setItem(settingsKey, JSON.stringify(next));
       setSettings(next);
       setDraftMinutes(next.idleMinutes);
-      setDraftSchedule(localDateTimeValue(next.scheduledExitAt));
+      const scheduleDate = new Date(next.scheduledExitAt);
+    setDraftScheduleDate(Number.isFinite(scheduleDate.getTime()) ? [String(scheduleDate.getDate()).padStart(2, '0'), String(scheduleDate.getMonth() + 1).padStart(2, '0'), scheduleDate.getFullYear()].join('/') : '');
+    setDraftScheduleTime(Number.isFinite(scheduleDate.getTime()) ? String(scheduleDate.getHours()).padStart(2, '0') + ':' + String(scheduleDate.getMinutes()).padStart(2, '0') : '');
       window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId } }));
       setStatus(message);
     } catch {
@@ -62,9 +73,17 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
   };
 
   const saveSchedule = () => {
-    const date = new Date(draftSchedule);
-    if (!draftSchedule || !Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
-      setStatus('Choose a future date and time for scheduled exit.');
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(draftScheduleDate);
+    const validTime = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(draftScheduleTime);
+    if (!match || !validTime) {
+      setStatus('Enter a valid date in DD/MM/YYYY format and time in HH:MM format.');
+      return;
+    }
+    const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+    const hour = Number(draftScheduleTime.slice(0, 2)), minute = Number(draftScheduleTime.slice(3, 5));
+    const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || date.getTime() <= Date.now()) {
+      setStatus('Choose a valid future date and time for scheduled exit.');
       return;
     }
     persist({ ...settings, scheduledExitAt: date.toISOString() }, `Scheduled exit saved for ${formatDate(date.toISOString())}.`);
@@ -103,9 +122,10 @@ export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
           <div className="kh-exit-setting-heading"><span className="kh-home-card-icon" aria-hidden="true">◴</span><div><h2>Scheduled exit</h2><p>Choose a future date and time for KingsHall to end this session automatically.</p></div></div>
           {settings.scheduledExitAt && <p className="kh-exit-schedule-current">Currently scheduled for <strong>{formatDate(settings.scheduledExitAt)}</strong></p>}
           <div className="kh-exit-schedule-form">
-            <div className="field"><label htmlFor="kh-scheduled-exit">Date and time</label><input id="kh-scheduled-exit" type="datetime-local" value={draftSchedule} min={localDateTimeValue(new Date(Date.now() + 60000).toISOString())} onChange={event => setDraftSchedule(event.target.value)} disabled={saving || exiting} /></div>
+            <div className="field"><label htmlFor="kh-scheduled-exit-date">Date</label><input id="kh-scheduled-exit-date" type="text" inputMode="numeric" autoComplete="off" placeholder="DD/MM/YYYY" maxLength={10} value={draftScheduleDate} onChange={event => { const digits = event.target.value.replace(/\D/g, "").slice(0, 8); setDraftScheduleDate(digits.length <= 2 ? digits : digits.length <= 4 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4)); }} disabled={saving || exiting} /></div>
+            <div className="field"><label htmlFor="kh-scheduled-exit-time">Time</label><input id="kh-scheduled-exit-time" type="text" inputMode="numeric" autoComplete="off" placeholder="HH:MM" maxLength={5} value={draftScheduleTime} onChange={event => { const digits = event.target.value.replace(/\D/g, "").slice(0, 4); setDraftScheduleTime(digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits); }} disabled={saving || exiting} /></div>
             <div className="kh-exit-actions">
-              <button type="button" className="primary-button" disabled={saving || exiting || !draftSchedule} onClick={saveSchedule}>{saving ? 'Saving…' : settings.scheduledExitAt ? 'Update schedule' : 'Save scheduled exit'}</button>
+              <button type="button" className="primary-button" disabled={saving || exiting || !draftScheduleDate || !draftScheduleTime} onClick={saveSchedule}>{saving ? 'Saving…' : settings.scheduledExitAt ? 'Update schedule' : 'Save scheduled exit'}</button>
               {settings.scheduledExitAt && <button type="button" className="secondary-button" disabled={saving} onClick={cancelSchedule}>Cancel schedule</button>}
             </div>
           </div>
