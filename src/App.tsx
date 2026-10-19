@@ -10,6 +10,7 @@ import ExternalLoginPage from './ExternalLogin';
 import AboutPage from './About';
 import StatisticsPage from './Statistics';
 import SetupPage from './Setup';
+import ExitPage from './Exit';
 import { alertsFetch } from './alertsClient';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
@@ -18,7 +19,7 @@ import './App.css';
 import AppUpdateMonitor from './AppUpdateMonitor';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
-type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT';
+type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT' | 'EXIT';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 type Result = { message?: string; error?: string; code?: string; email?: string; accessToken?: string; refreshToken?: string; user?: User };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -74,7 +75,7 @@ function go(path: string) {
 }
 function sectionFromHash(): HomeSection {
   const value = window.location.hash.slice(1).toUpperCase();
-  return (['HOME', 'IDENTITY', 'DEVICE', 'EXTERNAL', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS', 'ABOUT'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
+  return (['HOME', 'IDENTITY', 'DEVICE', 'EXTERNAL', 'APPS', 'SECURITY', 'PROFILE', 'HELP', 'ALERTS', 'ABOUT', 'EXIT'] as HomeSection[]).includes(value as HomeSection) ? value as HomeSection : 'HOME';
 }
 function ArrowIcon() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>; }
 function KingsHallMark() { return <img className="kh-brand-mark-svg" src="/kingshall-mark.svg?v=4" alt="" />; }
@@ -396,11 +397,102 @@ export default function App() {
     try { const d = await api('/api/auth/resend-verification', { email: verifyEmail }); say(d.message || 'If eligible, a new code has been sent.', true); }
     catch (e) { say((e as Error).message); } finally { setResendingVerification(false); }
   }
-  async function logout() {
+  async function logout(message = 'You have signed out.') {
     const refreshToken = sessionStorage.getItem('kh_refresh'); setBusy(true);
-    try { await api('/api/auth/logout', { refreshToken }); } catch {}
-    clear(); setUser(null); setBusy(false); navigate('landing'); say('You have signed out.', true);
+    try { if (refreshToken) await api('/api/auth/logout', { refreshToken }); } catch {}
+    clear(); setUser(null); setBusy(false); navigate('landing'); say(message, true);
   }
+
+  useEffect(() => {
+    if (!user?.id || mode !== 'home') return;
+    const settingsKey = 'kh_exit_settings_' + user.id;
+    let idleTimer: number | undefined;
+    let scheduledTimer: number | undefined;
+    let ended = false;
+
+    const readExitSettings = () => {
+      try {
+        const value = JSON.parse(localStorage.getItem(settingsKey) || '{}') as { idleEnabled?: boolean; idleMinutes?: number; scheduledExitAt?: string };
+        return {
+          idleEnabled: value.idleEnabled === true,
+          idleMinutes: [5, 10, 15, 20, 25, 30].includes(Number(value.idleMinutes)) ? Number(value.idleMinutes) : 10,
+          scheduledExitAt: typeof value.scheduledExitAt === 'string' ? value.scheduledExitAt : ''
+        };
+      } catch { return { idleEnabled: false, idleMinutes: 10, scheduledExitAt: '' }; }
+    };
+
+    const triggerExit = (message: string, clearSchedule = false) => {
+      if (ended) return;
+      ended = true;
+      if (clearSchedule) {
+        const current = readExitSettings();
+        try {
+          localStorage.setItem(settingsKey, JSON.stringify({ ...current, scheduledExitAt: '' }));
+          window.dispatchEvent(new CustomEvent('kh:exit-settings-changed', { detail: { userId: user.id } }));
+        } catch {}
+      }
+      void logout(message);
+    };
+
+    const resetIdleTimer = () => {
+      if (idleTimer !== undefined) window.clearTimeout(idleTimer);
+      idleTimer = undefined;
+      const settings = readExitSettings();
+      if (!settings.idleEnabled) return;
+      idleTimer = window.setTimeout(() => {
+        triggerExit(`You were signed out automatically after ${settings.idleMinutes} minutes of inactivity.`);
+      }, settings.idleMinutes * 60 * 1000);
+    };
+
+    const checkScheduledExit = () => {
+      if (scheduledTimer !== undefined) window.clearTimeout(scheduledTimer);
+      scheduledTimer = undefined;
+      const scheduledAt = readExitSettings().scheduledExitAt;
+      if (!scheduledAt) return;
+      const time = new Date(scheduledAt).getTime();
+      if (!Number.isFinite(time)) return;
+      if (time <= Date.now()) {
+        triggerExit('Your scheduled exit time has arrived. You have been signed out.', true);
+        return;
+      }
+      scheduledTimer = window.setTimeout(checkScheduledExit, Math.min(time - Date.now(), 2147483647));
+    };
+
+    const handleActivity = () => resetIdleTimer();
+    const handleSettingsChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string }>).detail;
+      if (detail?.userId && detail.userId !== user.id) return;
+      resetIdleTimer();
+      checkScheduledExit();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== settingsKey) return;
+      resetIdleTimer();
+      checkScheduledExit();
+    };
+    const handleResume = () => {
+      if (document.visibilityState === 'visible') checkScheduledExit();
+    };
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'pointerdown'];
+    activityEvents.forEach(eventName => window.addEventListener(eventName, handleActivity, { passive: true }));
+    window.addEventListener('kh:exit-settings-changed', handleSettingsChanged as EventListener);
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleResume);
+    document.addEventListener('visibilitychange', handleResume);
+    resetIdleTimer();
+    checkScheduledExit();
+
+    return () => {
+      if (idleTimer !== undefined) window.clearTimeout(idleTimer);
+      if (scheduledTimer !== undefined) window.clearTimeout(scheduledTimer);
+      activityEvents.forEach(eventName => window.removeEventListener(eventName, handleActivity));
+      window.removeEventListener('kh:exit-settings-changed', handleSettingsChanged as EventListener);
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleResume);
+      document.removeEventListener('visibilitychange', handleResume);
+    };
+  }, [user?.id, mode]);
+
   async function respondToAppAuth(action: 'approve' | 'deny', requestId: string) {
     const token = sessionStorage.getItem('kh_access');
     if (!token || appAuthBusy) return;
@@ -443,7 +535,7 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
-    if (section === 'IDENTITY' || section === 'DEVICE' || section === 'EXTERNAL' || section === 'SECURITY' || section === 'ABOUT') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+    if (section === 'IDENTITY' || section === 'DEVICE' || section === 'EXTERNAL' || section === 'SECURITY' || section === 'ABOUT' || section === 'EXIT') { window.scrollTo({ top: 0, behavior: 'auto' }); return; }
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
@@ -493,7 +585,7 @@ export default function App() {
       <section className="final-cta"><span className="eyebrow"><span className="eyebrow-line" />YOUR NEXT STEP</span><h2>Start with KingsHall.</h2><p>Already have an account? Sign in. New to the ecosystem? Request access.</p><div className="landing-actions"><button className="primary-button" onClick={() => navigate('request')}>Request Access <ArrowIcon /></button><button className="secondary-button" disabled={busy} onClick={() => void handleSignInClick()}>{busy ? <LoadingDots /> : <>Sign In <ArrowIcon /></>}</button></div></section>
     </> : mode === 'home' ? <>
       <section className="kh-home" id="kh-home-top">
-        {homeSection === 'EXTERNAL' ? <ExternalLoginPage /> : homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
+        {homeSection === 'EXIT' ? <ExitPage userId={user?.id} onExit={() => { void logout(); }} /> : homeSection === 'EXTERNAL' ? <ExternalLoginPage /> : homeSection === 'ALERTS' ? <AlertsPage version={alertsVersion} onUnreadCount={setUnreadAlerts} /> : homeSection === 'ABOUT' ? <AboutPage /> : homeSection === 'DEVICE' ? <SetupPage /> : homeSection === 'IDENTITY' ? <IdentityPage user={user} /> : homeSection === 'SECURITY' ? <SecurityPage user={user} /> : <>
         <div className="kh-home-heading">
           <span className="eyebrow"><span className="eyebrow-line" />KINGSHALL HOME</span>
           <p className="kh-home-greeting">WELCOME BACK</p>
