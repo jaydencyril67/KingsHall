@@ -662,9 +662,10 @@ export default function App() {
     const targetId = section === 'HOME' ? 'kh-home-top' : section === 'APPS' ? 'kh-home-apps' : section === 'PROFILE' ? 'kh-home-profile' : 'kh-home-help';
     document.getElementById(targetId)?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
+  const showHeaderAlerts = homeSection !== 'EXIT' && unreadAlerts > 0;
   return <main className="kh-shell">
     <AppUpdateMonitor />
-    <header className={`topbar${headerAppearance.enabled && unreadAlerts > 0 ? ' kh-header-alert-color-active' : ''}`} style={headerAppearance.enabled && unreadAlerts > 0 ? ({
+    <header className={`topbar${headerAppearance.enabled && showHeaderAlerts ? ' kh-header-alert-color-active' : ''}`} style={headerAppearance.enabled && showHeaderAlerts ? ({
       borderColor: headerAppearance.color + 'b8',
       boxShadow: headerPulseActive
         ? `0 0 0 1px color-mix(in srgb, ${headerAppearance.color} 72%, transparent), 0 0 18px color-mix(in srgb, ${headerAppearance.color} 48%, transparent), 0 14px 30px rgba(0,0,0,0.24)`
@@ -675,10 +676,10 @@ export default function App() {
       <span className="header-artwork">
         <span className="header-logo"><KingsHallMark /></span>
       </span>
-      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (getSessionValue('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : unreadAlerts > 0 ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
+      <a className="header-brand" href="/home#alerts" onClick={e => { e.preventDefault(); if (getSessionValue('kh_access')) navigateHomeSection('ALERTS'); }}><strong>{!isOnline ? 'NO INTERNET' : showHeaderAlerts ? 'New Alert' : 'KINGSHALL'}</strong>{!isOnline && <small>Check your connection</small>}</a>
       <span className="header-artwork header-artwork-right">
         <span className="header-logo"><KingsHallMark /></span>
-        {unreadAlerts > 0 ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
+        {showHeaderAlerts ? <span className="header-alerts-badge kh-logo-alert-badge" aria-label={`${unreadAlerts} unread alerts`}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span> : null}
       </span>
     </header>
     {landing ? <>
