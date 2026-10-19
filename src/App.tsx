@@ -217,7 +217,13 @@ export default function App() {
     const accessToken = sessionStorage.getItem('kh_access');
     const refreshToken = sessionStorage.getItem('kh_refresh');
     const params = new URLSearchParams(window.location.search);
-    if (!accessToken || (params.has('returnTo') && readSavedBrowserAccounts().length > 1)) return;
+    const entryReturnTo = params.get('returnTo') || '';
+    let validCompanionReturn = false;
+    try {
+      const candidate = new URL(entryReturnTo);
+      validCompanionReturn = candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'));
+    } catch {}
+    if (!accessToken || (validCompanionReturn && readSavedBrowserAccounts().length > 1)) return;
     let cancelled = false;
     void (async () => {
       let validUser: User | null = null;
