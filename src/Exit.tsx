@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 type ExitSettings = { idleEnabled: boolean; idleMinutes: number; scheduledExitAt: string };
-type Props = { userId?: string; onExit: () => void };
-type ExitTab = 'auto' | 'manual';
+type Props = { userId?: string; onExit: () => void; onStaySignedIn: () => void };
 const defaults: ExitSettings = { idleEnabled: false, idleMinutes: 10, scheduledExitAt: '' };
 const keyFor = (userId?: string) => 'kh_exit_settings_' + (userId || 'guest');
 function readSettings(key: string): ExitSettings {
@@ -25,9 +24,8 @@ function formatDate(value: string) {
   return Number.isFinite(date.getTime()) ? date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
 }
 
-export default function ExitPage({ userId, onExit }: Props) {
+export default function ExitPage({ userId, onExit, onStaySignedIn }: Props) {
   const settingsKey = useMemo(() => keyFor(userId), [userId]);
-  const [tab, setTab] = useState<ExitTab>('auto');
   const [settings, setSettings] = useState<ExitSettings>(() => readSettings(keyFor(userId)));
   const [draftMinutes, setDraftMinutes] = useState(settings.idleMinutes);
   const [draftSchedule, setDraftSchedule] = useState(() => localDateTimeValue(settings.scheduledExitAt));
@@ -81,17 +79,8 @@ export default function ExitPage({ userId, onExit }: Props) {
       <p>Choose when KingsHall should end this session, or sign out whenever you are ready.</p>
     </header>
 
-    <section className="kh-exit-card">
-      <div className="kh-exit-switcher" role="tablist" aria-label="Exit options">
-        <button type="button" role="tab" aria-selected={tab === 'auto'} className={tab === 'auto' ? 'is-active' : ''} onClick={() => setTab('auto')}>
-          <span className="kh-exit-tab-icon" aria-hidden="true">◷</span><span><strong>Auto Exit</strong><small>Idle or scheduled</small></span>
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'manual'} className={tab === 'manual' ? 'is-active' : ''} onClick={() => setTab('manual')}>
-          <span className="kh-exit-tab-icon" aria-hidden="true">↪</span><span><strong>Manual Exit</strong><small>Sign out now</small></span>
-        </button>
-      </div>
-
-      {tab === 'auto' ? <div className="kh-exit-panel" role="tabpanel">
+    <section className="kh-exit-card kh-exit-idle-card">
+      <div className="kh-exit-panel">
         <section className="kh-exit-setting">
           <div className="kh-exit-setting-heading"><span className="kh-home-card-icon" aria-hidden="true">◷</span><div><h2>Exit when idle</h2><p>End your session after a period without activity. Moving, tapping, scrolling or typing resets the timer.</p></div></div>
           <div className="kh-exit-control">
@@ -105,9 +94,11 @@ export default function ExitPage({ userId, onExit }: Props) {
           </div>
           <p className="kh-exit-inline-status">{settings.idleEnabled ? `Enabled · signs out after ${settings.idleMinutes} minutes of inactivity.` : 'Disabled · your session will remain active until you sign out or it expires.'}</p>
         </section>
+      </div>
+    </section>
 
-        <div className="kh-exit-divider" />
-
+    <section className="kh-exit-card kh-exit-scheduled-card">
+      <div className="kh-exit-panel">
         <section className="kh-exit-setting">
           <div className="kh-exit-setting-heading"><span className="kh-home-card-icon" aria-hidden="true">◴</span><div><h2>Scheduled exit</h2><p>Choose a future date and time for KingsHall to end this session automatically.</p></div></div>
           {settings.scheduledExitAt && <p className="kh-exit-schedule-current">Currently scheduled for <strong>{formatDate(settings.scheduledExitAt)}</strong></p>}
@@ -121,16 +112,20 @@ export default function ExitPage({ userId, onExit }: Props) {
           <p className="kh-exit-inline-status" aria-live="polite">{status || (settings.scheduledExitAt ? 'Scheduled exit is active on this device.' : 'No scheduled exit configured.')}</p>
         </section>
         <p className="kh-exit-footnote">These exit preferences are saved on this browser or device and apply to this KingsHall session. Scheduled exit is checked when KingsHall is open or resumes.</p>
-      </div> : <div className="kh-exit-panel" role="tabpanel">
+      </div>
+    </section>
+
+    <section className="kh-exit-card kh-exit-manual-card">
+      <div className="kh-exit-panel">
         <section className="kh-exit-setting kh-exit-manual-warning" role="alert">
           <div className="kh-exit-setting-heading"><span className="kh-home-card-icon" aria-hidden="true">!</span><div><h2>Ready to sign out?</h2><p>Your current KingsHall session will be ended and you will return to the landing page. You may need to sign in again to continue.</p></div></div>
           <p className="kh-exit-warning-copy"><strong>Before exiting, save any work or finish any action you do not want to lose.</strong></p>
           <div className="kh-exit-actions kh-exit-manual-actions">
-            <button type="button" className="secondary-button" disabled={exiting} onClick={() => setTab('auto')}>Keep me signed in</button>
+            <button type="button" className="secondary-button" disabled={exiting} onClick={onStaySignedIn}>Keep me signed in</button>
             <button type="button" className="primary-button kh-exit-danger-button" disabled={exiting} onClick={() => { setExiting(true); onExit(); }}>{exiting ? 'Signing out…' : 'Exit now'}</button>
           </div>
         </section>
-      </div>}
+      </div>
     </section>
   </section>;
 }
