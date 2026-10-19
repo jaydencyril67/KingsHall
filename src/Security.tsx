@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 import AccountVerification from './AccountVerification';
@@ -17,6 +17,11 @@ type Profile = {
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null };
 type ResponseData = { profile?: Profile; message?: string; error?: string; fundingCodeSet?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; enabled?: boolean; pending?: boolean; secret?: string };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
+type AndroidAccountPlugin = {
+  listAccounts(): Promise<{ accounts: string[] }>;
+  removeAccount(options: { email: string }): Promise<void>;
+};
+const AndroidAccounts = registerPlugin<AndroidAccountPlugin>('KingsHallAccount');
 const SAVED_ACCOUNTS_KEY = 'kh_saved_accounts';
 const REMOVED_ACCOUNTS_KEY = 'kh_removed_accounts';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,9 +129,22 @@ async function request(path: string, body?: unknown): Promise<ResponseData> {
 export default function SecurityPage({ user }: Props) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [savedBrowserAccounts, setSavedBrowserAccounts] = useState<string[]>(() => Capacitor.isNativePlatform() ? [] : readBrowserAccounts());
+  const [savedAndroidAccounts, setSavedAndroidAccounts] = useState<string[]>([]);
   const [browserAccountActionMenuEmail, setBrowserAccountActionMenuEmail] = useState<string | null>(null);
+  const [androidAccountActionMenuEmail, setAndroidAccountActionMenuEmail] = useState<string | null>(null);
+  const [removingAndroidAccount, setRemovingAndroidAccount] = useState(false);
+  async function refreshAndroidAccounts() {
+    const result = await AndroidAccounts.listAccounts();
+    setSavedAndroidAccounts([...new Set((result.accounts || []).filter(email => typeof email === 'string' && EMAIL_PATTERN.test(email)).map(email => email.trim().toLowerCase()))].slice(0, 10));
+  }
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) return;
+    if (Capacitor.isNativePlatform()) {
+      if (Capacitor.getPlatform() === 'android') void refreshAndroidAccounts().catch(error => {
+        setNotice((error as Error).message || 'Could not read Android saved accounts.');
+        setNoticeOk(false);
+      });
+      return;
+    }
     const accounts = writeBrowserAccounts(readBrowserAccounts());
     setSavedBrowserAccounts(accounts);
   }, []);
@@ -168,7 +186,7 @@ export default function SecurityPage({ user }: Props) {
       if (target instanceof Element && target.closest('.kh-wallet-network-field')) return;
       if (target instanceof Element && target.closest('.kh-security-code-input-wrap')) return;
       if (!(target instanceof Element && target.closest('.kh-wallet-address-item'))) setWalletActionMenuId(null);
-      if (!(target instanceof Element && target.closest('.kh-security-browser-account'))) setBrowserAccountActionMenuEmail(null);
+      if (!(target instanceof Element && target.closest('.kh-security-browser-account'))) { setBrowserAccountActionMenuEmail(null); setAndroidAccountActionMenuEmail(null); }
       setSecurityFieldMenu(null);
       setOpenNetworkId(null);
       setNetworkSearch('');
@@ -179,6 +197,7 @@ export default function SecurityPage({ user }: Props) {
         setNetworkSearch('');
         setWalletActionMenuId(null);
         setBrowserAccountActionMenuEmail(null);
+        setAndroidAccountActionMenuEmail(null);
       }
     };
     document.addEventListener('pointerdown', closeNetworkSelector);
@@ -464,13 +483,36 @@ export default function SecurityPage({ user }: Props) {
     </div>
     <Toast message={notice} tone={noticeOk ? 'success' : 'error'} onClose={() => setNotice('')} />
 
-      {!Capacitor.isNativePlatform() && <section className="kh-identity-card kh-security-browser-accounts">
+      {Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' ? <section className="kh-identity-card kh-security-browser-accounts">
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved Android accounts</h2><p>Manage KingsHall accounts saved in Android Account Manager on this device. Removing one deletes its saved device account and refresh credential; it does not log out your current in-app session.</p></div></div>
+        {savedAndroidAccounts.length > 0 ? <div className="kh-security-browser-account-list">
+          {savedAndroidAccounts.map(email => <div className="kh-security-browser-account" key={email}>
+            <button type="button" className="kh-security-browser-account-trigger" aria-expanded={androidAccountActionMenuEmail === email} onClick={() => setAndroidAccountActionMenuEmail(current => current === email ? null : email)}>
+              <span className="kh-security-browser-account-email">{email}</span><span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
+            </button>
+            {androidAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved Android account actions">
+              <button type="button" className="is-danger" disabled={removingAndroidAccount} onClick={async event => {
+                event.stopPropagation();
+                if (!window.confirm('Remove ' + email + ' from Android saved KingsHall accounts on this device? This will delete its saved device credential.')) return;
+                setRemovingAndroidAccount(true); setNotice('');
+                try {
+                  await AndroidAccounts.removeAccount({ email });
+                  setSavedAndroidAccounts(current => current.filter(item => item !== email));
+                  setAndroidAccountActionMenuEmail(null);
+                  setNotice('KingsHall account removed from Android Account Manager.'); setNoticeOk(true);
+                } catch (error) {
+                  setNotice((error as Error).message || 'Could not remove the saved Android account.'); setNoticeOk(false);
+                } finally { setRemovingAndroidAccount(false); }
+              }}>{removingAndroidAccount ? 'Removing…' : 'Remove account'}</button>
+            </div>}
+          </div>)}
+        </div> : <p className="kh-security-browser-accounts-empty">No KingsHall accounts are currently saved in Android Account Manager.</p>}
+      </section> : !Capacitor.isNativePlatform() && <section className="kh-identity-card kh-security-browser-accounts">
         <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Manage accounts saved on this browser. You can remove an account here; sign-in and account selection happen in the connected app.</p></div></div>
         {savedBrowserAccounts.length > 0 ? <div className="kh-security-browser-account-list">
           {savedBrowserAccounts.map(email => <div className="kh-security-browser-account" key={email}>
             <button type="button" className="kh-security-browser-account-trigger" aria-expanded={browserAccountActionMenuEmail === email} onClick={() => setBrowserAccountActionMenuEmail(current => current === email ? null : email)}>
-              <span className="kh-security-browser-account-email">{email}</span>
-              <span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
+              <span className="kh-security-browser-account-email">{email}</span><span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
             </button>
             {browserAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
               <button type="button" className="is-danger" onClick={event => {
@@ -478,8 +520,7 @@ export default function SecurityPage({ user }: Props) {
                 const removed = [...new Set([...readCookieList(REMOVED_ACCOUNTS_KEY), email])].slice(-50);
                 writeCookieList(REMOVED_ACCOUNTS_KEY, removed);
                 const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
-                setSavedBrowserAccounts(remaining);
-                setBrowserAccountActionMenuEmail(null);
+                setSavedBrowserAccounts(remaining); setBrowserAccountActionMenuEmail(null);
                 let currentHint = '';
                 const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
                 if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
