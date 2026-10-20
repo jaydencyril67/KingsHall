@@ -481,6 +481,83 @@ jobs:
           gradle_file.write_text(source)
           PY
 
+      - name: Generate KingsHall Digital Asset Links association
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Use the same permanent certificate that signs the published APK.
+          CERT_SHA256="$(keytool -exportcert \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            | openssl dgst -sha256 -binary | od -An -v -tx1 | tr -d ' \n' | tr '[:lower:]' '[:upper:]' | sed 's/../&:/g; s/:$//')"
+          ANDROID_KEY_HASH="$(keytool -exportcert \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')"
+
+          test -n "$CERT_SHA256"
+          test -n "$ANDROID_KEY_HASH"
+          mkdir -p public/.well-known
+          python3 - "$CERT_SHA256" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          fingerprint = sys.argv[1]
+          data = [
+              {
+                  "relation": [
+                      "delegate_permission/common.handle_all_urls",
+                      "delegate_permission/common.get_login_creds"
+                  ],
+                  "target": {
+                      "namespace": "android_app",
+                      "package_name": "online.kingshall.foundation",
+                      "sha256_cert_fingerprints": [fingerprint]
+                  }
+              },
+              {
+                  "relation": ["delegate_permission/common.get_login_creds"],
+                  "target": {
+                      "namespace": "web",
+                      "site": "https://kingshall.online"
+                  }
+              }
+          ]
+          Path("public/.well-known/assetlinks.json").write_text(
+              json.dumps(data, indent=2) + "\\n", encoding="utf-8"
+          )
+          PY
+
+          echo "KingsHall Android origin: android:apk-key-hash:$ANDROID_KEY_HASH"
+          {
+            echo "### KingsHall WebAuthn configuration"
+            echo ""
+            echo "- Set `WEBAUTHN_ANDROID_ORIGIN` on the ApiKingsHall Render service to:"
+            echo ""
+            echo "`android:apk-key-hash:$ANDROID_KEY_HASH`"
+            echo ""
+            echo "- Signing certificate SHA-256: `$CERT_SHA256`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Publish the association file with the web app source so hosting deploys it.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/.well-known/assetlinks.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Configure KingsHall Android WebAuthn domain association"
+            git push origin HEAD:main
+          else
+            echo "KingsHall assetlinks.json is already current."
+          fi
+
       - name: Build signed production APK
         working-directory: android
         env:
