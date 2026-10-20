@@ -134,6 +134,7 @@ export default function SecurityPage({ user }: Props) {
   const [browserAccountActionMenuEmail, setBrowserAccountActionMenuEmail] = useState<string | null>(null);
   const [androidAccountActionMenuEmail, setAndroidAccountActionMenuEmail] = useState<string | null>(null);
   const [removingAndroidAccount, setRemovingAndroidAccount] = useState(false);
+  const [accountRemovalConfirmation, setAccountRemovalConfirmation] = useState<{ email: string; platform: 'android' | 'browser' } | null>(null);
   async function refreshAndroidAccounts() {
     const result = await AndroidAccounts.listAccounts();
     setSavedAndroidAccounts([...new Set((result.accounts || []).filter(email => typeof email === 'string' && EMAIL_PATTERN.test(email)).map(email => email.trim().toLowerCase()))].slice(0, 10));
@@ -488,6 +489,37 @@ export default function SecurityPage({ user }: Props) {
     }
   }
 
+  async function confirmSavedAccountRemoval(): Promise<void> {
+    const pending = accountRemovalConfirmation;
+    if (!pending) return;
+    setAccountRemovalConfirmation(null);
+    const email = pending.email;
+    if (pending.platform === 'android') {
+      if (removingAndroidAccount) return;
+      setRemovingAndroidAccount(true); setNotice('');
+      try {
+        await AndroidAccounts.removeAccount({ email });
+        setSavedAndroidAccounts(current => current.filter(item => item !== email));
+        setNotice('KingsHall account removed from Android Account Manager.'); setNoticeOk(true);
+      } catch (error) {
+        setNotice((error as Error).message || 'Could not remove the saved Android account.'); setNoticeOk(false);
+      } finally { setRemovingAndroidAccount(false); }
+      return;
+    }
+    const removed = [...new Set([...readCookieList(REMOVED_ACCOUNTS_KEY), email])].slice(-50);
+    writeCookieList(REMOVED_ACCOUNTS_KEY, removed);
+    const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
+    setSavedBrowserAccounts(remaining);
+    let currentHint = '';
+    const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
+    if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
+    if (currentHint === email) {
+      document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
+      localStorage.removeItem('kingshall_account_hint');
+    }
+    setNotice('Saved account removed from this browser.'); setNoticeOk(true);
+  }
+
   async function deleteWallet(walletId: string): Promise<void> {
     if (savingWallets) return;
     setWalletPendingDeleteId(walletId);
@@ -519,7 +551,9 @@ export default function SecurityPage({ user }: Props) {
             {androidAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved Android account actions">
               <button type="button" className="is-danger" disabled={removingAndroidAccount} onClick={async event => {
                 event.stopPropagation();
-                if (!window.confirm('Remove ' + email + ' from Android saved KingsHall accounts on this device? This will delete its saved device credential.')) return;
+                setAccountRemovalConfirmation({ email, platform: 'android' });
+                setAndroidAccountActionMenuEmail(null);
+                return;
                 setRemovingAndroidAccount(true); setNotice('');
                 try {
                   await AndroidAccounts.removeAccount({ email });
@@ -543,6 +577,9 @@ export default function SecurityPage({ user }: Props) {
             {browserAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
               <button type="button" className="is-danger" onClick={event => {
                 event.stopPropagation();
+                setAccountRemovalConfirmation({ email, platform: 'browser' });
+                setBrowserAccountActionMenuEmail(null);
+                return;
                 const removed = [...new Set([...readCookieList(REMOVED_ACCOUNTS_KEY), email])].slice(-50);
                 writeCookieList(REMOVED_ACCOUNTS_KEY, removed);
                 const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
@@ -645,6 +682,14 @@ export default function SecurityPage({ user }: Props) {
         </div>}
         {(walletDraft || walletPendingDeleteId) && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : walletPendingDeleteId ? 'Verify & delete' : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && !walletPendingDeleteId && wallets.length >= 20)} onClick={() => { if (walletDraft || walletPendingDeleteId) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletPendingDeleteId(null); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft || walletPendingDeleteId ? 'Send code' : '+ Add wallet address'}</button>}
       </section>
+      {accountRemovalConfirmation && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false" style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 'min(340px, calc(100vw - 40px))', padding: '18px', zIndex: 1000, whiteSpace: 'normal' }}>
+        <strong>Remove saved account?</strong>
+        <p style={{ margin: '10px 0 14px', lineHeight: 1.5, whiteSpace: 'normal' }}>{accountRemovalConfirmation.platform === 'android' ? 'Remove ' + accountRemovalConfirmation.email + ' from Android saved KingsHall accounts on this device? This deletes its saved device credential but does not log you out of your current session.' : 'Remove ' + accountRemovalConfirmation.email + ' from saved KingsHall accounts on this browser? This only removes the saved account entry from this browser.'}</p>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <button type="button" className="secondary-button" disabled={removingAndroidAccount} onClick={() => setAccountRemovalConfirmation(null)}>Cancel</button>
+          <button type="button" className="submit-button is-danger" disabled={removingAndroidAccount} onClick={() => void confirmSavedAccountRemoval()}>{removingAndroidAccount ? 'Removing…' : 'Remove account'}</button>
+        </div>
+      </div>}
       <AccountVerification />
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
