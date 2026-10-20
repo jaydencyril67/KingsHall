@@ -18,11 +18,35 @@ if not main.is_file():
 text = main.read_text()
 if "NativeWebAuthnPlugin.class" not in text:
     if "import online.kingshall.foundation.NativeWebAuthnPlugin;" not in text:
-        text = text.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport online.kingshall.foundation.NativeWebAuthnPlugin;")
-    marker = "public class MainActivity extends BridgeActivity {"
-    if marker not in text:
-        raise SystemExit("Could not find MainActivity class declaration.")
-    text = text.replace(marker, marker + "\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(NativeWebAuthnPlugin.class);\n        super.onCreate(savedInstanceState);\n    }", 1)
+        text = text.replace(
+            "import com.getcapacitor.BridgeActivity;",
+            "import com.getcapacitor.BridgeActivity;\nimport online.kingshall.foundation.NativeWebAuthnPlugin;"
+        )
+    # Reuse an existing onCreate method when Capacitor or another setup step
+    # has already generated one; never create duplicate Java method signatures.
+    method = re.search(
+        r"public\\s+void\\s+onCreate\\s*\\(\\s*(?:android\\.os\\.)?Bundle\\s+(\\w+)\\s*\\)\\s*\\{",
+        text
+    )
+    if method:
+        body_start = method.end()
+        super_call = re.search(r"super\\.onCreate\\s*\\(\\s*\\w+\\s*\\)\\s*;", text[body_start:])
+        if super_call:
+            insert_at = body_start + super_call.start()
+            text = text[:insert_at] + "registerPlugin(NativeWebAuthnPlugin.class);\n        " + text[insert_at:]
+        else:
+            text = text[:body_start] + "\n        registerPlugin(NativeWebAuthnPlugin.class);" + text[body_start:]
+    else:
+        marker = "public class MainActivity extends BridgeActivity {"
+        if marker not in text:
+            raise SystemExit("Could not find MainActivity class declaration.")
+        text = text.replace(
+            marker,
+            marker + "\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n"
+            + "        registerPlugin(NativeWebAuthnPlugin.class);\n"
+            + "        super.onCreate(savedInstanceState);\n    }",
+            1
+        )
     main.write_text(text)
 
 gradle = root / "app/build.gradle"
