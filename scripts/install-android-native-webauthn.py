@@ -25,12 +25,12 @@ if "NativeWebAuthnPlugin.class" not in text:
     # Reuse an existing onCreate method when Capacitor or another setup step
     # has already generated one; never create duplicate Java method signatures.
     method = re.search(
-        r"public\\s+void\\s+onCreate\\s*\\(\\s*(?:android\\.os\\.)?Bundle\\s+(\\w+)\\s*\\)\\s*\\{",
+        r"public\s+void\s+onCreate\s*\(\s*(?:android\.os\.)?Bundle\s+(\w+)\s*\)\s*\{",
         text
     )
     if method:
         body_start = method.end()
-        super_call = re.search(r"super\\.onCreate\\s*\\(\\s*\\w+\\s*\\)\\s*;", text[body_start:])
+        super_call = re.search(r"super\.onCreate\s*\(\s*\w+\s*\)\s*;", text[body_start:])
         if super_call:
             insert_at = body_start + super_call.start()
             text = text[:insert_at] + "registerPlugin(NativeWebAuthnPlugin.class);\n        " + text[insert_at:]
