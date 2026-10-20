@@ -127,7 +127,7 @@ for permission in (
 # QR scanning uses the camera only when requested, so devices without a camera can still install KingsHall.
 camera_feature = '    <uses-feature android:name="android.hardware.camera" android:required="false" />'
 if camera_feature not in manifest:
-    manifest = manifest.replace("<application", camera_feature + "\\n\\n    <application", 1)
+    manifest = manifest.replace("<application", camera_feature + "\n\n    <application", 1)
 manifest_path.write_text(manifest, encoding="utf-8")
 
 activity_path = java_dir / "MainActivity.java"
