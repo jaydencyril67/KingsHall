@@ -4,6 +4,7 @@ import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.credentials.CreatePublicKeyCredentialRequest;
+import androidx.credentials.CreateCredentialResponse;
 import androidx.credentials.CreatePublicKeyCredentialResponse;
 import androidx.credentials.CredentialManager;
 import androidx.credentials.CredentialManagerCallback;
@@ -49,11 +50,16 @@ public class NativeWebAuthnPlugin extends Plugin {
         call.setKeepAlive(true);
         credentialManager.createCredentialAsync(
             getActivity(), request, cancellation, mainExecutor,
-            new CredentialManagerCallback<CreatePublicKeyCredentialResponse, CreateCredentialException>() {
+            new CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>() {
                 @Override
-                public void onResult(CreatePublicKeyCredentialResponse response) {
+                public void onResult(CreateCredentialResponse response) {
+                    if (!(response instanceof CreatePublicKeyCredentialResponse)) {
+                        call.reject("Android did not return a public-key credential response.");
+                        return;
+                    }
+                    CreatePublicKeyCredentialResponse publicKeyResponse = (CreatePublicKeyCredentialResponse) response;
                     JSObject result = new JSObject();
-                    result.put("responseJson", response.getRegistrationResponseJson());
+                    result.put("responseJson", publicKeyResponse.getRegistrationResponseJson());
                     call.resolve(result);
                 }
                 @Override
