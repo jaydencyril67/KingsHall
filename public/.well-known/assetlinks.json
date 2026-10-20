@@ -1,0 +1,24 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "online.kingshall.foundation",
+      "sha256_cert_fingerprints": [
+        "E6:98:54:7B:F4:11:0E:62:81:37:71:06:E8:DA:38:DF:8F:1E:60:A1:47:38:5D:1F:69:70:7E:96:02:BB:2D:02"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "web",
+      "site": "https://kingshall.online"
+    }
+  }
+]
