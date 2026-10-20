@@ -122,6 +122,30 @@ jobs:
       - name: Add Android wrapper
         run: npx cap add android
 
+      - name: Set Android compile SDK to 35 for AndroidX dependencies
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/variables.gradle")
+          if not path.is_file():
+              raise SystemExit("Capacitor did not generate android/variables.gradle; cannot safely set compile SDK.")
+
+          text = path.read_text()
+          updated, count = re.subn(
+              r"(?m)^(\s*compileSdkVersion\s*=\s*)\d+\s*$",
+              r"\g<1>35",
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not find compileSdkVersion in android/variables.gradle; no build settings changed.")
+          path.write_text(updated)
+          print("Set Android compileSdkVersion to 35. targetSdkVersion and minSdkVersion are unchanged.")
+          PY
+
       - name: Generate KingsHall Android app icons from the master logo
         run: |
           set -euo pipefail
