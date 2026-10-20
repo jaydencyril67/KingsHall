@@ -581,18 +581,6 @@ export default function SecurityPage({ user }: Props) {
                 setAccountRemovalConfirmation({ email, platform: 'browser' });
                 setBrowserAccountActionMenuEmail(null);
                 return;
-                const removed = [...new Set([...readCookieList(REMOVED_ACCOUNTS_KEY), email])].slice(-50);
-                writeCookieList(REMOVED_ACCOUNTS_KEY, removed);
-                const remaining = writeBrowserAccounts(savedBrowserAccounts.filter(item => item !== email));
-                setSavedBrowserAccounts(remaining); setBrowserAccountActionMenuEmail(null);
-                let currentHint = '';
-                const hintCookie = document.cookie.split(';').map(item => item.trim()).find(item => item.startsWith('kh_account_hint='));
-                if (hintCookie) { try { currentHint = decodeURIComponent(hintCookie.slice('kh_account_hint='.length)).trim().toLowerCase(); } catch {} }
-                if (currentHint === email) {
-                  document.cookie = 'kh_account_hint=; Domain=.kingshall.online; Path=/; Max-Age=0; Secure; SameSite=Lax';
-                  localStorage.removeItem('kingshall_account_hint');
-                }
-                setNotice('Saved account removed from this browser.'); setNoticeOk(true);
               }}>Remove</button>
             </div>}
           </div>)}
