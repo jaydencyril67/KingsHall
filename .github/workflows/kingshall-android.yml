@@ -537,15 +537,15 @@ jobs:
           PY
 
           echo "KingsHall Android origin: android:apk-key-hash:$ANDROID_KEY_HASH"
-          {
-            echo "### KingsHall WebAuthn configuration"
-            echo ""
-            echo "- Set `WEBAUTHN_ANDROID_ORIGIN` on the ApiKingsHall Render service to:"
-            echo ""
-            echo "`android:apk-key-hash:$ANDROID_KEY_HASH`"
-            echo ""
-            echo "- Signing certificate SHA-256: `$CERT_SHA256`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' \
+            '### KingsHall WebAuthn configuration' \
+            '' \
+            '- Set `WEBAUTHN_ANDROID_ORIGIN` on the ApiKingsHall Render service to:' \
+            '' \
+            "`android:apk-key-hash:$ANDROID_KEY_HASH`" \
+            '' \
+            "- Signing certificate SHA-256: `$CERT_SHA256`" \
+            >> "$GITHUB_STEP_SUMMARY"
 
           # Publish the association file with the web app source so hosting deploys it.
           git config user.name "github-actions[bot]"
