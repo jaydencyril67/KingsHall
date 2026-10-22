@@ -238,8 +238,8 @@ export default function SetupPage() {
       <div className="kh-setup-release-version">
         <span className="kh-setup-release-mark" aria-hidden="true">↓</span>
         <div className="kh-setup-setting-copy">
-          <strong>{apkRelease.status === 'checking' ? 'Checking latest release…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'Latest APK available · KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
-          <span>{apkRelease.status === 'update' ? 'A newer signed Android APK is ready to install.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest KingsHall release is available in CrownStore.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking GitHub for the latest signed APK.'}</span>
+          <strong>{apkRelease.status === 'checking' ? 'Checking latest version…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'Latest version · KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
+          <span>{apkRelease.status === 'update' ? 'A newer signed Android release is available in CrownStore.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest KingsHall release is available in CrownStore.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking for the latest KingsHall release.'}</span>
           {apkRelease.installedVersion && <span>Currently installed: v{apkRelease.installedVersion}</span>}
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function SetupPage() {
     { key: 'header', title: 'App header lighting', summary: headerEnabled ? 'Alert accent on · ' + headerColor.toUpperCase() : 'Alert accent off', icon: '✧' },
     { key: 'channels', title: 'Notification channels', summary: [channels.inApp && 'In-app', channels.push && 'Push', channels.email && 'Email'].filter(Boolean).join(' · ') || 'All channels off', icon: '♧' },
     { key: 'types', title: 'Notification types', summary: Object.values(types).filter(Boolean).length + ' of ' + TYPE_OPTIONS.length + ' alert types enabled', icon: '☷' },
-    { key: 'release', title: 'Latest APK release', summary: apkRelease.status === 'update' ? 'Update available · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'current' ? 'Latest installed · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'latest' ? 'Download v' + (apkRelease.latestVersion || '') : apkRelease.status === 'checking' ? 'Checking latest release…' : 'APK version unavailable', icon: '↓' }
+    { key: 'release', title: 'Latest APK release', summary: apkRelease.status === 'update' ? 'Update available · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'current' ? 'Latest installed · v' + (apkRelease.latestVersion || '') : apkRelease.status === 'latest' ? 'Download v' + (apkRelease.latestVersion || '') : apkRelease.status === 'checking' ? 'Checking latest version…' : 'APK version unavailable', icon: '↓' }
   ];
   return <section className="kh-setup-page kh-device-expanded" aria-labelledby="kh-setup-title">
     <div className="kh-setup-heading">
