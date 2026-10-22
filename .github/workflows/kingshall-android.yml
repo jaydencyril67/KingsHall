@@ -6,7 +6,7 @@ on:
       build_apk:
         description: 'Build and publish the signed KingsHall production APK'
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: kingshall-release-apk
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-signed-release-apk:
