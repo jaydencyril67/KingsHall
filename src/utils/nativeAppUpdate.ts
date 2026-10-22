@@ -5,25 +5,10 @@ export type NativeAppInfo = {
   versionCode: number;
 };
 
-export type NativeAppUpdateEvent = {
-  message?: string;
-  stage?: string;
-  timestamp?: number;
-};
-
 export type NativeAppUpdatePlugin = {
+  // Version metadata is retained for this app's update-notification checks.
+  // APK downloads and installation are handled exclusively by CrownStore.
   getAppInfo(): Promise<NativeAppInfo>;
-  downloadAndInstall(options: { url: string }): Promise<{
-    status?: string;
-    downloadId?: number;
-    requiresPermission?: boolean;
-    url?: string;
-    queuedAt?: number;
-  }>;
-  addListener?(
-    eventName: 'downloadError',
-    listener: (event: NativeAppUpdateEvent) => void,
-  ): Promise<{ remove: () => Promise<void> }>;
 };
 
 export const NativeAppUpdate = registerPlugin<NativeAppUpdatePlugin>('NativeAppUpdate');
