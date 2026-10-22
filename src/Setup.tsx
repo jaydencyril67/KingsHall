@@ -5,10 +5,11 @@ import { registerKingsHallNativePushToken, unregisterKingsHallNativePushToken } 
 import { registerKingsHallWebPushSubscription, unregisterKingsHallWebPushSubscription } from './webPush';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
 import { alertsFetch } from './alertsClient';
+import { openCrownStoreApp } from './utils/crownStore';
 import ColorSelectionPage from './ColorSelectionPage';
 
 type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
-type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseNotes?: string; message?: string };
+type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; releaseNotes?: string; message?: string };
 type Channels = { email: boolean; inApp: boolean; push: boolean };
 type AlertTypes = Record<AlertType, boolean>;
 const TYPE_OPTIONS: { key: AlertType; label: string; group: string }[] = [
@@ -76,7 +77,6 @@ export default function SetupPage() {
   const [notice, setNotice] = useState('');
   const [apkRelease, setApkRelease] = useState<ApkRelease>({ status: 'checking' });
   const [apkActionMessage, setApkActionMessage] = useState('');
-  const [apkDownloading, setApkDownloading] = useState(false);
   const [savedAt, setSavedAt] = useState('');
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [colorPicker, setColorPicker] = useState<'nowbar' | 'header' | 'button' | null>(null);
@@ -93,14 +93,13 @@ export default function SetupPage() {
       }
       const query = appInfo?.versionName ? '?installedVersion=' + encodeURIComponent(appInfo.versionName) : '';
       const response = await alertsFetch('/api/notifications/app-update-check' + query, { cache: 'no-store' });
-      const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; downloadUrl?: string; releaseNotes?: string; message?: string };
+      const data = await response.json().catch(() => ({})) as { updateAvailable?: boolean; installedVersion?: string; latestVersion?: string; releaseNotes?: string; message?: string };
       if (!response.ok) throw new Error(data.message || 'Unable to check the latest KingsHall APK.');
-      if (!data.latestVersion || !data.downloadUrl) throw new Error('No published KingsHall APK release is available yet.');
+      if (!data.latestVersion) throw new Error('No published KingsHall release is available yet.');
       setApkRelease({
         status: isAndroid && appInfo ? (data.updateAvailable ? 'update' : 'current') : 'latest',
         installedVersion: appInfo?.versionName || undefined,
         latestVersion: data.latestVersion,
-        downloadUrl: data.downloadUrl,
         releaseNotes: data.releaseNotes || ''
       });
     } catch (error) {
@@ -108,29 +107,9 @@ export default function SetupPage() {
     }
   };
 
-  const downloadLatestApk = async () => {
-    if (!apkRelease.downloadUrl || apkDownloading) return;
-    const isAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-    if (!isAndroid) {
-      setApkActionMessage('Opening the latest signed KingsHall APK download.');
-      window.open(apkRelease.downloadUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    setApkDownloading(true);
-    setApkActionMessage('Preparing the KingsHall APK download…');
-    try {
-      const result = await NativeAppUpdate.downloadAndInstall({ url: apkRelease.downloadUrl });
-      if (result.requiresPermission) {
-        setApkActionMessage('Allow KingsHall to install unknown apps in Android settings, return here, then tap Download / Install again.');
-        setApkDownloading(false);
-      } else {
-        setApkActionMessage('APK download started. Android will ask you to approve the update when it finishes.');
-      }
-    } catch {
-      setApkDownloading(false);
-      setApkActionMessage('The in-app installer could not start. Opening the signed APK download in your browser.');
-      window.open(apkRelease.downloadUrl, '_blank', 'noopener,noreferrer');
-    }
+  const openLatestInCrownStore = () => {
+    if (!apkRelease.latestVersion) return;
+    openCrownStoreApp('kingshall', setApkActionMessage);
   };
 
   useEffect(() => {
@@ -144,16 +123,6 @@ export default function SetupPage() {
       window.removeEventListener('focus', refreshWhenVisible);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android' || !NativeAppUpdate.addListener) return;
-    let listener: { remove: () => Promise<void> } | undefined;
-    void NativeAppUpdate.addListener('downloadError', event => {
-      setApkDownloading(false);
-      setApkActionMessage(event.message || 'The KingsHall APK download or installer could not complete.');
-    }).then(handle => { listener = handle; }).catch(() => {});
-    return () => { if (listener) void listener.remove(); };
   }, []);
 
   useEffect(() => {
@@ -270,7 +239,7 @@ export default function SetupPage() {
         <span className="kh-setup-release-mark" aria-hidden="true">↓</span>
         <div className="kh-setup-setting-copy">
           <strong>{apkRelease.status === 'checking' ? 'Checking latest release…' : apkRelease.status === 'error' ? 'Release check unavailable' : 'Latest APK available · KingsHall v' + (apkRelease.latestVersion || '—')}</strong>
-          <span>{apkRelease.status === 'update' ? 'A newer signed Android APK is ready to install.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest signed Android APK available for download.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking GitHub for the latest signed APK.'}</span>
+          <span>{apkRelease.status === 'update' ? 'A newer signed Android APK is ready to install.' : apkRelease.status === 'current' ? 'This device is already using the latest release.' : apkRelease.status === 'latest' ? 'Latest KingsHall release is available in CrownStore.' : apkRelease.status === 'error' ? (apkRelease.message || 'Please try checking again.') : 'Checking GitHub for the latest signed APK.'}</span>
           {apkRelease.installedVersion && <span>Currently installed: v{apkRelease.installedVersion}</span>}
         </div>
       </div>
@@ -278,7 +247,7 @@ export default function SetupPage() {
       {apkActionMessage && <Toast message={apkActionMessage} tone="info" onClose={() => setApkActionMessage('')} />}
       <div className="kh-setup-release-actions">
         <button type="button" className="secondary-button" onClick={() => void checkApkRelease()} disabled={apkRelease.status === 'checking'}>{apkRelease.status === 'checking' ? 'Checking…' : 'Check for updates'}</button>
-        <button type="button" className="kh-setup-release-primary" onClick={() => void downloadLatestApk()} disabled={!apkRelease.downloadUrl || apkRelease.status === 'checking' || apkDownloading}>{apkDownloading ? 'Downloading…' : apkRelease.status === 'update' ? 'Update & install' : 'Download latest APK'}</button>
+        <button type="button" className="kh-setup-release-primary" onClick={openLatestInCrownStore} disabled={!apkRelease.latestVersion || apkRelease.status === 'checking'}>{apkRelease.status === 'update' ? 'Update in CrownStore' : 'Open CrownStore'}</button>
       </div>
     </>;
     return <>
