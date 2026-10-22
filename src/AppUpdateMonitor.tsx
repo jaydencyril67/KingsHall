@@ -1,21 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NativeAppUpdate } from './utils/nativeAppUpdate';
+import { openCrownStoreApp } from './utils/crownStore';
 import { alertsFetch } from './alertsClient';
 
 type UpdateCheckResponse = {
   updateAvailable: boolean;
   installedVersion?: string;
   latestVersion?: string;
-  downloadUrl?: string;
   releaseNotes?: string;
-  releaseUrl?: string;
 };
 
 export default function AppUpdateMonitor() {
   const [update, setUpdate] = useState<UpdateCheckResponse | null>(null);
   const [hidden, setHidden] = useState(false);
-  const [installing, setInstalling] = useState(false);
   const [message, setMessage] = useState('');
 
   const checkForUpdate = useCallback(async () => {
@@ -27,7 +25,7 @@ export default function AppUpdateMonitor() {
       const response = await alertsFetch('/api/notifications/app-update-check' + query, { cache: 'no-store' });
       if (!response.ok) return;
       const data = await response.json() as UpdateCheckResponse;
-      if (data.updateAvailable && data.downloadUrl && data.latestVersion) {
+      if (data.updateAvailable && data.latestVersion) {
         setUpdate(data);
         setHidden(false);
       } else {
@@ -56,33 +54,9 @@ export default function AppUpdateMonitor() {
     };
   }, [checkForUpdate]);
 
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android' || !NativeAppUpdate.addListener) return;
-    let listener: { remove: () => Promise<void> } | undefined;
-    void NativeAppUpdate.addListener('downloadError', event => {
-      setInstalling(false);
-      setMessage(event.message || 'The KingsHall APK download or installer could not complete.');
-    }).then(handle => { listener = handle; }).catch(() => {});
-    return () => { if (listener) void listener.remove(); };
-  }, []);
-
-  const startUpdate = async () => {
-    if (!update?.downloadUrl || installing) return;
-    setInstalling(true);
-    setMessage('Preparing the KingsHall update…');
-    try {
-      const result = await NativeAppUpdate.downloadAndInstall({ url: update.downloadUrl });
-      if (result.requiresPermission) {
-        setInstalling(false);
-        setMessage('Allow KingsHall to install unknown apps in Android settings, return here, then tap Update now again.');
-      } else {
-        setMessage('The APK is downloading. Android will ask you to approve the update when it finishes.');
-      }
-    } catch {
-      setInstalling(false);
-      setMessage('The in-app installer could not start. Opening the signed APK download in your browser.');
-      window.open(update.downloadUrl, '_blank', 'noopener,noreferrer');
-    }
+  const startUpdate = () => {
+    if (!update?.latestVersion) return;
+    openCrownStoreApp('kingshall', setMessage);
   };
 
   if (!update || hidden || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return null;
@@ -100,13 +74,9 @@ export default function AppUpdateMonitor() {
       {update.releaseNotes && <details className="kh-app-update-notes"><summary>Release notes</summary><p>{update.releaseNotes}</p></details>}
       {message && <p className="kh-app-update-message" role="status" aria-live="polite">{message}</p>}
       <div className="kh-app-update-actions">
-        {installing ? (
-          <div className="kh-app-update-progress" role="status" aria-live="polite"><span className="kh-app-update-spinner" aria-hidden="true" /> Download starting…</div>
-        ) : (
-          <button type="button" className="kh-app-update-primary" onClick={() => void startUpdate()}>
-            <span aria-hidden="true">↓</span> Update now
-          </button>
-        )}
+        <button type="button" className="kh-app-update-primary" onClick={startUpdate}>
+          <span aria-hidden="true">↗</span> Open CrownStore to update
+        </button>
         <button type="button" className="kh-app-update-later" onClick={() => setHidden(true)}>Later</button>
       </div>
     </aside>
