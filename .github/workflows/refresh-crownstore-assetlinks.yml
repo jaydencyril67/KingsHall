@@ -1,0 +1,68 @@
+name: Refresh CrownStore Android passkey association
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout KingsHall website
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Add the CrownStore signing certificate to Digital Asset Links
+        env:
+          CROWNSTORE_CERT_SHA256: ${{ vars.CROWNSTORE_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          fingerprint = os.environ.get("CROWNSTORE_CERT_SHA256", "").strip().upper()
+          if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint):
+              raise SystemExit(
+                  "Set the KingsHall repository Actions variable CROWNSTORE_CERT_SHA256 "
+                  "to CrownStore's colon-separated SHA-256 signing-certificate fingerprint first."
+              )
+
+          path = Path("public/.well-known/assetlinks.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          data = [
+              item for item in data
+              if not (
+                  item.get("target", {}).get("namespace") == "android_app"
+                  and item.get("target", {}).get("package_name") == "online.kingshall.crownstore"
+              )
+          ]
+          data.append({
+              "relation": ["delegate_permission/common.get_login_creds"],
+              "target": {
+                  "namespace": "android_app",
+                  "package_name": "online.kingshall.crownstore",
+                  "sha256_cert_fingerprints": [fingerprint]
+              }
+          })
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          print("CrownStore Android passkey association prepared.")
+          PY
+
+      - name: Commit Digital Asset Links update
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/.well-known/assetlinks.json
+          if git diff --cached --quiet; then
+            echo "CrownStore asset link is already current."
+          else
+            git commit -m "Add CrownStore Android passkey association"
+            git push origin HEAD:main
+          fi
