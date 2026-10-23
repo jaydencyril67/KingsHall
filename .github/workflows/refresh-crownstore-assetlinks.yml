@@ -2,6 +2,11 @@ name: Refresh CrownStore Android passkey association
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/refresh-crownstore-assetlinks.yml"
 
 permissions:
   contents: write
@@ -15,6 +20,14 @@ jobs:
         with:
           ref: main
 
+      - name: Set up Android SDK to inspect the current APK if needed
+        if: ${{ vars.CROWNSTORE_CERT_SHA256 == '' }}
+        uses: android-actions/setup-android@v3
+
+      - name: Install APK signature verifier if needed
+        if: ${{ vars.CROWNSTORE_CERT_SHA256 == '' }}
+        run: sdkmanager "build-tools;35.0.0"
+
       - name: Add the CrownStore signing certificate to Digital Asset Links
         env:
           CROWNSTORE_CERT_SHA256: ${{ vars.CROWNSTORE_CERT_SHA256 }}
@@ -24,14 +37,39 @@ jobs:
           import json
           import os
           import re
+          import subprocess
+          import urllib.request
           from pathlib import Path
 
           fingerprint = os.environ.get("CROWNSTORE_CERT_SHA256", "").strip().upper()
           if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint):
-              raise SystemExit(
-                  "Set the KingsHall repository Actions variable CROWNSTORE_CERT_SHA256 "
-                  "to CrownStore's colon-separated SHA-256 signing-certificate fingerprint first."
+              # Derive the public signing-certificate fingerprint from the latest
+              # stable APK when the repository variable has not been configured.
+              request = urllib.request.Request(
+                  "https://api.github.com/repos/jaydencyril67/CrownStore/releases/latest",
+                  headers={"Accept": "application/vnd.github+json", "User-Agent": "KingsHall-assetlinks-refresh"}
               )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  release = json.load(response)
+              asset = next((item for item in release.get("assets", []) if item.get("name") == "CrownStore.apk"), None)
+              if not asset or not asset.get("browser_download_url"):
+                  raise SystemExit("The latest stable CrownStore release has no downloadable APK.")
+              apk_path = Path("CrownStore.apk")
+              apk_request = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "KingsHall-assetlinks-refresh"})
+              with urllib.request.urlopen(apk_request, timeout=90) as response, apk_path.open("wb") as output:
+                  output.write(response.read())
+              signer = Path(os.environ.get("ANDROID_HOME", "/usr/local/lib/android/sdk")) / "build-tools" / "35.0.0" / "apksigner"
+              if not signer.is_file():
+                  raise SystemExit("Android apksigner was not installed; cannot derive CrownStore's signing certificate.")
+              result = subprocess.run([str(signer), "verify", "--print-certs", str(apk_path)], check=True, capture_output=True, text=True)
+              match = re.search(r"Signer #1 certificate SHA-256 digest:\\s*([0-9A-Fa-f]{64})", result.stdout)
+              if not match:
+                  raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint.")
+              hex_digest = match.group(1).upper()
+              fingerprint = ":".join(hex_digest[index:index + 2] for index in range(0, len(hex_digest), 2))
+              print("Derived CrownStore signing-certificate fingerprint from the latest stable APK.")
+          if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint):
+              raise SystemExit("CROWNSTORE_CERT_SHA256 must be a colon-separated SHA-256 certificate fingerprint.")
 
           path = Path("public/.well-known/assetlinks.json")
           data = json.loads(path.read_text(encoding="utf-8"))
