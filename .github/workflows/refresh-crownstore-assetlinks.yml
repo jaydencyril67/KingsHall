@@ -65,7 +65,7 @@ jobs:
               signer_output = result.stdout + "\n" + result.stderr
               match = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9A-Fa-f]{64})", signer_output, re.IGNORECASE)
               if not match:
-                  raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint. Output was: " + signer_output[-2000:])
+                  raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint. Output start: " + signer_output[:2500] + " Output end: " + signer_output[-1500:])
               hex_digest = match.group(1).upper()
               fingerprint = ":".join(hex_digest[index:index + 2] for index in range(0, len(hex_digest), 2))
               public_key_match = re.search(r"Signer #1 public key SHA-256 digest:\s*([0-9A-Fa-f]{64})", signer_output, re.IGNORECASE)
