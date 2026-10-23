@@ -62,7 +62,7 @@ jobs:
               if not signer.is_file():
                   raise SystemExit("Android apksigner was not installed; cannot derive CrownStore's signing certificate.")
               result = subprocess.run([str(signer), "verify", "--print-certs", str(apk_path)], check=True, capture_output=True, text=True)
-              match = re.search(r"Signer #1 certificate SHA-256 digest:\\s*([0-9A-Fa-f]{64})", result.stdout)
+              match = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9A-Fa-f]{64})", result.stdout)
               if not match:
                   raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint.")
               hex_digest = match.group(1).upper()
