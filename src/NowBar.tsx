@@ -199,6 +199,7 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
                   style={buttonAppearance.enabled ? {
                     borderColor: buttonAppearance.color,
                     borderWidth: '1.5px',
+                    color: buttonAppearance.color,
                     boxShadow: `0 0 0 1px ${buttonAppearance.color}66, 0 0 10px ${buttonAppearance.color}55, inset 0 0 5px ${buttonAppearance.color}1f`
                   } : undefined}
                   type="button"
