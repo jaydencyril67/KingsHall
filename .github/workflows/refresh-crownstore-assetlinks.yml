@@ -62,14 +62,15 @@ jobs:
                   raise SystemExit("Android apksigner was not installed; cannot derive CrownStore's signing certificate.")
               signer = signers[-1]
               result = subprocess.run([str(signer), "verify", "--print-certs", str(apk_path)], check=True, capture_output=True, text=True)
-              match = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9A-Fa-f]{64})", result.stdout)
+              signer_output = result.stdout + "\\n" + result.stderr
+              match = re.search(r"Signer #1 certificate SHA-256 digest:\\s*([0-9A-Fa-f]{64})", signer_output, re.IGNORECASE)
               if not match:
-                  raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint.")
+                  raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint. Output was: " + signer_output[-2000:])
               hex_digest = match.group(1).upper()
               fingerprint = ":".join(hex_digest[index:index + 2] for index in range(0, len(hex_digest), 2))
-              public_key_match = re.search(r"Signer #1 public key SHA-256 digest:\s*([0-9A-Fa-f]{64})", result.stdout)
+              public_key_match = re.search(r"Signer #1 public key SHA-256 digest:\\s*([0-9A-Fa-f]{64})", signer_output, re.IGNORECASE)
               if not public_key_match:
-                  raise SystemExit("apksigner did not report the public-key SHA-256 digest needed for Android passkeys.")
+                  raise SystemExit("apksigner did not report the public-key SHA-256 digest needed for Android passkeys. Output was: " + signer_output[-2000:])
               public_key_digest = bytes.fromhex(public_key_match.group(1))
               android_origin = "android:apk-key-hash:" + __import__("base64").urlsafe_b64encode(public_key_digest).decode("ascii").rstrip("=")
               print("Derived CrownStore signing-certificate fingerprint from the latest stable APK.")
