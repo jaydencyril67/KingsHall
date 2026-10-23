@@ -487,6 +487,7 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/kingshall-release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          CROWNSTORE_CERT_SHA256: ${{ vars.CROWNSTORE_CERT_SHA256 }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -508,6 +509,8 @@ jobs:
           mkdir -p public/.well-known
           python3 - "$CERT_SHA256" <<'PY'
           import json
+          import os
+          import re
           import sys
           from pathlib import Path
 
@@ -532,6 +535,22 @@ jobs:
                   }
               }
           ]
+
+          # CrownStore's fingerprint is public association metadata, configured as a
+          # repository Actions variable after reading it from its signed release workflow.
+          crownstore_fingerprint = os.environ.get("CROWNSTORE_CERT_SHA256", "").strip().upper()
+          if crownstore_fingerprint:
+              if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", crownstore_fingerprint):
+                  raise SystemExit("CROWNSTORE_CERT_SHA256 must be a colon-separated 32-byte SHA-256 fingerprint.")
+              data.append({
+                  "relation": ["delegate_permission/common.get_login_creds"],
+                  "target": {
+                      "namespace": "android_app",
+                      "package_name": "online.kingshall.crownstore",
+                      "sha256_cert_fingerprints": [crownstore_fingerprint]
+                  }
+              })
+
           Path("public/.well-known/assetlinks.json").write_text(
               json.dumps(data, indent=2) + "\n", encoding="utf-8"
           )
