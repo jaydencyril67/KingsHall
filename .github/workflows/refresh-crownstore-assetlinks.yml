@@ -20,14 +20,6 @@ jobs:
         with:
           ref: main
 
-      - name: Set up Android SDK to inspect the current APK if needed
-        if: ${{ vars.CROWNSTORE_CERT_SHA256 == '' }}
-        uses: android-actions/setup-android@v3
-
-      - name: Install APK signature verifier if needed
-        if: ${{ vars.CROWNSTORE_CERT_SHA256 == '' }}
-        run: sdkmanager "build-tools;35.0.0"
-
       - name: Add the CrownStore signing certificate to Digital Asset Links
         env:
           CROWNSTORE_CERT_SHA256: ${{ vars.CROWNSTORE_CERT_SHA256 }}
@@ -58,9 +50,17 @@ jobs:
               apk_request = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "KingsHall-assetlinks-refresh"})
               with urllib.request.urlopen(apk_request, timeout=90) as response, apk_path.open("wb") as output:
                   output.write(response.read())
-              signer = Path(os.environ.get("ANDROID_HOME", "/usr/local/lib/android/sdk")) / "build-tools" / "35.0.0" / "apksigner"
-              if not signer.is_file():
+              sdk_root = Path(os.environ.get("ANDROID_HOME", "/usr/local/lib/android/sdk"))
+              signers = sorted((sdk_root / "build-tools").glob("*/apksigner"))
+              if not signers:
+                  sdkmanager = sdk_root / "cmdline-tools" / "latest" / "bin" / "sdkmanager"
+                  if not sdkmanager.is_file():
+                      raise SystemExit("Android sdkmanager is unavailable; cannot derive CrownStore's signing certificate.")
+                  subprocess.run([str(sdkmanager), "build-tools;35.0.0"], check=True, timeout=240)
+                  signers = sorted((sdk_root / "build-tools").glob("*/apksigner"))
+              if not signers:
                   raise SystemExit("Android apksigner was not installed; cannot derive CrownStore's signing certificate.")
+              signer = signers[-1]
               result = subprocess.run([str(signer), "verify", "--print-certs", str(apk_path)], check=True, capture_output=True, text=True)
               match = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9A-Fa-f]{64})", result.stdout)
               if not match:
