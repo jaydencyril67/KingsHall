@@ -26,10 +26,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import base64
+          import hashlib
           import json
           import os
           import re
           import subprocess
+          import tempfile
+          import zipfile
           import urllib.request
           from pathlib import Path
 
@@ -68,13 +72,40 @@ jobs:
                   raise SystemExit("apksigner did not report a SHA-256 signing-certificate fingerprint. Output start: " + signer_output[:2500] + " Output end: " + signer_output[-1500:])
               hex_digest = match.group(1).upper()
               fingerprint = ":".join(hex_digest[index:index + 2] for index in range(0, len(hex_digest), 2))
-              public_key_match = re.search(r"(?:Signer #1|V[234] Signer): public key SHA-256 digest:\s*([0-9A-Fa-f]{64})", signer_output, re.IGNORECASE)
-              if not public_key_match:
-                  raise SystemExit("apksigner did not report the public-key SHA-256 digest needed for Android passkeys. Output was: " + signer_output[-2000:])
-              public_key_digest = bytes.fromhex(public_key_match.group(1))
-              android_origin = "android:apk-key-hash:" + __import__("base64").urlsafe_b64encode(public_key_digest).decode("ascii").rstrip("=")
-              print("Derived CrownStore signing-certificate fingerprint from the latest stable APK.")
-              print("Set WEBAUTHN_ANDROID_ORIGIN to include this exact origin on ApiKingsHall Render: " + android_origin)
+              android_origin = ""
+              # V1-signed APKs include the signing certificate in META-INF/*.RSA,
+              # *.DSA or *.EC. Extract its DER public key to calculate Android's
+              # exact android:apk-key-hash origin (not the APK file checksum).
+              with zipfile.ZipFile(apk_path) as archive:
+                  certificate_entries = [name for name in archive.namelist()
+                                         if name.upper().startswith("META-INF/")
+                                         and name.upper().endswith((".RSA", ".DSA", ".EC"))]
+                  if certificate_entries:
+                      with tempfile.TemporaryDirectory() as temporary:
+                          certificate_container = Path(temporary) / "signer.p7"
+                          certificate_pem = Path(temporary) / "signer.pem"
+                          certificate_container.write_bytes(archive.read(certificate_entries[0]))
+                          extracted = subprocess.run(
+                              ["openssl", "pkcs7", "-inform", "DER", "-in", str(certificate_container),
+                               "-print_certs", "-out", str(certificate_pem)],
+                              capture_output=True, text=True
+                          )
+                          if extracted.returncode == 0 and certificate_pem.exists():
+                              public_key = subprocess.run(
+                                  ["openssl", "x509", "-in", str(certificate_pem), "-pubkey", "-noout"],
+                                  capture_output=True, check=True
+                              )
+                              public_key_der = subprocess.run(
+                                  ["openssl", "pkey", "-pubin", "-outform", "DER"],
+                                  input=public_key.stdout, capture_output=True, check=True
+                              )
+                              digest = hashlib.sha256(public_key_der.stdout).digest()
+                              android_origin = "android:apk-key-hash:" + base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+              if android_origin:
+                  print("Set WEBAUTHN_ANDROID_ORIGIN on ApiKingsHall Render to include this exact origin: " + android_origin)
+              else:
+                  print("The APK certificate fingerprint was derived, but its public key was not available through a V1 META-INF signature.")
+                  print("The Android passkey origin is shown by the CrownStore Android release workflow's signing-configuration step summary.")
           if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint):
               raise SystemExit("CROWNSTORE_CERT_SHA256 must be a colon-separated SHA-256 certificate fingerprint.")
 
