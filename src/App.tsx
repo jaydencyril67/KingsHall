@@ -121,18 +121,19 @@ function returnToCompanionApp(email: unknown): boolean {
   let safeReturn: URL | null = null;
   try {
     const candidate = new URL(returnTo);
-    const validPath = candidate.protocol === 'https:' && candidate.pathname === '/signin';
+    const validCompanionPath = candidate.protocol === 'https:' && candidate.pathname === '/signin';
+    const validCrownStoreReturn = requestedApp === 'crownstore' && candidate.hostname === 'crownstore.kingshall.online' && candidate.pathname === '/' && candidate.searchParams.get('profile') === '1';
     const validCryBots = requestedApp === 'crybots' && candidate.hostname === 'crybots.kingshall.online';
     const validHallsChat = requestedApp === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online';
-    if (validPath && (validCryBots || validHallsChat)) safeReturn = candidate;
+    if ((validCompanionPath && (validCryBots || validHallsChat)) || validCrownStoreReturn) safeReturn = candidate;
   } catch {
     // An invalid or external return URL must never become an automatic redirect.
   }
-  if (!safeReturn || (requestedApp !== 'crybots' && requestedApp !== 'hallschat')) return false;
+  if (!safeReturn || !['crybots', 'hallschat', 'crownstore'].includes(requestedApp)) return false;
 
   if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && Capacitor.isPluginAvailable('CrossAppLauncher')) {
-    const target = requestedApp === 'crybots' ? 'crybots' : 'halls-chat';
-    const scheme = requestedApp === 'crybots' ? 'crybots' : 'hallschat';
+    const target = requestedApp === 'crybots' ? 'crybots' : requestedApp === 'hallschat' ? 'halls-chat' : 'crownstore';
+    const scheme = requestedApp === 'crybots' ? 'crybots' : requestedApp === 'hallschat' ? 'hallschat' : 'crownstore';
     const callback = new URL(scheme + '://signin');
     const childReturn = safeReturn.searchParams.get('returnTo');
     if (childReturn && childReturn.startsWith('/') && !childReturn.startsWith('//')) {
