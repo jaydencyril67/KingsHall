@@ -407,7 +407,7 @@ export default function SecurityPage({ user }: Props) {
           </div>)}
         </div> : <p className="kh-security-browser-accounts-empty">No KingsHall accounts are currently saved in Android Account Manager.</p>}
       </section> : !Capacitor.isNativePlatform() && <section className="kh-identity-card kh-security-browser-accounts">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Saved browser accounts</h2><p>Manage accounts saved on this browser. You can remove an account here; sign-in and account selection happen in the connected app.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon /></span><div><h2>Saved browser accounts</h2><p>Manage accounts saved on this browser. You can remove an account here; sign-in and account selection happen in the connected app.</p></div></div>
         {savedBrowserAccounts.length > 0 ? <div className="kh-security-browser-account-list">
           {savedBrowserAccounts.map(email => <div className="kh-security-browser-account" key={email}>
             <button type="button" className="kh-security-browser-account-trigger" aria-expanded={browserAccountActionMenuEmail === email} onClick={() => setBrowserAccountActionMenuEmail(current => current === email ? null : email)}>
@@ -433,7 +433,7 @@ export default function SecurityPage({ user }: Props) {
       </section>}
 
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Account security{loading && <span className="kh-identity-section-loading" aria-label="Loading security details"><LoadingDots /></span>}</h2><p>Manage your account security settings below.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon /></span><div><h2>Account security{loading && <span className="kh-identity-section-loading" aria-label="Loading security details"><LoadingDots /></span>}</h2><p>Manage your account security settings below.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field kh-security-editable-field">
             <label htmlFor="security-password">Password</label>
@@ -472,7 +472,7 @@ export default function SecurityPage({ user }: Props) {
       </section>
 
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Two-factor authenticator</h2><p>Bind an authenticator app, then enable it separately to require a code at sign-in.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon /></span><div><h2>Two-factor authenticator</h2><p>Bind an authenticator app, then enable it separately to require a code at sign-in.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field kh-two-factor-status-field"><label>Binding status</label><div className="kh-two-factor-status" role="status"><span>{twoFactorEnabled ? 'Bound and verified' : twoFactorPending ? 'Setup pending verification' : 'Not bound'}</span>{twoFactorEnabled && <span className="kh-security-code-check kh-two-factor-status-check" aria-label="Bound and verified"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           {twoFactorEnabled && <div className="field"><label>Require 2FA at sign-in</label><button type="button" className={twoFactorLoginEnabled ? 'secondary-button' : 'submit-button'} disabled={loading} onClick={() => void setAuthenticatorLoginRequirement(!twoFactorLoginEnabled)}>{twoFactorLoginEnabled ? 'Disable sign-in requirement' : 'Enable at sign-in'}</button><small className="kh-postal-feedback">{twoFactorLoginEnabled ? 'Sign-in will require a current authenticator code.' : 'Authenticator is bound but will not be requested at sign-in until enabled here.'}</small></div>}
@@ -484,7 +484,7 @@ export default function SecurityPage({ user }: Props) {
 
       </section>
       <section className="kh-identity-card kh-identity-security">
-        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon type="lock" /></span><div><h2>Biometric security</h2><p>Configure a passkey and separately enable it to require biometric verification during KingsHall sign-in.</p></div></div>
+        <div className="kh-identity-card-head"><span className="kh-home-card-icon"><SecurityIcon /></span><div><h2>Biometric security</h2><p>Configure a passkey and separately enable it to require biometric verification during KingsHall sign-in.</p></div></div>
         <div className="kh-identity-grid kh-identity-security-fields">
           <div className="field"><label>Passkey status</label><div className="kh-two-factor-status" role="status"><span>{biometricConfigured ? 'Passkey configured' : 'Not configured'}</span>{biometricConfigured && <span className="kh-security-code-check kh-two-factor-status-check" aria-label="Passkey configured"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.25" /><path d="m5.8 10.2 2.7 2.7 5.7-6" /></svg></span>}</div></div>
           {!biometricConfigured && <div className="field"><label>Set up biometrics</label><button type="button" className="submit-button" disabled={biometricBusy || loading} onClick={() => void configureBiometric()}>{biometricBusy ? <LoadingDots /> : 'Configure passkey'}</button></div>}
