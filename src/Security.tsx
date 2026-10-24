@@ -671,14 +671,48 @@ export default function SecurityPage({ user }: Props) {
         </div>}
         {(walletDraft || walletPendingDeleteId) && walletVerificationRequested ? <div className="kh-wallet-verify-row"><input className="kh-wallet-verification-code" aria-label="Email verification code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Email code" value={walletEmailVerificationCode} onChange={e => setWalletEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} /><button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button kh-wallet-verify-action" type="button" disabled={savingWallets || walletEmailVerificationCode.length !== 6} onClick={() => void commitWalletDraft()}>{savingWallets ? <LoadingDots /> : walletPendingDeleteId ? 'Verify & delete' : 'Verify & save'}</button></div> : <button className="secondary-button kh-identity-add-wallet kh-wallet-smart-button" type="button" disabled={savingWallets || (!walletDraft && !walletPendingDeleteId && wallets.length >= 20)} onClick={() => { if (walletDraft || walletPendingDeleteId) void commitWalletDraft(); else { setWalletDraft(newWallet()); setWalletPendingDeleteId(null); setWalletVerificationRequested(false); setWalletEmailVerificationCode(''); setWalletActionMenuId(null); setNotice(''); } }}>{savingWallets ? <LoadingDots /> : walletDraft || walletPendingDeleteId ? 'Send code' : '+ Add wallet address'}</button>}
       </section>
-      {accountRemovalConfirmation && <div className="kh-wallet-actions-popout kh-security-browser-account-popout kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false" style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 'min(340px, calc(100vw - 40px))', padding: '18px', zIndex: 1000, whiteSpace: 'normal' }}>
-        <strong>Remove saved account?</strong>
-        <p style={{ margin: '10px 0 14px', lineHeight: 1.5, whiteSpace: 'normal' }}>{accountRemovalConfirmation.platform === 'android' ? 'Remove ' + accountRemovalConfirmation.email + ' from Android saved KingsHall accounts on this device? This deletes its saved device credential but does not log you out of your current session.' : 'Remove ' + accountRemovalConfirmation.email + ' from saved KingsHall accounts on this browser? This only removes the saved account entry from this browser.'}</p>
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-          <button type="button" className="secondary-button" disabled={removingAndroidAccount} onClick={() => setAccountRemovalConfirmation(null)}>Cancel</button>
-          <button type="button" className="submit-button is-danger" disabled={removingAndroidAccount} onClick={() => void confirmSavedAccountRemoval()}>{removingAndroidAccount ? 'Removing…' : 'Remove account'}</button>
+      {accountRemovalConfirmation && <>
+        <style>{`
+          .kh-account-removal-backdrop {
+            position: fixed; inset: 0; z-index: 999; display: grid; place-items: center;
+            padding: 20px; background: rgba(4, 7, 15, .62); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+          }
+          .kh-account-removal-confirm-popout {
+            position: relative; width: min(100%, 380px); box-sizing: border-box;
+            padding: 22px; border: 1px solid rgba(255,255,255,.16); border-radius: 22px;
+            color: var(--text-primary, #f7f8fc); background: linear-gradient(145deg, rgba(29,35,49,.98), rgba(13,17,28,.98));
+            box-shadow: 0 24px 80px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.07);
+            white-space: normal; animation: kh-account-removal-in .16s ease-out;
+          }
+          .kh-account-removal-icon {
+            display: grid; place-items: center; width: 42px; height: 42px; margin-bottom: 15px;
+            border: 1px solid rgba(255,105,105,.24); border-radius: 14px;
+            color: #ff8585; background: rgba(255,91,91,.10);
+          }
+          .kh-account-removal-icon svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+          .kh-account-removal-confirm-popout h3 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 650; letter-spacing: -.02em; }
+          .kh-account-removal-confirm-popout p { margin: 9px 0 20px; color: rgba(235,239,249,.76); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+          .kh-account-removal-email { color: #fff; font-weight: 600; }
+          .kh-account-removal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+          .kh-account-removal-actions button { min-height: 43px; border-radius: 13px; font-weight: 600; }
+          .kh-account-removal-actions .kh-account-removal-danger { border: 1px solid rgba(255,107,107,.35); color: #fff; background: linear-gradient(135deg,#e34f5f,#b92e43); box-shadow: 0 5px 16px rgba(185,46,67,.2); }
+          .kh-account-removal-actions button:disabled { opacity: .58; cursor: wait; }
+          @keyframes kh-account-removal-in { from { opacity: 0; transform: translateY(7px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+          @media (prefers-reduced-motion: reduce) { .kh-account-removal-confirm-popout { animation: none; } }
+        `}</style>
+        <div className="kh-account-removal-backdrop" onClick={() => { if (!removingAndroidAccount) setAccountRemovalConfirmation(null); }}>
+          <div className="kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="true" aria-labelledby="kh-account-removal-title" aria-describedby="kh-account-removal-description" onClick={event => event.stopPropagation()}>
+            <div className="kh-account-removal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v5m4-5v5" /></svg></div>
+            <h3 id="kh-account-removal-title">Remove saved account?</h3>
+            <p id="kh-account-removal-description">{accountRemovalConfirmation.platform === 'android' ? <>Remove <span className="kh-account-removal-email">{accountRemovalConfirmation.email}</span> from KingsHall accounts saved on this device? Its saved device credential will be deleted, but your current session will stay signed in.</> : <>Remove <span className="kh-account-removal-email">{accountRemovalConfirmation.email}</span> from KingsHall accounts saved in this browser? This only removes the saved account entry from this browser.</>}</p>
+            <div className="kh-account-removal-actions">
+              <button type="button" className="secondary-button" disabled={removingAndroidAccount} onClick={() => setAccountRemovalConfirmation(null)}>Cancel</button>
+              <button type="button" className="kh-account-removal-danger" disabled={removingAndroidAccount} onClick={() => void confirmSavedAccountRemoval()}>{removingAndroidAccount ? 'Removing…' : 'Remove account'}</button>
+            </div>
+          </div>
         </div>
-      </div>}
+      </>}
       <AccountVerification />
       <p className="kh-identity-footnote">Never share your password or verification codes. Only enter public wallet receiving addresses here.</p>
   </div>;
