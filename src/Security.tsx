@@ -389,14 +389,14 @@ export default function SecurityPage({ user }: Props) {
             <button type="button" className="kh-security-browser-account-trigger" aria-expanded={androidAccountActionMenuEmail === email} onClick={() => setAndroidAccountActionMenuEmail(current => current === email ? null : email)}>
               <span className="kh-security-browser-account-email">{email}</span><span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
             </button>
-            {androidAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved Android account actions">
+            {androidAccountActionMenuEmail === email && <div className="kh-account-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved Android account actions">
               <button type="button" className="is-danger" disabled={removingAndroidAccount} onClick={event => {
                 event.stopPropagation();
                 setAccountRemovalConfirmation({ email, platform: 'android' });
                 setAndroidAccountActionMenuEmail(null);
               }}>Remove account</button>
             </div>}
-            {accountRemovalConfirmation?.email === email && accountRemovalConfirmation.platform === 'android' && <div className="kh-wallet-actions-popout kh-security-browser-account-popout kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false">
+            {accountRemovalConfirmation?.email === email && accountRemovalConfirmation.platform === 'android' && <div className="kh-account-actions-popout kh-security-browser-account-popout kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false">
               <strong>Remove saved account?</strong>
               <p>Remove <span className="kh-account-removal-email">{email}</span> from KingsHall accounts saved on this device? Its saved device credential will be deleted, but your current session will stay signed in.</p>
               <div className="kh-account-removal-actions">
@@ -413,14 +413,14 @@ export default function SecurityPage({ user }: Props) {
             <button type="button" className="kh-security-browser-account-trigger" aria-expanded={browserAccountActionMenuEmail === email} onClick={() => setBrowserAccountActionMenuEmail(current => current === email ? null : email)}>
               <span className="kh-security-browser-account-email">{email}</span><span className="kh-security-browser-account-chevron" aria-hidden="true">⌄</span>
             </button>
-            {browserAccountActionMenuEmail === email && <div className="kh-wallet-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
+            {browserAccountActionMenuEmail === email && <div className="kh-account-actions-popout kh-security-browser-account-popout" role="group" aria-label="Saved account actions">
               <button type="button" className="is-danger" onClick={event => {
                 event.stopPropagation();
                 setAccountRemovalConfirmation({ email, platform: 'browser' });
                 setBrowserAccountActionMenuEmail(null);
               }}>Remove</button>
             </div>}
-            {accountRemovalConfirmation?.email === email && accountRemovalConfirmation.platform === 'browser' && <div className="kh-wallet-actions-popout kh-security-browser-account-popout kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false">
+            {accountRemovalConfirmation?.email === email && accountRemovalConfirmation.platform === 'browser' && <div className="kh-account-actions-popout kh-security-browser-account-popout kh-account-removal-confirm-popout" role="alertdialog" aria-label="Confirm saved account removal" aria-modal="false">
               <strong>Remove saved account?</strong>
               <p>Remove <span className="kh-account-removal-email">{email}</span> from KingsHall accounts saved in this browser? This only removes the saved account entry from this browser.</p>
               <div className="kh-account-removal-actions">
