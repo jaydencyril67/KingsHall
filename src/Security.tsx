@@ -203,6 +203,7 @@ export default function SecurityPage({ user }: Props) {
         setWalletActionMenuId(null);
         setBrowserAccountActionMenuEmail(null);
         setAndroidAccountActionMenuEmail(null);
+        setAccountRemovalConfirmation(current => removingAndroidAccount ? current : null);
       }
     };
     document.addEventListener('pointerdown', closeNetworkSelector);
