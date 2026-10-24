@@ -49,7 +49,7 @@ function handleNativeKingsHallLaunch(value: string) {
     const url = new URL(value);
     if (url.protocol !== 'kingshall:' || url.hostname !== 'signin') return;
     const app = url.searchParams.get('app') || '';
-    if (app !== 'crybots' && app !== 'hallschat') return;
+    if (app !== 'crybots' && app !== 'hallschat' && app !== 'crownstore') return;
     const returnTo = url.searchParams.get('returnTo') || '';
     const params = new URLSearchParams({ app });
     if (returnTo) params.set('returnTo', returnTo);
