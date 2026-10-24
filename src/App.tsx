@@ -18,6 +18,7 @@ import type { FormEvent } from 'react';
 import './App.css';
 import AppUpdateMonitor from './AppUpdateMonitor';
 import { authenticateWithPasskey } from './webauthn';
+import { openEcosystemApp } from './utils/crossAppLauncher';
 
 type Mode = 'landing' | 'login' | 'request' | 'verify' | 'account' | 'home' | 'onboard' | 'review';
 type HomeSection = 'HOME' | 'IDENTITY' | 'DEVICE' | 'EXTERNAL' | 'APPS' | 'SECURITY' | 'PROFILE' | 'HELP' | 'ALERTS' | 'ABOUT' | 'EXIT';
@@ -110,6 +111,45 @@ function store(data: Result) {
     window.sessionStorage.setItem('kh_refresh', data.refreshToken);
   }
 }
+function returnToCompanionApp(email: unknown): boolean {
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (!normalizedEmail) return false;
+
+  const params = new URLSearchParams(window.location.search);
+  const requestedApp = params.get('app') || '';
+  const returnTo = params.get('returnTo') || '';
+  let safeReturn: URL | null = null;
+  try {
+    const candidate = new URL(returnTo);
+    const validPath = candidate.protocol === 'https:' && candidate.pathname === '/signin';
+    const validCryBots = requestedApp === 'crybots' && candidate.hostname === 'crybots.kingshall.online';
+    const validHallsChat = requestedApp === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online';
+    if (validPath && (validCryBots || validHallsChat)) safeReturn = candidate;
+  } catch {
+    // An invalid or external return URL must never become an automatic redirect.
+  }
+  if (!safeReturn || (requestedApp !== 'crybots' && requestedApp !== 'hallschat')) return false;
+
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && Capacitor.isPluginAvailable('CrossAppLauncher')) {
+    const target = requestedApp === 'crybots' ? 'crybots' : 'halls-chat';
+    const scheme = requestedApp === 'crybots' ? 'crybots' : 'hallschat';
+    const callback = new URL(scheme + '://signin');
+    const childReturn = safeReturn.searchParams.get('returnTo');
+    if (childReturn && childReturn.startsWith('/') && !childReturn.startsWith('//')) {
+      callback.searchParams.set('returnTo', childReturn);
+    }
+    callback.hash = 'kingshall_account=' + normalizedEmail;
+    // If the companion APK is missing, the shared launcher intentionally
+    // falls back to that exact app's CrownStore page, then to CrownStore web.
+    void openEcosystemApp(target, target, callback.toString());
+    return true;
+  }
+
+  safeReturn.hash = 'kingshall_account=' + encodeURIComponent(normalizedEmail);
+  window.location.assign(safeReturn.toString());
+  return true;
+}
+
 function clear() {
   for (const storage of [window.localStorage, window.sessionStorage]) {
     storage.removeItem('kh_access');
@@ -276,7 +316,7 @@ export default function App() {
     // silently restoring the previous browser session when multiple accounts exist.
     const showAccountChooser = window.location.pathname === '/signin' && validCompanionReturn && readSavedBrowserAccounts().length > 1;
     const refresh = getSessionValue('kh_refresh');
-    if (refresh && !(window.location.pathname === '/signin' && getSessionValue('kh_access')) && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); if (data.user) { saveBrowserAccountHint(data.user); const params = new URLSearchParams(window.location.search); const returnTo = params.get('returnTo') || ''; let safeReturn: URL | null = null; try { const candidate = new URL(returnTo); if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate; } catch {} if (safeReturn) { safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email); window.location.assign(safeReturn.toString()); return; } if (window.location.pathname !== '/home' && window.location.pathname !== '/account') { saveBrowserAccountHint(data.user); return; } setUser(data.user); setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
+    if (refresh && !(window.location.pathname === '/signin' && getSessionValue('kh_access')) && !showAccountChooser) api('/api/auth/refresh', { refreshToken: refresh }).then(data => { store(data); if (data.user) { saveBrowserAccountHint(data.user); if (returnToCompanionApp(data.user.email)) return; if (window.location.pathname !== '/home' && window.location.pathname !== '/account') { saveBrowserAccountHint(data.user); return; } setUser(data.user); setMode('home'); setPath('/home'); go('/home'); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'Restoring Android device account…' : 'Browser session active'); registerDeviceAccount(data.user).then(() => { setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }).catch(() => { setDeviceAccountStatus('You are signed in, but Android could not confirm the device account.'); }); } else { clear(); if (window.location.pathname === '/home' || window.location.pathname === '/account') { setMode('landing'); setPath('/'); go('/'); } } }).catch(() => { if (window.location.pathname === '/home' || window.location.pathname === '/account') { setUser(null); setMode('landing'); setPath('/'); go('/'); } });
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
@@ -310,6 +350,7 @@ export default function App() {
       }
       if (cancelled) return;
       if (validUser?.id) {
+        if (returnToCompanionApp(validUser.email)) return;
         setUser(validUser);
         setMode('home');
         setPath('/home');
@@ -486,10 +527,7 @@ export default function App() {
       setLoginChallengeToken('');setLoginChallengeMethods([]);setLoginChallengeMethod('');setLoginChallengeCode('');
       try{await registerDeviceAccount(data.user);setDeviceAccountStatus(Capacitor.isNativePlatform()?'KingsHall is registered in Android device accounts.':'You are signed in on this browser.');}
       catch{setDeviceAccountStatus('You are signed in, but Android could not add the device account.');}
-      const params=new URLSearchParams(window.location.search),returnTo=params.get('returnTo')||'',requestedApp=params.get('app')||'';
-      let safeReturn:URL|null=null;
-      try{const candidate=new URL(returnTo);if(candidate.protocol==='https:'&&candidate.pathname==='/signin'&&((requestedApp==='crybots'&&candidate.hostname==='crybots.kingshall.online')||(requestedApp==='hallschat'&&candidate.hostname==='hallschat.kingshall.online')))safeReturn=candidate;}catch{}
-      if(safeReturn){safeReturn.hash='kingshall_account='+encodeURIComponent(data.user.email);window.location.assign(safeReturn.toString());return;}
+      if (returnToCompanionApp(data.user.email)) return;
       navigate('home');say(data.message||'Security check passed. Welcome to KingsHall.',true);
     }catch(error){say((error as Error).message||'The extra-security check failed.');}
     finally{setBusy(false);if(method==='2fa')setLoginChallengeCode('');}
@@ -540,19 +578,7 @@ export default function App() {
           if (data.user) {
             try { await registerDeviceAccount(data.user); setDeviceAccountStatus(Capacitor.isNativePlatform() ? 'KingsHall is registered in Android device accounts.' : 'You are signed in on this browser.'); }
             catch { setDeviceAccountStatus('You are signed in, but Android could not add the device account.'); }
-            const params = new URLSearchParams(window.location.search);
-            const returnTo = params.get('returnTo') || '';
-            const requestedApp = params.get('app') || '';
-            let safeReturn: URL | null = null;
-            try {
-              const candidate = new URL(returnTo);
-              if (candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((requestedApp === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (requestedApp === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) safeReturn = candidate;
-            } catch {}
-            if (safeReturn) {
-              safeReturn.hash = 'kingshall_account=' + encodeURIComponent(data.user.email);
-              window.location.assign(safeReturn.toString());
-              return;
-            }
+            if (returnToCompanionApp(data.user.email)) return;
             navigate('home'); say(data.message || 'Signed in successfully. Welcome to your KingsHall home.', true);
           } else { navigate('home'); say(data.message || 'Signed in successfully. Welcome to KingsHall.', true); }
         } catch (err) {
