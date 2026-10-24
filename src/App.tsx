@@ -138,7 +138,7 @@ function returnToCompanionApp(email: unknown): boolean {
     if (childReturn && childReturn.startsWith('/') && !childReturn.startsWith('//')) {
       callback.searchParams.set('returnTo', childReturn);
     }
-    callback.hash = 'kingshall_account=' + normalizedEmail;
+    callback.hash = 'kingshall_account=' + encodeURIComponent(normalizedEmail);
     // If the companion APK is missing, the shared launcher intentionally
     // falls back to that exact app's CrownStore page, then to CrownStore web.
     void openEcosystemApp(target, target, callback.toString());
