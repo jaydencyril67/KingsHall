@@ -8,7 +8,7 @@ import { alertsFetch } from './alertsClient';
 import { openCrownStoreApp } from './utils/crownStore';
 import ColorSelectionPage from './ColorSelectionPage';
 
-type AlertType = 'signIns' | 'security' | 'identity' | 'wallet' | 'profile' | 'systemUpdates';
+type AlertType = 'signIns' | 'security' | 'identity' | 'profile' | 'systemUpdates';
 type ApkRelease = { status: 'checking' | 'update' | 'current' | 'latest' | 'error'; installedVersion?: string; latestVersion?: string; releaseNotes?: string; message?: string };
 type Channels = { email: boolean; inApp: boolean; push: boolean };
 type AlertTypes = Record<AlertType, boolean>;
@@ -16,7 +16,6 @@ const TYPE_OPTIONS: { key: AlertType; label: string; group: string }[] = [
   { key: 'signIns', label: 'Sign-ins & new devices', group: 'Account activity' },
   { key: 'security', label: 'Security changes', group: 'Account activity' },
   { key: 'identity', label: 'Identity updates', group: 'Account activity' },
-  { key: 'wallet', label: 'Wallet activity', group: 'Ecosystem' },
   { key: 'profile', label: 'Profile changes', group: 'Ecosystem' },
   { key: 'systemUpdates', label: 'App updates & notices', group: 'System' },
 ];
@@ -73,7 +72,7 @@ export default function SetupPage() {
   const [headerEnabled, setHeaderEnabled] = useState(() => readBool('kh_alert_color_enabled', true));
   const [headerColor, setHeaderColor] = useState(() => readColor('kh_alert_color', '#b9c7df'));
   const [channels, setChannels] = useState<Channels>(() => readJson<Channels>('kh_alert_channels', { email: false, inApp: true, push: false }));
-  const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }));
+  const [types, setTypes] = useState<AlertTypes>(() => readJson<AlertTypes>('kh_alert_types', { signIns: true, security: true, identity: true, profile: true, systemUpdates: true }));
   const [notice, setNotice] = useState('');
   const [apkRelease, setApkRelease] = useState<ApkRelease>({ status: 'checking' });
   const [apkActionMessage, setApkActionMessage] = useState('');
@@ -277,7 +276,7 @@ export default function SetupPage() {
         {activePanel === panel.key && <div className="kh-device-panel-inline">{panelContent(panel.key)}</div>}
       </article>)}
     </div>
-    <div className="kh-setup-footer kh-device-footer"><span>{savedAt ? 'Saved ' + savedAt : 'Preferences save automatically on this device.'}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setButtonColorEnabled(false); setButtonColor('#b9c7df'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, wallet: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
+    <div className="kh-setup-footer kh-device-footer"><span>{savedAt ? 'Saved ' + savedAt : 'Preferences save automatically on this device.'}</span><button type="button" className="secondary-button" onClick={() => { setNowbarEnabled(false); setNowbarColor('#b9c7df'); setNowbarLight('stable'); setButtonColorEnabled(false); setButtonColor('#b9c7df'); setHeaderEnabled(true); setHeaderColor('#b9c7df'); setChannels({ email: false, inApp: true, push: false }); setTypes({ signIns: true, security: true, identity: true, profile: true, systemUpdates: true }); setActivePanel(null); setNotice('Default preferences restored.'); }}>Restore defaults</button></div>
     {colorPicker === 'nowbar' && <ColorSelectionPage color={nowbarColor} title="Choose Nowbar colour" description="Choose the accent colour used by the Nowbar edge light and glow." onChange={setNowbarColor} onClose={() => setColorPicker(null)} />}
     {notice && <Toast message={notice} tone={notice.toLowerCase().includes('unavailable') || notice.toLowerCase().includes('unable') ? 'warning' : 'success'} onClose={() => setNotice('')} />}
     {colorPicker === 'button' && <ColorSelectionPage color={buttonColor} title="Choose Nowbar button colour" description="Choose the colour used for each individual navigation button border and glow." onChange={setButtonColor} onClose={() => setColorPicker(null)} />}
