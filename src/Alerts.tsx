@@ -13,7 +13,7 @@ type AlertItem = {
   read_at: string | null;
 };
 type Props = { version: number; onUnreadCount: (count: number) => void };
-type Filter = 'all' | 'unread' | 'login' | 'security' | 'identity' | 'wallet' | 'profile';
+type Filter = 'all' | 'unread' | 'login' | 'security' | 'identity' | 'profile';
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All activity' },
@@ -21,14 +21,12 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'login', label: 'Sign-ins' },
   { id: 'security', label: 'Security' },
   { id: 'identity', label: 'Identity' },
-  { id: 'wallet', label: 'Wallet' },
   { id: 'profile', label: 'Profile' },
 ];
 
 function AlertIcon({ category }: { category: string }) {
   const path = category === 'security' ? 'M12 3 19 6v5c0 4.5-3 7.8-7 10-4-2.2-7-5.5-7-10V6zM9 12l2 2 4-4'
     : category === 'login' ? 'M12 3a4 4 0 0 0-4 4v2H6v11h12V9h-2V7a4 4 0 0 0-4-4ZM8 9h8M12 13v3'
-    : category === 'wallet' ? 'M4 6h15a2 2 0 0 1 2 2v11H5a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12M16 12h5'
     : category === 'profile' ? 'M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8'
     : 'M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.5-3A7.5 7.5 0 1 1 20 11.5z';
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={path} /></svg>;
@@ -59,7 +57,7 @@ function dayGroup(value: string) {
   return 'Earlier';
 }
 function categoryLabel(value: string) {
-  const known: Record<string, string> = { login: 'Sign-in', security: 'Security', identity: 'Identity', wallet: 'Wallet', profile: 'Profile' };
+  const known: Record<string, string> = { login: 'Sign-in', security: 'Security', identity: 'Identity', profile: 'Profile' };
   return known[value?.toLowerCase()] || (value ? value.replace(/[_-]+/g, ' ') : 'Account');
 }
 
@@ -123,7 +121,7 @@ export default function AlertsPage({ version, onUnreadCount }: Props) {
     if (!inAppEnabled) return [];
     const typeForCategory: Record<string, string> = {
       login: 'signIns', signin: 'signIns', sign_in: 'signIns', security: 'security',
-      identity: 'identity', wallet: 'wallet', profile: 'profile',
+      identity: 'identity', profile: 'profile',
       system: 'systemUpdates', system_update: 'systemUpdates', system_updates: 'systemUpdates',
       update: 'systemUpdates', notice: 'systemUpdates'
     };
