@@ -53,7 +53,8 @@ function handleNativeKingsHallLaunch(value: string) {
     const returnTo = url.searchParams.get('returnTo') || '';
     const params = new URLSearchParams({ app });
     if (returnTo) params.set('returnTo', returnTo);
-    const route = '/signin?' + params.toString();
+    const query = params.toString();
+    const route = '/signin' + (query ? '?' + query : '');
     window.history.replaceState({}, '', route);
     window.dispatchEvent(new PopStateEvent('popstate'));
   } catch {
