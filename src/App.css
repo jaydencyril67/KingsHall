@@ -264,7 +264,6 @@ input,textarea{font-size:12px}
 .kh-identity-page input[type=date]{color-scheme:dark}
 .kh-identity-page .field label{display:block;margin-bottom:6px;font-size:10px}.kh-identity-help{display:block;margin-top:6px;color:#9296a0;font-size:10px;line-height:1.55}
 .kh-identity-page textarea{min-height:78px;resize:vertical}
-.kh-identity-wallets{display:grid;gap:10px}
 .kh-identity-wallet{padding:13px 12px 2px;border:1px solid var(--kh-card-secondary-border);border-radius:13px;background:var(--kh-card-secondary-surface)}
 .kh-identity-wallet-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
 .kh-identity-wallet-title strong{color:#e7ebf1;font-size:11px}
@@ -495,31 +494,13 @@ input,textarea{font-size:12px}
 .kh-two-factor-status-check svg{width:20px;height:20px}
 
 
-.kh-wallet-address-feedback{display:block;margin-top:7px;font-size:12px;line-height:1.45}
-.kh-wallet-address-feedback.is-valid{color:#35d07f}
-.kh-wallet-address-feedback.is-invalid{color:#f08080}
 .kh-identity-wallet .field input[aria-invalid="true"]{border-color:rgba(240,128,128,.7)}
 /* Wallet validation uses feedback text only; keep the input border neutral. */
 .kh-identity-wallet .field input[aria-invalid="false"]{border-color:var(--kh-border,rgba(255,255,255,.12))}
-.kh-security-wallet-card .kh-identity-card-head{margin-bottom:15px}
-.kh-wallet-address-item{position:relative;min-width:0}
-.kh-wallet-address-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid rgba(220,226,234,.12);border-radius:12px;background:rgba(255,255,255,.025);color:#edf0f4;text-align:left;cursor:pointer;transition:background .16s ease,border-color .16s ease}
-.kh-wallet-address-trigger:hover,.kh-wallet-address-trigger[aria-expanded="true"]{background:rgba(255,255,255,.055);border-color:rgba(220,226,234,.22)}
-.kh-wallet-address-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
-.kh-wallet-address-copy small{color:#9da3ae;font-size:10px}
-.kh-wallet-address-copy strong{overflow-wrap:anywhere;font-size:11px;font-weight:500;line-height:1.5}
-.kh-wallet-address-network{flex:0 0 auto;padding:5px 7px;border:1px solid rgba(220,226,234,.13);border-radius:7px;color:#cbd0d9;font-size:9px;white-space:nowrap}
-.kh-wallet-actions-popout{position:absolute;z-index:22;bottom:calc(100% + 7px);right:9px;display:flex;gap:6px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
-.kh-wallet-actions-popout button{min-width:66px;min-height:35px;padding:6px 10px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.045);color:#e9edf3;font:inherit;font-size:10px;cursor:pointer}
-.kh-wallet-actions-popout button:hover{background:rgba(255,255,255,.1)}
-.kh-wallet-actions-popout button.is-danger{color:#f0a5a5;background:rgba(150,50,50,.14);border-color:rgba(230,110,110,.13)}
-.kh-wallet-editor{margin-top:12px;padding:12px;border:1px solid rgba(220,226,234,.13);border-radius:13px;background:rgba(0,0,0,.16)}
-.kh-wallet-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
-.kh-wallet-editor-heading strong{color:#e7ebf1;font-size:11px}
-.kh-wallet-cancel-edit{padding:5px 7px;border:1px solid rgba(220,226,234,.14);border-radius:8px;background:rgba(255,255,255,.04);color:#bfc4cd;font:inherit;font-size:10px}
-.kh-wallet-smart-button{width:100%;min-height:42px;margin-top:12px;justify-content:center;font-size:11px}
-.kh-wallet-smart-button:disabled{opacity:.65;cursor:wait}
-@media(max-width:480px){.kh-wallet-address-trigger{padding:10px;gap:8px}.kh-wallet-address-network{font-size:8px;padding:4px 5px}.kh-wallet-actions-popout button{min-width:60px}}
+.kh-account-actions-popout{position:absolute;z-index:22;bottom:calc(100% + 7px);right:9px;display:flex;gap:6px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
+.kh-account-actions-popout button{min-width:66px;min-height:35px;padding:6px 10px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.045);color:#e9edf3;font:inherit;font-size:10px;cursor:pointer}
+.kh-account-actions-popout button:hover{background:rgba(255,255,255,.1)}
+.kh-account-actions-popout button.is-danger{color:#f0a5a5;background:rgba(150,50,50,.14);border-color:rgba(230,110,110,.13)}
 
 
 
@@ -567,10 +548,6 @@ input,textarea{font-size:12px}
 }
 
 /* Wallet email verification split action */
-.kh-wallet-verify-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px;align-items:stretch}
-.kh-wallet-verification-code{width:100%;min-width:0;min-height:42px;padding:10px 12px;border:1px solid rgba(220,226,234,.18);border-radius:11px;background:rgba(0,0,0,.22);color:#eef1f6;font:inherit;font-size:11px;outline:none}
-.kh-wallet-verification-code:focus{border-color:rgba(220,226,234,.42);box-shadow:0 0 0 3px rgba(220,226,234,.05)}
-.kh-wallet-verify-action{margin-top:0;min-width:0;padding-left:8px;padding-right:8px}
 
 
 /* Two-factor binding: equal-width Cancel and Verify actions. */
