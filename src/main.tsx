@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { listenForNativeLaunchUrls } from './utils/crossAppLauncher';
 
 function InitialSplashCleanup() {
   useEffect(() => {
@@ -42,6 +43,25 @@ function registerKingsHallPwa() {
       .catch((error) => console.warn('KingsHall PWA service worker registration failed:', error));
   }, { once: true });
 }
+
+function handleNativeKingsHallLaunch(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'kingshall:' || url.hostname !== 'signin') return;
+    const app = url.searchParams.get('app') || '';
+    if (app !== 'crybots' && app !== 'hallschat') return;
+    const returnTo = url.searchParams.get('returnTo') || '';
+    const params = new URLSearchParams({ app });
+    if (returnTo) params.set('returnTo', returnTo);
+    const route = '/signin?' + params.toString();
+    window.history.replaceState({}, '', route);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  } catch {
+    // Ignore unrelated or malformed Android launch intents.
+  }
+}
+
+listenForNativeLaunchUrls(handleNativeKingsHallLaunch);
 
 registerKingsHallPwa();
 
