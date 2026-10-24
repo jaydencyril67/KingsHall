@@ -16,7 +16,8 @@ public class KingsHallAccountPlugin extends Plugin {
     private static final String ACCOUNT_TYPE = "online.kingshall.account";
     private static final String[] COMPANION_PACKAGES = {
             "com.kingshall.exchange",
-            "com.kingshall.hallschat"
+            "com.kingshall.hallschat",
+            "online.kingshall.crownstore"
     };
 
     @PluginMethod
@@ -76,6 +77,9 @@ public class KingsHallAccountPlugin extends Plugin {
         JSObject result = new JSObject();
         com.getcapacitor.JSArray accounts = new com.getcapacitor.JSArray();
         for (Account account : manager.getAccountsByType(ACCOUNT_TYPE)) {
+            // Refresh visibility for already-saved accounts as well as newly-added ones.
+            // Android hides accounts from apps that have not been explicitly granted visibility.
+            makeCompanionAccountSelectable(manager, account);
             accounts.put(account.name);
         }
         result.put("accounts", accounts);
