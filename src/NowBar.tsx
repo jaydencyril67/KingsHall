@@ -186,7 +186,7 @@ export default function NowBar({ section, onNavigate, onExit }: Props) {
             }}
           >
             <span className="kh-nowbar-orb" />
-            <span className="kh-nowbar-current">{section}</span>
+            <span className="kh-nowbar-current" style={buttonAppearance.enabled ? { color: buttonAppearance.color, textShadow: `0 0 6px ${buttonAppearance.color}aa, 0 0 14px ${buttonAppearance.color}66` } : undefined}>{section}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
           </button>
         ) : (
