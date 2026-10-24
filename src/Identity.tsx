@@ -8,14 +8,13 @@ import Toast from './Toast';
 import LoadingDots from './components/LoadingDots';
 import VerificationBadge from './components/VerificationBadge';
 
-type Wallet = { id: string; label: string; network: string; address: string };
 type IdentityProfile = {
   id: string; firstName: string; middleName: string; lastName: string; username: string; email: string; emailVerified: boolean; memberSince: string;
   dateOfBirth: string; phone: string; country: string; state: string; city: string; address: string;
   postalCode: string; nationality: string; gender: string; occupation: string;
   website: string; instagram: string; facebook: string; xHandle: string; telegram: string; discord: string; linkedin: string;
   language: string; timeZone: string; preferredCurrency: string; pronouns: string; relationshipStatus: string;
-  avatarData: string; coverPhoto: string; wallets: Wallet[]; securityCodeSet: boolean; updatedAt: string | null; usernameChangedAt: string | null; namesChangedAt: string | null; nationalityChangedAt: string | null; phoneChangedAt: string | null; postalCodeChangedAt: string | null; regionChangedAt: string | null; genderChangedAt: string | null;
+  avatarData: string; coverPhoto: string; securityCodeSet: boolean; updatedAt: string | null; usernameChangedAt: string | null; namesChangedAt: string | null; nationalityChangedAt: string | null; phoneChangedAt: string | null; postalCodeChangedAt: string | null; regionChangedAt: string | null; genderChangedAt: string | null;
 };
 type Props = { user: { id: string; name: string; username: string; email: string; isEmailVerified: boolean } | null; onPersonalComplete?: () => void };
 const API = (import.meta.env.VITE_API_BASE_URL || 'https://api.kingshall.online').replace(/\/$/, '');
@@ -174,7 +173,7 @@ const blankProfile = (user: Props['user']): IdentityProfile => ({
   state: '', city: '', address: '', postalCode: '', nationality: '', gender: '', occupation: '',
   website: '', instagram: '', facebook: '', xHandle: '', telegram: '', discord: '', linkedin: '',
   language: '', timeZone: '', preferredCurrency: 'USD', pronouns: '', relationshipStatus: '',
-  avatarData: '', coverPhoto: '', wallets: [], securityCodeSet: false, updatedAt: null, usernameChangedAt: null, namesChangedAt: null, nationalityChangedAt: null, phoneChangedAt: null, postalCodeChangedAt: null, regionChangedAt: null, genderChangedAt: null
+  avatarData: '', coverPhoto: '', securityCodeSet: false, updatedAt: null, usernameChangedAt: null, namesChangedAt: null, nationalityChangedAt: null, phoneChangedAt: null, postalCodeChangedAt: null, regionChangedAt: null, genderChangedAt: null
 });
 async function request(path: string, body?: unknown) {
   const makeRequest = (token: string | null) => fetch(API + path, {
@@ -707,7 +706,6 @@ export default function IdentityPage({ user, onPersonalComplete }: Props) {
         </section>
         
       </form>
-      <p className="kh-identity-footnote">Never enter a wallet seed phrase, private key, exchange password, or recovery phrase here. Use only public receiving addresses.</p>
 
       {nativePickerKind && <NativeGalleryModal onClose={() => setNativePickerKind(null)} onSelect={file => { const source = URL.createObjectURL(file); if (nativePickerKind === 'profile') setPhotoCropSource(source); else setCoverCropSource(source); setNativePickerKind(null); setNotice(''); }} />}
       {photoCropSource && <StoryImageCropModal imageUrl={photoCropSource} title="Edit profile photo" aspectRatio={1} onCancel={() => { URL.revokeObjectURL(photoCropSource); setPhotoCropSource(null); }} onDone={file => uploadCroppedPhoto(file, 'profile')} />}
@@ -716,8 +714,8 @@ export default function IdentityPage({ user, onPersonalComplete }: Props) {
       {coverPreview && <ImagePreviewModal imageUrl={coverPreview} onClose={() => setCoverPreview(null)} />}
   </div>;
 }
-function FeatureIconPlaceholder({ type }: { type: 'person' | 'wallet' | 'lock' }) {
-  const path = type === 'person' ? 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' : type === 'wallet' ? 'M4 6h15a2 2 0 0 1 2 2v11H5a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12 M16 12h5' : 'M5 10h14v11H5z M8 10V7a4 4 0 0 1 8 0v3';
+function FeatureIconPlaceholder({ type }: { type: 'person' | 'lock' }) {
+  const path = type === 'person' ? 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0' : 'M5 10h14v11H5z M8 10V7a4 4 0 0 1 8 0v3';
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={path} /></svg>;
 }
 
