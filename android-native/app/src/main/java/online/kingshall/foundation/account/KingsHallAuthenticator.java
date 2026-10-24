@@ -33,8 +33,7 @@ public class KingsHallAuthenticator extends AbstractAccountAuthenticator {
 
     static boolean isAllowedPackage(String packageName) {
         return "com.kingshall.exchange".equals(packageName)
-                || "com.kingshall.hallschat".equals(packageName)
-                || "online.kingshall.crownstore".equals(packageName);
+                || "com.kingshall.hallschat".equals(packageName);
     }
 
     static String profileKey(String email, String field) {
