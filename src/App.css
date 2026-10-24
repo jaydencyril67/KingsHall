@@ -251,7 +251,6 @@ input,textarea{font-size:12px}
 .kh-identity-avatar-copy small{color:#9397a1;font-size:10px;line-height:1.5}
 .kh-identity-upload{position:relative;display:inline-flex!important;align-items:center;min-height:30px;margin:3px 0 0!important;padding:7px 10px;border:1px solid rgba(220,226,234,.22);border-radius:9px;color:#e9edf3!important;background:rgba(255,255,255,.04);font-size:10px!important;cursor:pointer}
 .kh-identity-upload input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
-.kh-identity-remove-photo,.kh-identity-wallet-title button{border:0;background:transparent;color:#d4a9a9;font-size:10px}
 .kh-identity-readonly-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:17px}
 .kh-identity-readonly{min-width:0;display:flex;flex-direction:column;gap:5px;padding:11px;border:1px solid var(--kh-card-secondary-border);border-radius:11px;background:var(--kh-card-secondary-surface)}
 .kh-identity-readonly span,.kh-identity-readonly small{color:#9296a0;font-size:9px}
@@ -264,11 +263,6 @@ input,textarea{font-size:12px}
 .kh-identity-page input[type=date]{color-scheme:dark}
 .kh-identity-page .field label{display:block;margin-bottom:6px;font-size:10px}.kh-identity-help{display:block;margin-top:6px;color:#9296a0;font-size:10px;line-height:1.55}
 .kh-identity-page textarea{min-height:78px;resize:vertical}
-.kh-identity-wallet{padding:13px 12px 2px;border:1px solid var(--kh-card-secondary-border);border-radius:13px;background:var(--kh-card-secondary-surface)}
-.kh-identity-wallet-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
-.kh-identity-wallet-title strong{color:#e7ebf1;font-size:11px}
-.kh-identity-wallet-title button{padding:4px 0}
-.kh-identity-add-wallet{min-height:38px;margin-top:12px;font-size:11px}
 .kh-identity-save-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:2px 1px}
 .kh-identity-save-row>span{max-width:330px;color:#969aa4;font-size:10px;line-height:1.6}
 .kh-identity-save-row .submit-button{width:auto;min-width:145px;min-height:42px;margin:0;font-size:11px}
@@ -494,9 +488,6 @@ input,textarea{font-size:12px}
 .kh-two-factor-status-check svg{width:20px;height:20px}
 
 
-.kh-identity-wallet .field input[aria-invalid="true"]{border-color:rgba(240,128,128,.7)}
-/* Wallet validation uses feedback text only; keep the input border neutral. */
-.kh-identity-wallet .field input[aria-invalid="false"]{border-color:var(--kh-border,rgba(255,255,255,.12))}
 .kh-account-actions-popout{position:absolute;z-index:22;bottom:calc(100% + 7px);right:9px;display:flex;gap:6px;padding:7px;border:1px solid rgba(220,226,234,.22);border-radius:13px;background:linear-gradient(155deg,rgba(31,35,43,.98),rgba(9,11,15,.99));box-shadow:0 16px 42px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}
 .kh-account-actions-popout button{min-width:66px;min-height:35px;padding:6px 10px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.045);color:#e9edf3;font:inherit;font-size:10px;cursor:pointer}
 .kh-account-actions-popout button:hover{background:rgba(255,255,255,.1)}
@@ -547,7 +538,6 @@ input,textarea{font-size:12px}
   background: rgba(3,4,5,.5) !important;
 }
 
-/* Wallet email verification split action */
 
 
 /* Two-factor binding: equal-width Cancel and Verify actions. */
@@ -632,7 +622,6 @@ input,textarea{font-size:12px}
 .kh-alert-item-icon{width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(221,226,233,.13);border-radius:13px;background:rgba(255,255,255,.035);color:#c8ced8}
 .kh-alert-item-icon.is-security{color:#e0e5ec;background:rgba(190,200,218,.075)}
 .kh-alert-item-icon.is-login{color:#cbd7e8;background:rgba(125,157,202,.08)}
-.kh-alert-item-icon.is-wallet{color:#d7d1c4;background:rgba(185,166,124,.075)}
 .kh-alert-item-icon.is-profile,.kh-alert-item-icon.is-identity{color:#d7dce4;background:rgba(255,255,255,.045)}
 .kh-alert-item-icon svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
 .kh-alert-item-content{min-width:0;padding-top:1px}
