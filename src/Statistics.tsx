@@ -4,7 +4,7 @@ import VerificationBadge from './components/VerificationBadge';
 import { alertsFetch } from './alertsClient';
 type User = { id: string; name: string; username: string; email: string; isEmailVerified: boolean };
 import './Statistics.css';
-type Profile = { memberSince?: string; emailVerified?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean; wallets?: Array<{ address?: string }> };
+type Profile = { memberSince?: string; emailVerified?: boolean; securityCodeSet?: boolean; accessCodeSet?: boolean };
 type Activity = { id: string | number; category?: string; title?: string; message?: string; created_at: string; read_at?: string | null };
 type Props = { user: User | null; deviceAccountStatus: string; onNavigate: (section: 'IDENTITY' | 'DEVICE' | 'SECURITY' | 'ALERTS') => void };
 export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }: Props) {
@@ -35,7 +35,6 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
   useEffect(() => { let active = true; const run = () => { if (active) void refresh(); }; void refresh(true); const timer = window.setInterval(run, 30000); const visible = () => { if (document.visibilityState === 'visible') run(); }; window.addEventListener('focus', run); document.addEventListener('visibilitychange', visible); return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', run); document.removeEventListener('visibilitychange', visible); }; }, [refresh]);
   const checks = [Boolean(user?.isEmailVerified), Boolean(profile?.securityCodeSet), Boolean(profile?.accessCodeSet), twoFactor];
   const score = profile ? Math.round(checks.filter(Boolean).length / checks.length * 100) : null;
-  const walletCount = (profile?.wallets || []).filter(w => Boolean(w.address?.trim())).length;
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); const key = date.toLocaleDateString(); const count = activities.filter(item => new Date(item.created_at).toLocaleDateString() === key).length; return { label: date.toLocaleDateString([], { weekday: 'short' }), count }; }), [activities]);
   const maxActivity = Math.max(1, ...days.map(day => day.count));
   const protections = [['Email verification', checks[0]], ['Security Code', checks[1]], ['Access Code', checks[2]], ['Authenticator (2FA)', checks[3]]] as const;
@@ -45,7 +44,6 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
     <section className="kh-stats-metrics" aria-label="Account statistics">
       <article className="kh-stats-metric"><span>ACCOUNT STATUS</span><strong style={verificationStatus === 'verified' ? { display: 'inline-flex', alignItems: 'center', gap: 6 } : undefined}>{verificationStatus === 'verified' ? <>Verified <VerificationBadge size={18} title="Verified by KingsHall" /></> : 'Active'}</strong><small>{verificationStatus === 'verified' ? 'Verified by KingsHall' : 'Account is active'}</small></article>
       <article className="kh-stats-metric"><span>SECURITY SCORE</span><strong>{score === null ? '—' : score + '%'}</strong><div className="kh-stats-progress"><i style={{ width: (score || 0) + '%' }} /></div><small>Five available account protections</small></article>
-      <article className="kh-stats-metric"><span>SAVED WALLETS</span><strong>{profile ? walletCount : '—'}</strong><small>Public receiving addresses linked</small></article>
       <article className="kh-stats-metric"><span>UNREAD ALERTS</span><strong>{loading && !lastUpdated ? '—' : unread}</strong><small>Notices needing attention</small><button type="button" onClick={() => onNavigate('ALERTS')}>Review alerts ↗</button></article>
     </section>
     <section className="kh-stats-panels">
@@ -54,6 +52,6 @@ export default function StatisticsPage({ user, deviceAccountStatus, onNavigate }
     </section>
     <section className="kh-stats-panels kh-stats-lower"><article className="kh-home-card kh-stats-panel"><div className="kh-home-card-top"><span className="kh-home-card-icon">◎</span><span className="kh-home-tag">YOUR IDENTITY</span></div><h2>{user?.name || 'KingsHall member'}</h2><p className="kh-home-muted">@{user?.username || 'member'}</p><div className="kh-home-detail"><span>Email</span><strong>{user?.email || 'Not available'}</strong></div><div className="kh-home-detail"><span>Member since</span><strong>{profile?.memberSince ? new Date(profile.memberSince).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}</strong></div><div className="kh-home-detail"><span>Device account</span><strong>{deviceAccountStatus}</strong></div><button className="kh-stats-wide-action" type="button" onClick={() => onNavigate('IDENTITY')}>View identity ↗</button></article>
       <article className="kh-home-card kh-stats-panel"><div className="kh-home-card-top"><span className="kh-home-card-icon">⌘</span><span className="kh-home-tag">CONNECTED APPS</span></div><h2>Your ecosystem</h2><p className="kh-home-muted">Open your KingsHall-connected experiences.</p><a className="kh-stats-app-link" href="https://crybots.kingshall.online" target="_blank" rel="noreferrer"><span><strong>CryBots</strong><small>Digital asset tools and bot experiences</small></span><b>↗</b></a><a className="kh-stats-app-link" href="https://hallschat.kingshall.online" target="_blank" rel="noreferrer"><span><strong>HallsChat</strong><small>Social connections and conversations</small></span><b>↗</b></a><button className="kh-stats-wide-action" type="button" onClick={() => onNavigate('DEVICE')}>Review device setup ↗</button></article></section>
-    <footer className="kh-stats-footnote">Live statistics refresh every 30 seconds. Wallet counts represent saved addresses, not account balances.</footer>
+    <footer className="kh-stats-footnote">Live statistics refresh every 30 seconds.</footer>
   </section>;
 }
