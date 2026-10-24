@@ -443,6 +443,9 @@ jobs:
       - name: Install native KingsHall APK updater
         run: python3 scripts/install-android-app-update.py
 
+      - name: Install native ecosystem APK launcher
+        run: python3 scripts/install-android-cross-app-launcher.py online.kingshall.foundation
+
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
