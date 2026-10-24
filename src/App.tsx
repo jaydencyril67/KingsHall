@@ -311,7 +311,10 @@ export default function App() {
     let validCompanionReturn = false;
     try {
       const candidate = new URL(entryReturnTo);
-      validCompanionReturn = candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((entryParams.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (entryParams.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'));
+      validCompanionReturn = candidate.protocol === 'https:' && (
+        (candidate.pathname === '/signin' && ((entryParams.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (entryParams.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) ||
+        (candidate.pathname === '/' && candidate.hostname === 'crownstore.kingshall.online' && entryParams.get('app') === 'crownstore' && candidate.searchParams.get('profile') === '1')
+      );
     } catch {}
     // For app sign-in handoffs, let people choose a saved identity instead of
     // silently restoring the previous browser session when multiple accounts exist.
@@ -329,7 +332,10 @@ export default function App() {
     let validCompanionReturn = false;
     try {
       const candidate = new URL(entryReturnTo);
-      validCompanionReturn = candidate.protocol === 'https:' && candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'));
+      validCompanionReturn = candidate.protocol === 'https:' && (
+        (candidate.pathname === '/signin' && ((params.get('app') === 'crybots' && candidate.hostname === 'crybots.kingshall.online') || (params.get('app') === 'hallschat' && candidate.hostname === 'hallschat.kingshall.online'))) ||
+        (candidate.pathname === '/' && candidate.hostname === 'crownstore.kingshall.online' && params.get('app') === 'crownstore' && candidate.searchParams.get('profile') === '1')
+      );
     } catch {}
     if (!accessToken || (validCompanionReturn && readSavedBrowserAccounts().length > 1)) return;
     let cancelled = false;
